@@ -65,15 +65,15 @@ enum ChatBackground: Equatable {
         }
     }
 
-    /// How much of the picture shows: 1 is the picture as it is, a lower value
-    /// lets the app's colours through. A paper ignores it.
+    /// How much of the picture shows: 1 is the picture as it is, 0.01 lets
+    /// almost all of the app's colours through. A paper ignores it.
     static var opacity: Double {
         get {
             let stored = UserDefaults.standard.object(forKey: opacityKey) as? Double
-            return min(max(stored ?? 0.85, 0.1), 1)
+            return (stored ?? 0.85).clamped(to: 0.01 ... 1)
         }
         set {
-            UserDefaults.standard.set(min(max(newValue, 0.1), 1), forKey: opacityKey)
+            UserDefaults.standard.set(newValue.clamped(to: 0.01 ... 1), forKey: opacityKey)
             NotificationCenter.default.post(name: changed, object: nil)
         }
     }
@@ -118,5 +118,13 @@ enum ChatBackground: Equatable {
         case let .paper(paper): "paper:\(paper.rawValue)"
         case .image: "image"
         }
+    }
+}
+
+private extension Double {
+    /// The stored figure stays inside what the slider can reach, whatever an
+    /// older build left in defaults.
+    func clamped(to range: ClosedRange<Double>) -> Double {
+        min(max(self, range.lowerBound), range.upperBound)
     }
 }

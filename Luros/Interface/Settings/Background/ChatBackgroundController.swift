@@ -3,6 +3,7 @@ import LurosCore
 import PhotosUI
 import UIKit
 import UniformTypeIdentifiers
+import os
 
 /// Settings ▸ Preferences ▸ Chat Background: the app's own background, one of
 /// the papers Luros draws, or a picture of the reader's that the chat shows
@@ -34,9 +35,6 @@ final class ChatBackgroundController: TableController {
         let preview: UIImage?
     }
 
-    /// The whole of the picture, down in steps a reader can tell apart.
-    private static let opacityChoices: [Double] = [1, 0.85, 0.7, 0.55, 0.4, 0.25]
-
     private lazy var dataSource = TableDataSource<Section, Row, RowContent>(
         tableView: tableView,
         identifier: { $0.row },
@@ -57,6 +55,9 @@ final class ChatBackgroundController: TableController {
     override func viewDidLoad() {
         super.viewDidLoad()
         navigationItem.backButtonDisplayMode = .minimal
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 60
+        tableView.register(OpacityCell.self, forCellReuseIdentifier: "opacity")
         dataSource.headerTitle = { section in
             section == .papers ? String(localized: "Papers") : nil
         }
@@ -117,7 +118,7 @@ final class ChatBackgroundController: TableController {
             picture.append(RowContent(
                 row: .opacity,
                 title: String(localized: "Opacity"),
-                detail: Preferences.percentText(ChatBackground.opacity),
+                detail: nil,
                 selected: false,
                 preview: nil,
             ))
@@ -134,6 +135,13 @@ final class ChatBackgroundController: TableController {
     }
 
     private func cell(in tableView: UITableView, content value: RowContent) -> UITableViewCell {
+        if case .opacity = value.row {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "opacity") as? OpacityCell
+                ?? OpacityCell(style: .default, reuseIdentifier: "opacity")
+            cell.configure(ChatBackground.opacity)
+            cell.onChange = { opacity in ChatBackground.opacity = opacity }
+            return cell
+        }
         let cell = tableView.dequeueReusableCell(withIdentifier: "background")
             ?? UITableViewCell(style: .value1, reuseIdentifier: "background")
         var content = UIListContentConfiguration.valueCell()
@@ -150,7 +158,7 @@ final class ChatBackgroundController: TableController {
             cell.accessoryType = value.selected ? .checkmark : .none
             cell.selectionStyle = .default
             cell.accessibilityTraits = value.selected ? [.button, .selected] : [.button]
-        case .choose, .opacity:
+        case .choose:
             cell.accessoryType = .disclosureIndicator
             cell.selectionStyle = .default
             cell.accessibilityTraits = [.button]
@@ -160,6 +168,8 @@ final class ChatBackgroundController: TableController {
             cell.accessibilityTraits = [.button]
             content.textProperties.color = .systemRed
             cell.contentConfiguration = content
+        case .opacity:
+            break
         }
         return cell
     }
@@ -177,23 +187,10 @@ final class ChatBackgroundController: TableController {
         case .choose:
             choosePicture()
         case .opacity:
-            let choices = Self.opacityChoices
-            let current = ChatBackground.opacity
-            push(SettingChoiceController(
-                title: String(localized: "Opacity"),
-                options: choices.map { Preferences.percentText($0) },
-                selected: choices.enumerated().min { abs($0.element - current) < abs($1.element - current) }?.offset ?? 1,
-            ) { index in
-                ChatBackground.opacity = choices[index]
-                self.updateRows()
-            })
+            break
         case .remove:
             confirmRemoval()
         }
-    }
-
-    private func push(_ page: UIViewController) {
-        navigationController?.pushViewController(page, animated: true)
     }
 
     // MARK: - The reader's own picture
@@ -218,40 +215,12 @@ final class ChatBackgroundController: TableController {
             do {
                 try ChatBackground.removeImage()
             } catch {
+                log.error("removing the picture failed: \(error.localizedDescription, privacy: .public)")
                 self?.notice(String(localized: "The picture could not be removed."), detail: error.localizedDescription)
             }
             self?.updateRows()
         })
         present(alert, animated: true)
-    }
-
-    /// Scales the picture down to at most 3000 pixels on its longest side and
-    /// writes it as a JPEG: a photo's file is otherwise tens of megabytes, and
-    /// nothing draws it larger than a screen.
-    private nonisolated static func storedJPEG(_ data: Data) -> Data? {
-        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
-        let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageAlways: true,
-            kCGImageSourceCreateThumbnailWithTransform: true,
-            kCGImageSourceThumbnailMaxPixelSize: 3000,
-        ]
-        guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
-            return nil
-        }
-        let output = NSMutableData()
-        guard let destination = CGImageDestinationCreateWithData(
-            output,
-            UTType.jpeg.identifier as CFString,
-            1,
-            nil,
-        ) else { return nil }
-        CGImageDestinationAddImage(
-            destination,
-            image,
-            [kCGImageDestinationLossyCompressionQuality: 0.88] as CFDictionary,
-        )
-        guard CGImageDestinationFinalize(destination) else { return nil }
-        return output as Data
     }
 
     private nonisolated static func store(_ jpeg: Data) throws {
@@ -274,37 +243,137 @@ final class ChatBackgroundController: TableController {
 extension ChatBackgroundController: PHPickerViewControllerDelegate {
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         picker.dismiss(animated: true)
-        guard let provider = results.first?.itemProvider,
-              provider.hasItemConformingToTypeIdentifier(UTType.image.identifier)
-        else { return }
-        provider.loadDataRepresentation(forTypeIdentifier: UTType.image.identifier) { [weak self] data, error in
-            Task { @MainActor in
-                guard let self else { return }
-                guard let data else {
-                    self.notice(
-                        String(localized: "That picture could not be read."),
-                        detail: error?.localizedDescription,
-                    )
-                    return
+        guard let provider = results.first?.itemProvider else { return }
+        let types = provider.registeredTypeIdentifiers.joined(separator: ", ")
+        log.info("picture picked, types: \(types, privacy: .public)")
+        Task { @MainActor in
+            guard let jpeg = await Self.jpeg(from: provider) else {
+                self.notice(String(localized: "That picture could not be read."))
+                return
+            }
+            do {
+                try Self.store(jpeg)
+                ChatBackground.current = .image
+                self.updateRows()
+            } catch {
+                log.error("saving the picture failed: \(error.localizedDescription, privacy: .public)")
+                self.notice(
+                    String(localized: "The picture could not be saved."),
+                    detail: error.localizedDescription,
+                )
+            }
+        }
+    }
+
+    /// The picture the provider holds, as a JPEG: its own bytes first, and
+    /// the image itself when it will not hand them over.
+    private static func jpeg(from provider: NSItemProvider) async -> Data? {
+        if let data = await rawData(from: provider) {
+            let jpeg = await Task.detached(priority: .userInitiated) {
+                ChatBackgroundPicture.storedJPEG(data)
+            }.value
+            if let jpeg { return jpeg }
+        }
+        guard let image = await picture(from: provider) else { return nil }
+        log.info("picture handed over as an image, not as bytes")
+        return ChatBackgroundPicture.storedJPEG(image)
+    }
+
+    /// The picture's bytes, under the type the provider actually registered.
+    /// A camera photo is usually HEIC — `public.heic`, not `public.image` — and
+    /// a provider that lists a concrete type is not promised to answer for the
+    /// general one.
+    private static func rawData(from provider: NSItemProvider) async -> Data? {
+        for type in provider.registeredTypeIdentifiers
+        where UTType(type)?.conforms(to: .image) ?? false {
+            let data: Data? = await withCheckedContinuation { continuation in
+                provider.loadDataRepresentation(forTypeIdentifier: type) { data, error in
+                    if let error {
+                        log.error("loading \(type, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+                    }
+                    continuation.resume(returning: data)
                 }
-                let jpeg = await Task.detached(priority: .userInitiated) {
-                    Self.storedJPEG(data)
-                }.value
-                guard let jpeg else {
-                    self.notice(String(localized: "That picture could not be read."))
-                    return
+            }
+            if let data { return data }
+        }
+        return nil
+    }
+
+    private static func picture(from provider: NSItemProvider) async -> UIImage? {
+        await withCheckedContinuation { continuation in
+            provider.loadObject(ofClass: UIImage.self) { object, error in
+                if let error {
+                    log.error("loading as UIImage failed: \(error.localizedDescription, privacy: .public)")
                 }
-                do {
-                    try Self.store(jpeg)
-                    ChatBackground.current = .image
-                    self.updateRows()
-                } catch {
-                    self.notice(
-                        String(localized: "The picture could not be saved."),
-                        detail: error.localizedDescription,
-                    )
-                }
+                continuation.resume(returning: object as? UIImage)
             }
         }
     }
 }
+
+/// The picture's opacity, a whole percent at a time: the slider moves freely
+/// and the value it reports is rounded, so a drag never leaves 83.7% behind.
+private final class OpacityCell: UITableViewCell {
+    private let title = UILabel()
+    private let value = UILabel()
+    private let slider = UISlider()
+    /// Called with the stepped value (0.01 ... 1) while the slider moves.
+    var onChange: ((Double) -> Void)?
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        selectionStyle = .none
+        title.text = String(localized: "Opacity")
+        title.font = .preferredFont(forTextStyle: .body)
+        title.adjustsFontForContentSizeCategory = true
+        title.isAccessibilityElement = false
+        value.font = .preferredFont(forTextStyle: .body)
+        value.adjustsFontForContentSizeCategory = true
+        value.textColor = .secondaryLabel
+        value.textAlignment = .right
+        value.isAccessibilityElement = false
+        value.setContentCompressionResistancePriority(.required, for: .horizontal)
+        slider.minimumValue = 0.01
+        slider.maximumValue = 1
+        slider.isContinuous = true
+        slider.addTarget(self, action: #selector(sliderChanged), for: .valueChanged)
+        for view in [title, value, slider] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            contentView.addSubview(view)
+        }
+        NSLayoutConstraint.activate([
+            title.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+            title.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+            title.trailingAnchor.constraint(lessThanOrEqualTo: value.leadingAnchor, constant: -8),
+            value.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+            value.firstBaselineAnchor.constraint(equalTo: title.firstBaselineAnchor),
+            slider.leadingAnchor.constraint(equalTo: title.leadingAnchor),
+            slider.trailingAnchor.constraint(equalTo: value.trailingAnchor),
+            slider.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 6),
+            slider.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12),
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) is not used")
+    }
+
+    func configure(_ opacity: Double) {
+        slider.value = Float(opacity)
+        slider.accessibilityLabel = title.text
+        value.text = Preferences.percentText(opacity)
+        slider.accessibilityValue = value.text
+    }
+
+    @objc private func sliderChanged() {
+        let stepped = (Double(slider.value) * 100).rounded() / 100
+        value.text = Preferences.percentText(stepped)
+        slider.accessibilityValue = value.text
+        onChange?(stepped)
+    }
+}
+
+/// One place for what the picker and ImageIO say, so a picture that will not
+/// load can be read back out of the device log.
+private let log = Logger(subsystem: "com.fluoxetine.luros", category: "ChatBackground")
