@@ -17,6 +17,7 @@ final class ChatBackgroundController: TableController {
         case plain
         case papers
         case picture
+        case bubbles
     }
 
     private enum Row: Hashable {
@@ -25,6 +26,7 @@ final class ChatBackgroundController: TableController {
         case choose
         case opacity
         case remove
+        case bubble(ChatBubbleStyle)
     }
 
     private struct RowContent: Equatable {
@@ -59,7 +61,11 @@ final class ChatBackgroundController: TableController {
         tableView.estimatedRowHeight = 60
         tableView.register(OpacityCell.self, forCellReuseIdentifier: "opacity")
         dataSource.headerTitle = { section in
-            section == .papers ? String(localized: "Papers") : nil
+            switch section {
+            case .papers: String(localized: "Papers")
+            case .bubbles: String(localized: "Bubbles")
+            case .plain, .picture: nil
+            }
         }
         dataSource.footerTitle = { section in
             switch section {
@@ -67,6 +73,8 @@ final class ChatBackgroundController: TableController {
                 return nil
             case .papers:
                 return String(localized: "A paper is drawn by Luros and fills the chat as it is; only a picture of your own can be made see-through.")
+            case .bubbles:
+                return String(localized: "Only your own messages sit on the bubble; replies stay on the paper.")
             case .picture:
                 return ChatBackground.hasImage
                     ? String(localized: "Opacity lets the app's colours show through the picture. The picture is copied into Luros's folder and scaled down when it is very large, so it stays after the photo app's temporary file is gone.")
@@ -131,6 +139,20 @@ final class ChatBackgroundController: TableController {
             ))
         }
         sections.append((.picture, picture))
+        let bubble = ChatBubbleStyle.current
+        sections.append((.bubbles, ChatBubbleStyle.allCases.map { style in
+            RowContent(
+                row: .bubble(style),
+                title: style.title,
+                detail: nil,
+                selected: bubble == style,
+                preview: style.preview(
+                    size: CGSize(width: 56, height: 36),
+                    traits: traitCollection,
+                    accent: view.tintColor,
+                ),
+            )
+        }))
         dataSource.update(sections, reconfigure: true)
     }
 
@@ -154,7 +176,7 @@ final class ChatBackgroundController: TableController {
         }
         cell.contentConfiguration = content
         switch value.row {
-        case .none, .paper:
+        case .none, .paper, .bubble:
             cell.accessoryType = value.selected ? .checkmark : .none
             cell.selectionStyle = .default
             cell.accessibilityTraits = value.selected ? [.button, .selected] : [.button]
@@ -188,6 +210,9 @@ final class ChatBackgroundController: TableController {
             choosePicture()
         case .opacity:
             break
+        case let .bubble(style):
+            ChatBubbleStyle.current = style
+            updateRows()
         case .remove:
             confirmRemoval()
         }
