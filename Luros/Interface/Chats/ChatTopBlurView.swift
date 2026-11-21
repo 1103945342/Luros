@@ -7,9 +7,10 @@ final class ChatTopBlurView: UIView {
         NSClassFromString("CABackdropLayer") ?? CALayer.self
     }
 
-    /// The paper the conversation is drawn on, so the frost above it fades
-    /// into that colour rather than the app's own background.
-    var paper: ChatBackground.Paper? {
+    /// What the conversation is drawn on, so the frost above it takes that
+    /// colour rather than the app's own background: a paper's own shade, the
+    /// colour a picture shows across its top, or the page's background.
+    var background: ChatBackground = .none {
         didSet { updateFrost() }
     }
 
@@ -63,10 +64,21 @@ final class ChatTopBlurView: UIView {
     }
 
     @objc dynamic private func updateFrost() {
-        let color = paper.map {
-            ChatBackgroundView.base($0, traits: traitCollection).resolvedColor(with: traitCollection)
-        } ?? UIColor.pageBackground.resolvedColor(with: traitCollection)
-        frost.colors = [color.withAlphaComponent(1).cgColor, color.withAlphaComponent(0).cgColor]
+        let color: UIColor?
+        switch background {
+        case .none:
+            color = UIColor.pageBackground.resolvedColor(with: traitCollection)
+        case let .paper(paper):
+            color = ChatBackgroundView.base(paper, traits: traitCollection)
+                .resolvedColor(with: traitCollection)
+        case .image:
+            // Half the picture's own colour, so the bar belongs to the picture
+            // and still softens what scrolls under it.
+            color = ChatBackgroundView.topTint()?.withAlphaComponent(0.55)
+        }
+        frost.colors = color.map {
+            [$0.cgColor, $0.withAlphaComponent(0).cgColor]
+        } ?? [UIColor.clear.cgColor, UIColor.clear.cgColor]
     }
 
     override func didMoveToWindow() {

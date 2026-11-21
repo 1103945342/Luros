@@ -72,7 +72,7 @@ final class ChatBackgroundView: UIView {
     private static var cachedPicture: UIImage?
     private static var cachedStamp: Date?
 
-    private static func picture() -> UIImage? {
+    static func picture() -> UIImage? {
         let url = ChatBackground.imageURL
         let stamp = (try? FileManager.default.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date
         if let stamp, stamp == cachedStamp, let cachedPicture {
@@ -114,5 +114,34 @@ final class ChatBackgroundView: UIView {
     /// The colour a paper is printed on: the bar's frost fades into it.
     static func base(_ paper: ChatBackground.Paper, traits: UITraitCollection) -> UIColor {
         PaperBackgroundView.base(paper, traits: traits)
+    }
+
+    /// The colour the reader's picture shows across its top band, where the
+    /// bar's frost sits: one averaged pixel, so the bar takes the picture's
+    /// colour instead of a white or black sheet over it.
+    static func topTint() -> UIColor? {
+        guard let image = picture(), let cg = image.cgImage else { return nil }
+        let band = max(1, cg.height / 8)
+        guard let top = cg.cropping(to: CGRect(x: 0, y: 0, width: cg.width, height: band)) else {
+            return nil
+        }
+        var pixel = [UInt8](repeating: 0, count: 4)
+        guard let context = CGContext(
+            data: &pixel,
+            width: 1,
+            height: 1,
+            bitsPerComponent: 8,
+            bytesPerRow: 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue,
+        ) else { return nil }
+        context.interpolationQuality = .medium
+        context.draw(top, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+        return UIColor(
+            red: CGFloat(pixel[0]) / 255,
+            green: CGFloat(pixel[1]) / 255,
+            blue: CGFloat(pixel[2]) / 255,
+            alpha: 1,
+        )
     }
 }

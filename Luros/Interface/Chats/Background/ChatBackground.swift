@@ -78,12 +78,6 @@ enum ChatBackground: Equatable {
         }
     }
 
-    /// The paper drawn, when one is: what the bar's frost fades into.
-    var paper: Paper? {
-        if case let .paper(paper) = self { return paper }
-        return nil
-    }
-
     /// What the reader's picture is stored as: `Background/chat.jpg` in the
     /// app's folder, copied out of the picker's temporary file.
     static var imageURL: URL {
