@@ -172,7 +172,7 @@ public struct Diagnostics: LogEvidenceSource, LiveLogSource {
             throw DiagnosticsError.invalidParameter("limit must be \(CrashReportListRequest.limitRange.lowerBound)–\(CrashReportListRequest.limitRange.upperBound)")
         }
         let maximumNameBytes = CrashReportListRequest.maximumNameBytes
-        for value in [request.bundleIdentifier, request.processName].compactMap(\.self) {
+        for value in [request.bundleIdentifier, request.processName].compactMap { $0 } {
             guard !value.isEmpty, value.utf8.count <= maximumNameBytes, !value.contains("/"), !value.contains("\0") else {
                 throw DiagnosticsError.invalidParameter("names must be 1–\(maximumNameBytes) bytes with no slash or NUL")
             }

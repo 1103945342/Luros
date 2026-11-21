@@ -725,7 +725,7 @@ public extension GitRepository {
         guard let tree else { throw GitError(.failed, "the merge has no tree") }
         defer { git_tree_free(tree) }
         var parentObjects: [OpaquePointer?] = []
-        let present = parents.compactMap(\.self)
+        let present = parents.compactMap { $0 }
         for parent in present {
             var oid = git_oid()
             try GitError.check(git_oid_fromstr(&oid, parent), "read \(parent)")

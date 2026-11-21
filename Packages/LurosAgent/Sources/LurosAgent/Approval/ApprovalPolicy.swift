@@ -832,7 +832,7 @@ public struct ApprovalPolicy: Sendable, Hashable {
     }
 
     static func feedbackEditReason(_ edit: FeedbackEditApproval) -> String {
-        let fields: [String] = [edit.title.map { _ in "title" }, edit.body.map { _ in "body" }].compactMap(\.self)
+        let fields: [String] = [edit.title.map { _ in "title" }, edit.body.map { _ in "body" }].compactMap { $0 }
         return "Replaces the \(fields.joined(separator: " and ")) of issue #\(edit.number) on \(edit.repository), which your GitHub account opened and anyone can read, with the text below; the line Luros added below the body stays as it is. Each edit needs your approval."
     }
 

@@ -673,7 +673,7 @@ actor MockBackend: AgentHostBackend {
                 footer: issue.footer,
             )
         }
-        let changed: [String] = [request.title.map { _ in "title" }, request.body.map { _ in "body" }].compactMap(\.self)
+        let changed: [String] = [request.title.map { _ in "title" }, request.body.map { _ in "body" }].compactMap { $0 }
         return FeedbackEditToolResponse(
             repository: "1103945342/Luros",
             issue: request.number,

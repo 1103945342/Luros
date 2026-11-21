@@ -51,7 +51,7 @@ struct ReadOnlyRoots: Sendable {
     func root(containing path: String) -> (root: ScopedRoot, shownAs: String)? {
         let trimmed = path.trimmingCharacters(in: .whitespaces)
         guard trimmed.hasPrefix("/"), let real = CanonicalPath.resolve(trimmed) else { return nil }
-        for folder in [developmentExtensions, bundledExtensions, sdks].compactMap(\.self) {
+        for folder in [developmentExtensions, bundledExtensions, sdks].compactMap { $0 } {
             guard let root = try? ScopedRoot(URL(fileURLWithPath: folder, isDirectory: true)) else { continue }
             if root.contains(real) {
                 return (root, folder)
@@ -67,7 +67,7 @@ struct ReadOnlyRoots: Sendable {
             developmentExtensions.map { "Luros's development extensions (\($0))" },
             bundledExtensions.map { "the copy in Luros's app bundle (\($0))" },
             sdks.map { "the registered SDKs (\($0))" },
-        ].compactMap(\.self)
+        ].compactMap { $0 }
         return named.isEmpty ? nil : named.joined(separator: " or ")
     }
 

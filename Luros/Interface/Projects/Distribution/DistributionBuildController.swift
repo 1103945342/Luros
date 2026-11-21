@@ -228,7 +228,7 @@ final class DistributionBuildController: TableController {
             content.textProperties.color = .secondaryLabel
         }
         cell.contentConfiguration = content
-        cell.accessibilityLabel = [value.text, value.secondaryText].compactMap(\.self).joined(separator: ", ")
+        cell.accessibilityLabel = [value.text, value.secondaryText].compactMap { $0 }.joined(separator: ", ")
     }
 
     @objc private dynamic func updateRows() {
@@ -449,7 +449,7 @@ final class DistributionBuildController: TableController {
         case "diagnostic": event.payload?["message"]?.stringValue
         case TaskEvent.stateKind:
             [event.payload?["state"]?.stringValue, event.payload?["message"]?.stringValue]
-                .compactMap(\.self).joined(separator: ": ")
+                .compactMap { $0 }.joined(separator: ": ")
         default: nil
         }
         guard let line else { return }

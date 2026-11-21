@@ -745,8 +745,8 @@ public struct GitService: Sendable {
     func author(name: String?, email: String?, repository: GitRepository) throws -> GitSignature {
         let settings = (try? JSONFile.read(SettingsFile.self, at: layout.gitSettings)) ?? nil
         let configured = repository.configuredSignature()
-        let name = [name, settings?.authorName, configured?.name].compactMap(\.self).first { !$0.isEmpty }
-        let email = [email, settings?.authorEmail, configured?.email].compactMap(\.self).first { !$0.isEmpty }
+        let name = [name, settings?.authorName, configured?.name].compactMap { $0 }.first { !$0.isEmpty }
+        let email = [email, settings?.authorEmail, configured?.email].compactMap { $0 }.first { !$0.isEmpty }
         guard let name, let email else {
             throw LurosError(
                 .badRequest,

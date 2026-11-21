@@ -58,7 +58,7 @@ enum CrashTextRenderer {
             field("Role", crash.process.role),
             field("Parent Process", withPID(crash.process.parentName, crash.process.parentPID)),
             field("Coalition", crash.process.coalitionName),
-        ].compactMap(\.self).joined(separator: "\n")
+        ].compactMap { $0 }.joined(separator: "\n")
     }
 
     private static func timing(_ crash: CrashReport, header: ReportHeader) -> String {
@@ -66,7 +66,7 @@ enum CrashTextRenderer {
             field("Date/Time", stamp(crash.device.captureDate ?? header.timestamp)),
             field("Launch Time", stamp(crash.process.launchDate)),
             field("OS Version", osVersion(crash) ?? header.osVersion),
-        ].compactMap(\.self).joined(separator: "\n")
+        ].compactMap { $0 }.joined(separator: "\n")
     }
 
     private static func failure(_ crash: CrashReport) -> String {
@@ -85,7 +85,7 @@ enum CrashTextRenderer {
         }
         if let termination = crash.termination {
             let reason = [termination.namespace, termination.code.map(String.init), termination.indicator]
-                .compactMap(\.self).joined(separator: " ")
+                .compactMap { $0 }.joined(separator: " ")
             if !reason.isEmpty {
                 lines.append("Termination Reason: \(reason)")
             }

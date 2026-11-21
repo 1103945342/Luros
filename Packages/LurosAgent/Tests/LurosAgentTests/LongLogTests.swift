@@ -228,7 +228,7 @@ struct LongLogTests {
             return line.withUnsafeBytes { SessionEventLog.kind(of: $0) }
         }
         let names = try needed.map(kind)
-        #expect(Set(names.compactMap(\.self)) == SessionEventLog.Summary.kinds && !names.contains(nil))
+        #expect(Set(names.compactMap { $0 }) == SessionEventLog.Summary.kinds && !names.contains(nil))
         for event in others {
             let name = try kind(event)
             #expect(name.map { !SessionEventLog.Summary.kinds.contains($0) } == true)

@@ -87,7 +87,7 @@ public enum PrivateShapes {
         }
         let octets = name.split(separator: ".", omittingEmptySubsequences: false).map { Int($0) }
         if octets.count == 4, octets.allSatisfy({ $0 != nil }) {
-            let numbers = octets.compactMap(\.self)
+            let numbers = octets.compactMap { $0 }
             return numbers[0] == 127 || isLocal(numbers)
         }
         return matches(localIPv6, name)

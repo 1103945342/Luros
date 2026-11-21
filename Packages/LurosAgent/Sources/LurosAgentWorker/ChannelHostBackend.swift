@@ -762,7 +762,7 @@ public struct ChannelHostBackend: AgentHostBackend {
         } catch let error as LurosError where error.reason == .authenticationRequired {
             throw FeedbackToolFailure(message: "Nothing was changed: " + Self.issueSignInNeeded)
         }
-        let changed: [String] = [request.title.map { _ in "title" }, request.body.map { _ in "body" }].compactMap(\.self)
+        let changed: [String] = [request.title.map { _ in "title" }, request.body.map { _ in "body" }].compactMap { $0 }
         return FeedbackEditToolResponse(
             repository: FeedbackRules.repository,
             issue: response.number,

@@ -16,7 +16,7 @@ enum LurosLinkRouter {
         // front — a link tapped in a conversation or a message arrives with
         // none — and only then the rest: a window the reader cannot see must
         // not be the one that takes the link, or nothing appears to happen.
-        let candidates = [scene].compactMap(\.self)
+        let candidates = [scene].compactMap { $0 }
             + connected.filter { $0 !== scene && $0.activationState == .foregroundActive }
             + connected.filter { $0 !== scene && $0.activationState != .foregroundActive }
         let root = candidates.lazy

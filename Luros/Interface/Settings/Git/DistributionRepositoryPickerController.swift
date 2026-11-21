@@ -170,7 +170,7 @@ private final class RepositoryCandidateCell: UITableViewCell {
         isAccessibilityElement = true
         accessibilityTraits = .button
         accessibilityLabel = candidate.fullName
-        accessibilityValue = ([description].compactMap(\.self).filter { !$0.isEmpty } + states).joined(separator: "\n")
+        accessibilityValue = ([description].compactMap { $0 }.filter { !$0.isEmpty } + states).joined(separator: "\n")
     }
 
     @available(*, unavailable)

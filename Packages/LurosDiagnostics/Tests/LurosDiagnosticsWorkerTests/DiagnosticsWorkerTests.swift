@@ -37,7 +37,7 @@ private final class FakeIcli: IcliSurface, @unchecked Sendable {
         handler: @escaping @Sendable (LogEntry) -> Bool,
         onEnd: @escaping @Sendable (String) -> Void,
     ) throws -> any IcliSyslogStream {
-        let lines = lock.withLock { batches.flatMap(\.self) }
+        let lines = lock.withLock { batches.flatMap { $0 } }
         let entries = lines.map { row in
             LogEntry(
                 date: (row["date"] as? String).flatMap(ISO8601DateFormatter().date(from:)),

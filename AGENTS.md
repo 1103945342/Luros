@@ -5338,3 +5338,64 @@ colour or a bug.
 - The page's segment control sets no title fonts: the platform draws them, and
   scales them with the reader's text size, which a font set here would freeze.
 
+
+## Device build (no Xcode)
+
+`Scripts/device/` compiles this project on the device itself, with the
+Luros toolchain (Apple Command Line Tools 15.3: Swift 5.10, clang) and a
+registered iPhoneOS 17.4 SDK — no xcodebuild, no SwiftPM, no make. It is
+the local answer to the Mac half of the build, and it is a work in
+progress: read what it has not reached before assuming a product builds.
+
+- `python3 Scripts/device/build.py --list` names every module the plan
+  has; `--modules A B`, `--product lurosd`, `--all`, `--clean`.
+- `plan.py` is the target table that Package.swift and the xcodeproj used
+  to be: one entry per Swift module or C target, with its sources and the
+  modules it imports. Keep it in step with the manifests.
+- `stage.py` copies each target's sources to `Builds/Device/staged/`
+  before compiling them, because the repository is written for Swift 6
+  and this compiler is 5.10. It drops trailing commas in argument lists
+  (SE-0439, 6.1) and nothing else; every other 5.10 difference is fixed
+  in the repository itself, where it also compiles with the newer
+  compiler. Nothing staged is committed (`Builds/Device/` is ignored).
+- Every path handed to swiftc or clang is relative to the project root.
+  On roothide those drivers are vroot-linked: an absolute path built
+  from the project's real path is looked for under `/rootfs` and never
+  found. Only `SDKROOT` is passed by name.
+- `bootstrap` names the slice: `iphoneos-arm64e` for roothide,
+  `iphoneos-arm64` for rootless (from `LUROS_ARCHITECTURE`).
+
+What compiles today: LurosCore, LurosProtocol, LurosProject,
+LurosConsole, LurosReplay, LurosMachO, LurosDebian, LurosCodeSign,
+CToolchainSystem, LurosToolchain, LurosToolCore, LurosToolHost,
+LurosToolExtension, LurosDiagnosticsCore, LurosLogReaderSPI,
+LurosLogReader, LurosCrashReport, LurosCrashSymbols, LurosCrashBlame,
+ConfirmLoaded, the Tree-sitter runtime and all fourteen grammars,
+Runestone and its language and theme support. A program linked from
+LurosCore and LurosProtocol was signed with ldid and ran on the device.
+
+What is not reached yet, in the order it has to be done:
+
+1. The packages the repository does not carry — kwwk, swift-nio, icli,
+   libgit2 and libarchive (prebuilt xcframeworks), capstone and
+   keystone, GhosttyKit, SnapKit, Then, Litext, MarkdownView, SwiftMath,
+   ScrubberKit, SwifterSwift, AlertController, ListViewKit, Dog,
+   DisplayLink, SPIndicator. They have to be vendored under
+   `Vendor/packages/` (and the xcframeworks' device slices linked) before
+   LurosGit, LurosDebArchive, LurosEnvironment, LurosBuild, the workers
+   and the app can be planned.
+2. The 17.4 SDK carries neither `usr/include/xpc` nor an `XPC` module
+   tbd, and lurosd imports both. Either a local `xpc` header subset plus
+   a dynamic-lookup link is written for it, or lurosd's Swift `XPC` use
+   is replaced with C calls of our own — a decision, not a port.
+3. `actool` and `xcstringstool` do not exist here. 47 imagesets and one
+   app icon become loose PNGs in the bundle (no AppIcon, no coloursets
+   to lose), and `Localizable.xcstrings` becomes `.strings` through a
+   small local reader; both are unwritten so far.
+4. The app's Liquid Glass paths (`UIGlassEffect` and the iOS 26-only
+   spellings beside it) are dropped for this SDK; nothing else in the app
+   has been compiled yet.
+5. Packaging: `luros-project.json` gains `external` pointing at
+   `luros/build.sh`, which will run this driver and write one .deb into
+   `$LUROS_PACKAGE_DIR` with the layout `Packaging/DEBIAN` describes.
+   Until a product links, there is nothing to package.

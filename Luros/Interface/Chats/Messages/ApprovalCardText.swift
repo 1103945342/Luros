@@ -21,7 +21,7 @@ enum ApprovalCardText {
     static func sections(_ payload: JSONValue?, title: String, callReason: String?) -> [Section] {
         let root = isRoot(payload)
         var result = [callReason, root ? nil : payload?["reason"]?.stringValue]
-            .compactMap(\.self).filter { !$0.isEmpty }.map { Section(text: $0) }
+            .compactMap { $0 }.filter { !$0.isEmpty }.map { Section(text: $0) }
         if let diff = payload?["detail"]?["descriptionChanged"]?["diff"]?.stringValue, !diff.isEmpty {
             result.append(Section(text: diff, isCode: true))
         }
@@ -90,7 +90,7 @@ enum ApprovalCardText {
             root ? nil : payload?["reason"]?.stringValue,
             payload?["detail"]?["descriptionChanged"]?["diff"]?.stringValue,
             arguments,
-        ].compactMap(\.self).filter { !$0.isEmpty }.joined(separator: "\n\n")
+        ].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n\n")
     }
 
     /// The arguments by name. For a shell_run, the command and directory are

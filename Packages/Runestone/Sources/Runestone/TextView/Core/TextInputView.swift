@@ -1090,7 +1090,7 @@ private extension TextInputView {
     }
 
     private func setupContentSizeObserver() {
-        contentSizeService.$isContentSizeInvalid.filter(\.self).sink { [weak self] _ in
+        contentSizeService.$isContentSizeInvalid.filter { $0 }.sink { [weak self] _ in
             if let self {
                 delegate?.textInputViewDidInvalidateContentSize(self)
             }

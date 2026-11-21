@@ -42,12 +42,12 @@ final class TreeSitterLanguageLayer {
 
 extension TreeSitterLanguageLayer {
     func parse(_ text: NSString) {
-        let ranges = [tree?.rootNode.textRange].compactMap(\.self)
+        let ranges = [tree?.rootNode.textRange].compactMap { $0 }
         parse(ranges, from: text)
     }
 
     func apply(_ edit: TreeSitterInputEdit) -> LineChangeSet {
-        let ranges = [tree?.rootNode.textRange].compactMap(\.self)
+        let ranges = [tree?.rootNode.textRange].compactMap { $0 }
         return apply(edit, parsing: ranges)
     }
 

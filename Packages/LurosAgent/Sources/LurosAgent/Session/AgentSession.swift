@@ -1511,7 +1511,7 @@ public actor AgentSession {
     /// messages are dropped separately; sources never return to the composer.
     @discardableResult
     public func abort() async -> StoppedWork {
-        let stopped = StoppedWork([runTask, compaction].compactMap(\.self))
+        let stopped = StoppedWork([runTask, compaction].compactMap { $0 })
         aborted = true
         stopGeneration &+= 1
         titleTask?.cancel()

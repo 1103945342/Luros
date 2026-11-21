@@ -239,7 +239,7 @@ public enum UIAction: Codable, Hashable, Sendable {
                 throw DiagnosticsError.invalidParameter("index must be \(indexRange.lowerBound)–\(indexRange.upperBound)")
             }
             let maximumFieldBytes = UIElementSelector.maximumFieldBytes
-            for value in [selector.text, selector.identifier, selector.role].compactMap(\.self) {
+            for value in [selector.text, selector.identifier, selector.role].compactMap { $0 } {
                 guard value.utf8.count <= maximumFieldBytes, !value.contains("\0") else {
                     throw DiagnosticsError.invalidParameter(
                         "selector fields must be at most \(maximumFieldBytes) bytes with no NUL",

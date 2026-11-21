@@ -66,7 +66,7 @@ public enum PackageOwnerPaths {
             guard spelling.hasPrefix("/"), !spellings.contains(spelling) else { return }
             spellings.append(spelling)
         }
-        for form in [path, throughPrivate(path)].compactMap(\.self) {
+        for form in [path, throughPrivate(path)].compactMap { $0 } {
             add(form)
             if let root, root != "/", form.hasPrefix(root) {
                 let relative = String(form.dropFirst(root.count))

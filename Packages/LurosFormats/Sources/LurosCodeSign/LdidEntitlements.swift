@@ -216,7 +216,7 @@ public struct LdidEntitlements: Equatable, Sendable {
                 0x31,
                 entries.map { tagged(0x30, tagged(0x0C, Array($0.key.utf8)) + der($0.value)) }
                     .sorted { $0.lexicographicallyPrecedes($1) }
-                    .flatMap(\.self),
+                    .flatMap { $0 },
             )
         }
     }

@@ -239,7 +239,7 @@ final class ProjectDistributionController: TableController {
         }
         cell.contentConfiguration = content
         cell.accessibilityLabel = value.spokenText
-            ?? [value.text, value.secondaryText].compactMap(\.self).joined(separator: ", ")
+            ?? [value.text, value.secondaryText].compactMap { $0 }.joined(separator: ", ")
         cell.accessibilityValue = value.spokenValue
     }
 

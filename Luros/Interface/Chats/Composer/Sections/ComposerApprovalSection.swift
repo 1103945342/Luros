@@ -425,7 +425,7 @@ private final class QuestionOptionControl: UIControl {
             addSubview(view)
         }
         isAccessibilityElement = true
-        accessibilityLabel = [shown, detail].compactMap(\.self).filter { !$0.isEmpty }.joined(separator: ", ")
+        accessibilityLabel = [shown, detail].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", ")
         accessibilityTraits = .button
         updateCheck()
     }

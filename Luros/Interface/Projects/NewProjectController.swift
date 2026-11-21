@@ -201,7 +201,7 @@ final class NewProjectController: TableController, UITextFieldDelegate {
     /// The template asked for, else the one already ticked, else the
     /// workspace, else the first.
     private func initialSelection(in available: [Choice]) -> String {
-        let wanted = [preferredTemplateID, selectedID].compactMap(\.self)
+        let wanted = [preferredTemplateID, selectedID].compactMap { $0 }
         if let id = wanted.first(where: { id in available.contains { $0.template.id == id } }) {
             return id
         }
@@ -279,7 +279,7 @@ final class NewProjectController: TableController, UITextFieldDelegate {
         cell.accessoryType = selected ? .checkmark : .none
         // the tick is drawn; the trait says it
         cell.isAccessibilityElement = true
-        cell.accessibilityLabel = [content.text, content.secondaryText].compactMap(\.self).joined(separator: ", ")
+        cell.accessibilityLabel = [content.text, content.secondaryText].compactMap { $0 }.joined(separator: ", ")
         cell.accessibilityTraits = selected ? [.button, .selected] : .button
     }
 
@@ -306,7 +306,7 @@ final class NewProjectController: TableController, UITextFieldDelegate {
         cell.accessoryType = selected ? .checkmark : .none
         // the tick is drawn; the trait says it
         cell.isAccessibilityElement = true
-        cell.accessibilityLabel = [content.text, content.secondaryText].compactMap(\.self).joined(separator: ", ")
+        cell.accessibilityLabel = [content.text, content.secondaryText].compactMap { $0 }.joined(separator: ", ")
         cell.accessibilityTraits = selected ? [.button, .selected] : .button
     }
 

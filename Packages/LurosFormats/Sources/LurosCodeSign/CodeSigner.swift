@@ -242,7 +242,7 @@ public enum CodeSigner {
             guard strings <= UInt32.max, strings <= UInt64(codeEnd) else { throw CodeSignFailure.malformed }
             codeEnd = Int(strings)
         }
-        let firstSection = (sectionOffsets + sectionlessContent).filter { $0 > 0 }.min() ?? 0
+        let firstSection: UInt64 = (sectionOffsets + sectionlessContent).filter { $0 > 0 }.min() ?? 0
         guard UInt64(headerSize + commands.count) <= firstSection, firstSection <= UInt64(codeEnd) else {
             throw CodeSignFailure.noRoom
         }

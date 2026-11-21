@@ -25,7 +25,7 @@ final class EmptyStateView: UIView {
         // Read the text once; the symbol adds no separate information.
         isAccessibilityElement = true
         accessibilityTraits = .staticText
-        accessibilityLabel = [title, text].compactMap(\.self).joined(separator: ". ")
+        accessibilityLabel = [title, text].compactMap { $0 }.joined(separator: ". ")
         let stack = UIStackView(arrangedSubviews: [icon])
         stack.axis = .vertical
         stack.alignment = .center

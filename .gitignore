@@ -14,3 +14,6 @@ Packages/*/.build/
 Extensions/**/.build/
 # The banner tool's pnpm dependencies
 Documents/Banner/Tool/node_modules/
+
+# Device build output (Scripts/device/build.py)
+Builds/Device/
