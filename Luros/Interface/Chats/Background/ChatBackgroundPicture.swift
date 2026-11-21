@@ -30,14 +30,21 @@ enum ChatBackgroundPicture {
             return nil
         }
         let type = CGImageSourceGetType(source) as String? ?? "unknown"
-        if let image = thumbnail(source) ?? decoded(source) {
+        // The picture itself first: a camera file's embedded preview can be a
+        // few hundred pixels wide, and taking it — as the first version of
+        // this did — left a blurry background on a screen of thousands.
+        if let image = decoded(source) {
             log.info("picture decoded from \(type, privacy: .public), \(image.width, privacy: .public)×\(image.height, privacy: .public)")
             return jpegData(image)
         }
         if let image = UIImage(data: data) {
             let scaled = image.preparingThumbnail(of: ceiling) ?? image
-            log.info("picture decoded by UIImage from \(type, privacy: .public)")
+            log.info("picture decoded by UIImage from \(type, privacy: .public), \(Int(scaled.size.width), privacy: .public)×\(Int(scaled.size.height), privacy: .public)")
             return scaled.jpegData(compressionQuality: 0.88)
+        }
+        if let image = thumbnail(source) {
+            log.error("only the picture's own preview could be read: \(image.width, privacy: .public)×\(image.height, privacy: .public) from \(type, privacy: .public)")
+            return jpegData(image)
         }
         log.error("no decoder took the picture of type \(type, privacy: .public)")
         return nil
@@ -50,7 +57,8 @@ enum ChatBackgroundPicture {
     }
 
     /// What the file already holds: a camera's embedded preview, scaled to the
-    /// ceiling if it is larger.
+    /// ceiling if it is larger. A last resort — it is often much smaller than
+    /// the picture beside it.
     private static func thumbnail(_ source: CGImageSource) -> CGImage? {
         CGImageSourceCreateThumbnailAtIndex(source, 0, [
             kCGImageSourceCreateThumbnailFromImageIfAbsent: true,
@@ -59,7 +67,8 @@ enum ChatBackgroundPicture {
         ] as CFDictionary)
     }
 
-    /// The whole image, decoded and scaled in one step.
+    /// The whole picture, decoded and scaled in one step: the way in that
+    /// keeps the detail a full screen needs.
     private static func decoded(_ source: CGImageSource) -> CGImage? {
         CGImageSourceCreateThumbnailAtIndex(source, 0, [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
