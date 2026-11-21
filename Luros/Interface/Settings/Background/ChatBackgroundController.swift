@@ -391,7 +391,7 @@ private final class OpacityCell: UITableViewCell {
         slider.accessibilityValue = value.text
     }
 
-    @objc private func sliderChanged() {
+    @objc dynamic private func sliderChanged() {
         let stepped = (Double(slider.value) * 100).rounded() / 100
         value.text = Preferences.percentText(stepped)
         slider.accessibilityValue = value.text

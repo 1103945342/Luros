@@ -32,6 +32,9 @@ final class ChatController: UIViewController {
     @objc dynamic private var openingQueueEditor = false
     private let composer = ComposerView()
     private let topBlur = ChatTopBlurView()
+    /// The line a conversation without messages opens with, in the middle of
+    /// the blank area above the composer.
+    private let welcome = ChatWelcomeView()
     /// Behind everything: the paper or picture the reader chose, drawn under
     /// the message list and the composer, which both stay transparent where
     /// they can.
@@ -293,6 +296,7 @@ final class ChatController: UIViewController {
             make.trailing.lessThanOrEqualTo(view.safeAreaLayoutGuide).offset(-16)
             make.width.equalTo(view.safeAreaLayoutGuide).offset(-32).priority(.low)
         }
+        addWelcome()
 
         var latestConfiguration: UIButton.Configuration
         if #available(iOS 26, *) {
@@ -593,6 +597,41 @@ final class ChatController: UIViewController {
         NotificationCenter.default.removeObserver(self)
     }
 
+    /// Puts the opening line between the bar and the composer, on the middle
+    /// of what will be the transcript when there is one.
+    private func addWelcome() {
+        view.insertSubview(welcome, aboveSubview: messageList)
+        welcome.isHidden = true
+        let centre = UILayoutGuide()
+        view.addLayoutGuide(centre)
+        centre.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+            make.bottom.equalTo(composer.snp.top)
+        }
+        welcome.snp.makeConstraints { make in
+            make.centerX.equalTo(view)
+            make.centerY.equalTo(centre.snp.centerY)
+            make.top.greaterThanOrEqualTo(centre.snp.top)
+            make.leading.greaterThanOrEqualTo(view.safeAreaLayoutGuide.snp.leading).offset(24)
+            make.trailing.lessThanOrEqualTo(view.safeAreaLayoutGuide.snp.trailing).offset(-24)
+        }
+    }
+
+    /// The page opens with a line while it has no messages; the first one
+    /// written on it is what the page has to say instead.
+    private func updateWelcome() {
+        let empty = messages.isEmpty && (chat?.isUntitled ?? true)
+        if empty {
+            guard welcome.isHidden else { return }
+            welcome.isHidden = false
+            welcome.play()
+        } else {
+            guard !welcome.isHidden else { return }
+            welcome.isHidden = true
+            welcome.stop()
+        }
+    }
+
     /// The paper or the reader's picture, as Settings last left it.
     @objc private func reloadBackground() {
         chatBackground.opacity = ChatBackground.opacity
@@ -602,6 +641,7 @@ final class ChatController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        updateWelcome()
         updateMessageListInsets()
         // Not while `use(_:)` is still swapping the conversation in:
         // restoring its draft lays the window out before its rows are in the
@@ -982,6 +1022,7 @@ final class ChatController: UIViewController {
             followedTurn = message
         }
         showTranscript(items)
+        updateWelcome()
         followTurn(heldLatest: heldLatest)
         if revealsCompaction {
             revealLatestMessage()
