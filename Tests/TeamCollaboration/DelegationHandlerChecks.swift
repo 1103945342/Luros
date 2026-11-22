@@ -31,12 +31,34 @@ final class SessionHost: @unchecked Sendable {
     let home: String
     let stateDirectory: URL
     let registry = TaskRegistryStub()
+    /// What `AgentDelegationTargets` reads: which project each artifact and
+    /// installation belongs to.
+    let artifacts = ArtifactRegistryStub()
+    let installations = InstallationStoreStub()
     init(delegations: AgentDelegationStore, assignments: AgentAssignmentStore, home: String, stateDirectory: URL) {
         self.delegations = delegations
         self.assignments = assignments
         self.home = home
         self.stateDirectory = stateDirectory
     }
+}
+final class ArtifactRegistryStub: @unchecked Sendable {
+    struct Artifact: Sendable { var projectID: String? }
+    private var byID: [String: Artifact] = [:]
+    private var byPath: [String: Artifact] = [:]
+    func add(id: String, path: String, projectID: String?) {
+        let artifact = Artifact(projectID: projectID)
+        byID[id] = artifact
+        byPath[path] = artifact
+    }
+    func artifact(_ id: String) -> Artifact? { byID[id] }
+    func artifact(path: String) -> Artifact? { byPath[path] }
+}
+final class InstallationStoreStub: @unchecked Sendable {
+    struct Record: Sendable { var projectID: String? }
+    private var records: [String: Record] = [:]
+    func add(_ id: String, projectID: String?) { records[id] = Record(projectID: projectID) }
+    func record(_ id: String) -> Record? { records[id] }
 }
 final class TaskRegistryStub: @unchecked Sendable {
     struct Record: Sendable { var state: TaskState }
@@ -52,8 +74,15 @@ final class AgentSessionTable: @unchecked Sendable {
     }
     static let shared = AgentSessionTable()
     private var entries: [String: Entry] = [:]
+    private var startedTasks: Set<String> = []
     func add(_ entry: Entry) { entries[entry.sessionID] = entry }
     func entry(_ sessionID: String) -> Entry? { entries[sessionID] }
+    func markStarted(_ taskID: TaskID, session: String) {
+        startedTasks.insert("\(session)/\(taskID.rawValue)")
+    }
+    func started(_ taskID: TaskID, session: String) -> Bool {
+        startedTasks.contains("\(session)/\(taskID.rawValue)")
+    }
 }
 /// The host resolves a project under `Projects/`; the checks only need the
 /// directory the path rule is applied to.
@@ -310,6 +339,127 @@ struct DelegationHandlerChecks {
             host: host,
         ) != nil, "a chat governed by a brief that lost its record is refused")
 
+        // MARK: - A step's capability admits its own project's work
+
+        for (tool, capability) in [
+            ("luros_project_build", AgentDelegationBrief.Capability.build),
+            ("luros_package_install", AgentDelegationBrief.Capability.install),
+            ("luros_package_remove", AgentDelegationBrief.Capability.install),
+            ("luros_package_confirm_loaded", AgentDelegationBrief.Capability.install),
+            ("luros_device_respring", AgentDelegationBrief.Capability.install),
+            ("git_stage", AgentDelegationBrief.Capability.gitCommit),
+            ("git_commit", AgentDelegationBrief.Capability.gitCommit),
+            ("luros_package_publish", AgentDelegationBrief.Capability.publish),
+        ] {
+            check(AgentDelegationToolPolicy.effect(of: tool) == .confined(capability),
+                  "\(tool) is confined to \(capability.rawValue)")
+        }
+        check(AgentDelegationToolPolicy.effect(of: "shell_run") == .unsupported,
+              "shell_run stays closed")
+        check(AgentDelegationToolPolicy.capability(of: .buildStart) == .build
+            && AgentDelegationToolPolicy.capability(of: .buildAttach) == .build
+            && AgentDelegationToolPolicy.capability(of: .distributionPublish) == .publish
+            && AgentDelegationToolPolicy.capability(of: .gitCommit) == .gitCommit
+            && AgentDelegationToolPolicy.capability(of: .confirmLoaded) == .install,
+            "the host's operations carry the same table")
+        check(AgentDelegationToolPolicy.capability(of: .agentRunCode) == nil,
+              "run-as-code has no confined adapter")
+
+        // A conversation its opener opened follows the opener's mode as that
+        // opener holds it now; every other conversation keeps the app's.
+        var childMode = AgentPromptRequest(sessionID: child, text: "x", approvalMode: .confirm)
+        childMode.applyOpenerMode(.full, targetParentSessionID: opener, openerSessionID: opener)
+        check(childMode.approvalMode == .full, "a child follows its opener's Full")
+        var foreignMode = AgentPromptRequest(sessionID: child, text: "x", approvalMode: .confirm)
+        foreignMode.applyOpenerMode(.full, targetParentSessionID: nil, openerSessionID: opener)
+        check(foreignMode.approvalMode == .confirm, "a conversation it did not open keeps the app's mode")
+        var othersChild = AgentPromptRequest(sessionID: child, text: "x", approvalMode: .relaxed)
+        othersChild.applyOpenerMode(.full, targetParentSessionID: stranger, openerSessionID: opener)
+        check(othersChild.approvalMode == .relaxed, "another opener's child is not this opener's to widen")
+
+        let builder = UUID().uuidString
+        let building = AgentDelegationBrief(
+            objective: "Build the project",
+            acceptance: ["It builds"],
+            steps: [.init(id: "build", title: "Build", capabilities: [.build, .install, .publish])],
+        )
+        try await store.register(child: builder, opener: opener, projectID: "project-1", brief: building)
+        let buildAdmitted = try await store.apply(AgentDelegationRequest(
+            sessionID: builder, action: .admit, expectedRevision: 1, tool: "luros_project_build",
+        ), caller: builder)
+        check(buildAdmitted.plan?.currentStep?.id == "build",
+              "a step's build capability admits luros_project_build")
+        do {
+            _ = try await store.apply(AgentDelegationRequest(
+                sessionID: builder, action: .admit, expectedRevision: 1, tool: "git_commit",
+            ), caller: builder)
+            fatalError("allowed: git_commit under a step without gitCommit")
+        } catch {
+            check(error.localizedDescription.contains("needs the gitCommit capability")
+                && error.localizedDescription.contains("amendment"),
+                "the refusal names the capability and the amendment: \(error.localizedDescription)")
+        }
+
+        // The target: the conversation's own project, its own artifact and
+        // installation, never another's.
+        host.artifacts.add(id: "artifact-own", path: "/Builds/own/x.deb", projectID: "project-1")
+        host.artifacts.add(id: "artifact-other", path: "/Builds/other/y.deb", projectID: "another")
+        host.installations.add("install-own", projectID: "project-1")
+        host.installations.add("install-other", projectID: "another")
+        func askTarget(_ operation: AppOperation, _ payload: Data) async -> Bool {
+            await AgentDelegationAdmission.refusal(
+                HostRequest(caller: .worker(.agent, instance: builder), operation: operation,
+                            payload: payload, requestID: "target"),
+                host: host,
+            ) == nil
+        }
+        let digestValue = "sha256:" + String(repeating: "0", count: 64)
+        let ownBuild = try JSONEncoder().encode(BuildStartRequest(projectID: "project-1"))
+        let otherBuild = try JSONEncoder().encode(BuildStartRequest(projectID: "another"))
+        check(await askTarget(.buildStart, ownBuild),
+              "a build of the conversation's own project is admitted")
+        check(!(await askTarget(.buildStart, otherBuild)),
+              "a build of another project is refused")
+        let ownInstall = try JSONEncoder().encode(
+            InstallPackageRequest(artifactID: "artifact-own", digest: digestValue),
+        )
+        let otherInstall = try JSONEncoder().encode(
+            InstallPackageRequest(artifactID: "artifact-other", digest: digestValue),
+        )
+        check(await askTarget(.installPackage, ownInstall),
+              "the project's own artifact installs")
+        check(!(await askTarget(.installPackage, otherInstall)),
+              "another project's artifact is refused")
+        let ownRemoval = try JSONEncoder().encode(RemovePackageRequest(installationID: "install-own"))
+        let otherRemoval = try JSONEncoder().encode(RemovePackageRequest(installationID: "install-other"))
+        check(await askTarget(.removePackage, ownRemoval),
+              "the project's own installation is removed")
+        check(!(await askTarget(.removePackage, otherRemoval)),
+              "another project's installation is refused")
+        let ownPublish = try JSONEncoder().encode(
+            DistributionPublishRequest(files: ["/Builds/own/x.deb"]),
+        )
+        let otherPublish = try JSONEncoder().encode(
+            DistributionPublishRequest(files: ["/Builds/other/y.deb"]),
+        )
+        check(await askTarget(.distributionPublish, ownPublish),
+              "the project's own package publishes")
+        check(!(await askTarget(.distributionPublish, otherPublish)),
+              "another project's package does not")
+
+        // A refused capability is recorded where the opener reads it, once.
+        _ = try await assignments.register(child: builder, opener: opener, brief: building)
+        check(!(await askTarget(.gitCommit, Data())), "a capability the step lacks is refused")
+        let ledger = try await assignments.read(opener: opener)
+        let group = ledger?.groups.first { $0.assignment(builder) != nil }
+        check(group?.assignment(builder)?.capabilityRequests?.map(\.capability) == ["gitCommit"],
+              "the refusal is recorded for the opener: \(String(describing: group?.assignment(builder)?.capabilityRequests))")
+        check(group?.snapshot().member(builder)?.capabilityRequests?.first?.capability == "gitCommit",
+              "the account shows the request")
+        check(!(await askTarget(.gitCommit, Data())), "the same refusal is refused again")
+        let again = try await assignments.assignment(child: builder, opener: opener)
+        check(again?.capabilityRequests?.count == 1, "a repeated request is recorded once")
+
         // Corrupt authority is refused, never read as an empty plan.
         let file = authority.appendingPathComponent(child + ".json")
         let preserved = try Data(contentsOf: file)
@@ -339,7 +489,7 @@ struct DelegationHandlerChecks {
         func succeeded(_ name: String, _ reply: WireReply) throws -> AgentDelegationResponse {
             guard case let .success(data) = reply.result else { fatalError("refused: \(name)") }
             check(true, name)
-            return try JSONDecoder().decode(AgentDelegationResponse.self, from: data)
+            return try JSONCoding.decode(AgentDelegationResponse.self, from: data)
         }
         func refused(_ name: String, _ reply: WireReply) {
             if case .success = reply.result { fatalError("allowed: \(name)") }

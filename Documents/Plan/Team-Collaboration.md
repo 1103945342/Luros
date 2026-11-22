@@ -181,6 +181,20 @@ A child's status report cannot edit titles, reorder steps or widen permissions.
   starts. The existing operation finishes under its admitted revision and its
   evidence retains that revision; do not pretend an amendment undoes writes.
 
+The typed capabilities are the only way in. `build` admits a build of this
+conversation's own project, and following or cancelling the task it started;
+`install` admits the packages this project's builds made — installed,
+confirmed loaded, removed — and a respring; `gitCommit` admits `git_stage`,
+`git_unstage` and `git_commit` in this project's repository; `publish` admits
+publishing the packages this project built, as it built them. Every other
+mutation stays closed whatever a step declares: shell commands, toolchains,
+SDKs, pushes, branch and history resets, MCP and extension tools,
+sub-delegation and `file_show`. A refusal for a capability the step does not
+hold is recorded in the opener's ledger (`capabilityRequests`, bounded and
+idempotent per capability, tool, step and plan revision) and names the
+capability in words; the opener grants it by amending that step (`amend`),
+never by an approval, and the child's next call reads the amended revision.
+
 The current brief is rendered at each model input boundary and after compaction
 without rebuilding the cached system prompt. `steer` is used for questions and
 corrections; permissions change only through the host's revision transaction.

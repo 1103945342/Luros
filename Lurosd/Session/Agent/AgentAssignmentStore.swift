@@ -231,6 +231,35 @@ actor AgentAssignmentStore {
         return record.group.assignment(child) ?? reconciled
     }
 
+    // MARK: API — a capability the step lacks
+
+    /// Records that the child's host refused an operation for a capability
+    /// its open step does not hold, so the opener's next read of the ledger
+    /// names it. Grants nothing: the opener amends the step to grant it, and
+    /// the child's next call reads the amended plan.
+    @discardableResult
+    func requestCapability(child: String, opener: String, capability: String, tool: String,
+                           stepID: String, planRevision: UInt64) throws -> AgentAssignment {
+        guard var record = try loadRecord(opener) else {
+            throw refusal("No assignments are registered for this opener.", child)
+        }
+        guard let stored = record.group.assignment(child) else {
+            throw refusal("This child has no assignment.", child)
+        }
+        guard !stored.state.isTerminal else { return stored }
+        let request = AgentAssignment.CapabilityRequest(
+            capability: capability,
+            tool: tool,
+            stepID: stepID,
+            planRevision: planRevision,
+        )
+        let member = try stored.requestingCapability(request, expectedRevision: stored.revision)
+        guard member != stored else { return stored }
+        record.group = try record.group.replacing(member, expectedRevision: record.group.revision)
+        try persist(record)
+        return member
+    }
+
     // MARK: API — the opener's explicit review
 
     /// The opener's review: the only path to `.accepted`.

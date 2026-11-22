@@ -58,12 +58,25 @@ public extension LurosService {
 }
 
 /// A deliberately closed first set. A capability in the brief does NOT make
-/// an opaque executable safe. Every unclassified tool, including extensions,
-/// is denied until it has a reviewed, bounded execution adapter.
+/// an opaque executable safe: a tool has no way into a constrained
+/// assignment until it has a reviewed adapter that confines its target, and
+/// the open step must hold the capability the tool needs. Everything else —
+/// commands, toolchains, SDKs, git pushes and history resets, subdelegation,
+/// opaque extensions — stays closed whatever a step allows.
 public enum AgentDelegationToolPolicy {
-    public enum Effect: Sendable, Equatable { case read, bookkeeping, fileWrite, unsupported }
+    public enum Effect: Sendable, Equatable {
+        case read, bookkeeping, fileWrite
+        /// A host operation with a confined adapter. The open step must hold
+        /// `capability`, and the adapter (`AgentDelegationTargets` in the
+        /// host) confines what it acts on to this conversation's own project.
+        case confined(AgentDelegationBrief.Capability)
+        case unsupported
+    }
 
     public static func effect(of tool: String) -> Effect {
+        if let capability = capability(ofTool: tool) {
+            return .confined(capability)
+        }
         switch tool {
         // file_show materializes managed Attachments/ inside the workspace;
         // without a scoped export adapter it is not a read-only operation.
@@ -86,6 +99,26 @@ public enum AgentDelegationToolPolicy {
         }
     }
 
+    /// The capability a tool's host operation needs, when it has a confined
+    /// adapter. Every tool absent here is refused whatever its step allows.
+    public static func capability(ofTool tool: String) -> AgentDelegationBrief.Capability? {
+        switch tool {
+        // A build of this conversation's own project, and reading back or
+        // cancelling the task it started.
+        case "luros_project_build": .build
+        // The package this project's build made: installed, confirmed
+        // loaded, followed; removal is held to an installation this project
+        // made. A respring is the last step of loading a tweak.
+        case "luros_package_install", "luros_package_remove",
+             "luros_package_confirm_loaded", "luros_device_respring": .install
+        // The project's own history. Nothing leaves the device.
+        case "git_stage", "git_unstage", "git_commit": .gitCommit
+        // The packages this project's builds made, as they made them.
+        case "luros_package_publish": .publish
+        default: nil
+        }
+    }
+
     public static func authorize(tool: String, path: String?, plan: AgentDelegationPlan,
                                  expectedRevision: UInt64) throws {
         try plan.validate()
@@ -100,8 +133,17 @@ public enum AgentDelegationToolPolicy {
         case .read, .bookkeeping: return
         case .fileWrite:
             try plan.authorize(.fileWrite, canonicalRelativePath: path, expectedRevision: expectedRevision)
+        case let .confined(capability):
+            do {
+                try plan.authorize(capability, expectedRevision: expectedRevision)
+            } catch let violation as AgentDelegationViolation {
+                // The step's own refusal, said for the tool that met it: the
+                // child reports the blocker, and its opener amends the step.
+                throw refuse("\(tool) needs the \(capability.rawValue) capability. \(violation.rule)")
+            }
         case .unsupported:
-            throw refuse("\(tool) has no confined execution adapter. Commands (including argv), builds, git mutations, installation, publishing, subdelegation and opaque extensions are not allowed in a constrained assignment.")
+            throw refuse("\(tool) has no confined execution adapter. Commands (including argv), toolchains, SDKs, pushes and history resets, subdelegation and opaque extensions are not allowed in a constrained assignment.")
         }
     }
 }
+

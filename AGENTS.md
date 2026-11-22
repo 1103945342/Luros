@@ -102,6 +102,21 @@ the same executable in session mode; the workers are its children.
   network call. A module's dependencies are built before it, a cycle is
   refused, and its declaration is in the build digest while its files are
   sources like any other.
+- **A delegated conversation reaches work through a typed capability, never
+  a tool name.** `build`, `install`, `gitCommit` and `publish` each admit one
+  closed set of host operations, confined to the child's own project: its
+  build and the task it started, the package its build made (installed,
+  confirmed loaded, removed), its repository's stage/commit, and the packages
+  its builds publish as built. Everything else — shell commands, toolchains,
+  SDKs, pushes, branch and history resets, MCP and extensions,
+  sub-delegation, `file_show` — is refused whatever a step declares. An
+  approval never widens a step: the opener's `amend` does, and a refusal for
+  a capability the step lacks is recorded in the opener's ledger
+  (`capabilityRequests`) so it can see what to grant.
+  `AgentDelegationToolPolicy.capability(ofTool:)` and `capability(of:)` are
+  the one table (`AgentDelegationOperations.swift`), the target checks live in
+  `AgentDelegationTargets.swift`, and a new adapter needs an entry in all
+  three plus a check in `Tests/TeamCollaboration/DelegationHandlerChecks.swift`.
 - **roothide is recognised by the process's own path** (`RoothideRoot`,
   libroothide's own name rule), never by loading libroothide through the
   `.jbroot` link, which is not promised, and never by falling back to
