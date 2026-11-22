@@ -14,7 +14,10 @@ final class GlassSurfaceView: UIView {
     private let glassHost = GlassHost()
     private let radius: CGFloat
 
-    init(cornerRadius: CGFloat = 0) {
+    /// `material` is the blur a corner-less surface falls back to before iOS
+    /// 26, where there is no glass: the panels want the chrome one, a drawer
+    /// wants a thinner sheet so the page behind it still reads.
+    init(cornerRadius: CGFloat = 0, material: UIBlurEffect.Style = .systemChromeMaterial) {
         radius = cornerRadius
         super.init(frame: .zero)
 
@@ -38,7 +41,7 @@ final class GlassSurfaceView: UIView {
             }
         } else {
             let effect = UIVisualEffectView()
-            effect.effect = UIBlurEffect(style: .systemChromeMaterial)
+            effect.effect = UIBlurEffect(style: material)
             addSubview(effect)
             effect.snp.makeConstraints { $0.edges.equalToSuperview() }
         }
@@ -139,4 +142,142 @@ private final class GlassHost: UIView {
 
 private final class MetalHost: UIView {
     override class var layerClass: AnyClass { CAMetalLayer.self }
+}
+
+extension UITableViewCell {
+    /// A row of a sidebar's list as a pane of the drawer's glass rather than a
+    /// white card: the row itself keeps no ground, so the wallpaper behind the
+    /// drawer reads through the list, and a picked row wears the light ring
+    /// `SidebarFocusGlow` runs round it.
+    func useGlassSidebarRow() {
+        backgroundColor = .clear
+        backgroundConfiguration = .clear()
+        selectionStyle = .default
+        guard selectedBackgroundView == nil else { return }
+        selectedBackgroundView = SidebarFocusGlow()
+    }
+}
+
+/// The ring a picked sidebar row wears: light running round its edge, in a
+/// colour the wallpaper gave, with the inside left open so the row under it
+/// reads exactly as it did. A ring rather than a fill, because a fill laid
+/// over the glass turns into the grey band a picked row used to be.
+final class SidebarFocusGlow: UIView {
+    private let sweep = CAGradientLayer()
+    private let ring = CAShapeLayer()
+    private var observer: NSObjectProtocol?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+        isAccessibilityElement = false
+        backgroundColor = .clear
+        layer.cornerRadius = 10
+        layer.cornerCurve = .continuous
+        sweep.type = .conic
+        sweep.startPoint = CGPoint(x: 0.5, y: 0.5)
+        sweep.endPoint = CGPoint(x: 0.5, y: 0)
+        sweep.locations = [0, 0.40, 0.5, 0.60, 1]
+        layer.addSublayer(sweep)
+        ring.fillColor = UIColor.clear.cgColor
+        ring.lineWidth = 2
+        ring.lineCap = .round
+        layer.mask = ring
+        reloadColors()
+        observer = NotificationCenter.default.addObserver(
+            forName: ChatBackground.changed,
+            object: nil,
+            queue: .main,
+        ) { [weak self] _ in
+            self?.reloadColors()
+        }
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("Use init(frame:)")
+    }
+
+    deinit {
+        if let observer { NotificationCenter.default.removeObserver(observer) }
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        // Square and larger than the row, so the ring's light keeps covering
+        // it however far round it has turned.
+        let side = max(bounds.width, bounds.height) * 1.6
+        sweep.bounds = CGRect(x: 0, y: 0, width: side, height: side)
+        sweep.position = CGPoint(x: bounds.midX, y: bounds.midY)
+        let edge = UIBezierPath(
+            roundedRect: bounds.insetBy(dx: 1, dy: 1),
+            cornerRadius: max(0, layer.cornerRadius - 1),
+        ).cgPath
+        ring.frame = bounds
+        ring.path = edge
+        CATransaction.commit()
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if window == nil {
+            sweep.removeAnimation(forKey: "flow")
+            return
+        }
+        setNeedsLayout()
+        guard sweep.animation(forKey: "flow") == nil else { return }
+        let flow = CABasicAnimation(keyPath: "transform.rotation.z")
+        flow.fromValue = 0
+        flow.toValue = Double.pi * 2
+        flow.duration = 2.6
+        flow.repeatCount = .infinity
+        flow.isRemovedOnCompletion = false
+        sweep.add(flow, forKey: "flow")
+    }
+
+    override func traitCollectionDidChange(_ previous: UITraitCollection?) {
+        super.traitCollectionDidChange(previous)
+        if traitCollection.userInterfaceStyle != previous?.userInterfaceStyle {
+            reloadColors()
+        }
+    }
+
+    /// The colour the ring runs in: the wallpaper's own, so a picked row
+    /// belongs to the sheet behind the drawer rather than to the system's blue.
+    private static func tint(traits: UITraitCollection) -> UIColor {
+        switch ChatBackground.current {
+        case .image:
+            ChatBackgroundView.topTint() ?? UIColor.systemBlue
+        case let .paper(paper):
+            ChatBackgroundView.base(paper, traits: traits)
+        case .none:
+            UIColor.systemBlue
+        }
+    }
+
+    private func reloadColors() {
+        let tint = Self.tint(traits: traitCollection)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        tint.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        // The light that runs round the ring: the wallpaper's colour, lifted
+        // towards white where the sweep's head is.
+        let head = UIColor(
+            red: min(1, red + 0.55),
+            green: min(1, green + 0.45),
+            blue: min(1, blue + 0.35),
+            alpha: 1,
+        )
+        sweep.colors = [
+            tint.withAlphaComponent(0).cgColor,
+            tint.withAlphaComponent(0.55).cgColor,
+            head.withAlphaComponent(0.95).cgColor,
+            tint.withAlphaComponent(0.55).cgColor,
+            tint.withAlphaComponent(0).cgColor,
+        ]
+    }
 }

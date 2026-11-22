@@ -26,7 +26,7 @@ final class SidebarWorkspacesController: UIViewController {
 
     private lazy var newButton = UIButton(configuration: .plain()).then {
         var configuration = UIButton.Configuration.plain()
-        configuration.title = String(localized: "New Workspace")
+        configuration.title = String(localized: "New Project")
         configuration.image = UIImage(systemName: "plus")
         configuration.imagePadding = 6
         configuration.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
@@ -158,21 +158,8 @@ final class SidebarWorkspacesController: UIViewController {
         // A row the reader can act on from a long press; the swipes carry
         // the two destructive ones.
         cell.accessibilityValue = cell.accessoryView?.accessibilityLabel
-        cell.configurationUpdateHandler = { cell, state in
-            var background = UIBackgroundConfiguration.listGroupedCell().updated(for: state)
-            if state.isSelected || state.isHighlighted {
-                background.backgroundColor = Self.selectionColor
-            }
-            cell.backgroundConfiguration = background
-        }
+        cell.useGlassSidebarRow()
     }
-
-    /// A picked row's ground, lighter than the system's, as the conversations
-    /// page draws it.
-    private static let selectionColor = UIColor(
-        light: UIColor.black.withAlphaComponent(0.1),
-        dark: UIColor.white.withAlphaComponent(0.1),
-    )
 
     /// How many of the workspace's conversations are working, as aimini's
     /// chip says; nil when none is.

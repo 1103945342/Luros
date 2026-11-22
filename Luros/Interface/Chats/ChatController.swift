@@ -27,18 +27,22 @@ final class ChatController: UIViewController {
     /// A conversation to show instead, picked as the sidebar picks one: a
     /// fork Fork from Here made.
     var onOpenChat: ((ChatSummary) -> Void)?
+    /// The `…` menu's Open Git and New Conversation, which the root's bar
+    /// used to carry.
+    var onOpenGit: (() -> Void)?
+    var onNewChat: (() -> Void)?
     private let titleView = ChatTitleView()
     private var messageList = ListView<ChatMessage>()
     @objc dynamic private var openingQueueEditor = false
     private let composer = ComposerView()
     private let topBlur = ChatTopBlurView()
+    private let chatBackground = ChatBackgroundView()
     /// The line a conversation without messages opens with, in the middle of
     /// the blank area above the composer.
     private let welcome = ChatWelcomeView()
     /// Behind everything: the paper or picture the reader chose, drawn under
     /// the message list and the composer, which both stay transparent where
     /// they can.
-    private let chatBackground = ChatBackgroundView()
     /// A tap on the page, anywhere the composer is not, puts the keyboard
     /// away; the tap still reaches what it landed on.
     private let keyboardDismissTap = UITapGestureRecognizer()
@@ -148,6 +152,8 @@ final class ChatController: UIViewController {
                 runtime: runtime,
                 from: self,
                 anchor: more,
+                onOpenGit: { [weak self] in self?.onOpenGit?() },
+                onNewChat: { [weak self] in self?.onNewChat?() },
                 onPrepareDistribution: { [weak self] prompt in self?.sendPrompt(prompt) },
                 onDelete: { [weak self] id in self?.onDelete?(id) },
                 // The conversation's team is read here and nowhere else, so
@@ -178,6 +184,19 @@ final class ChatController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .pageBackground
+        // The conversation is written on a paper or the reader's picture, and
+        // it runs the whole way up: before iOS 26 the bar's own ground is an
+        // opaque band in black or white, and a message that scrolled under it
+        // vanished into that band instead of blurring into it. The page's own
+        // blur (`topBlur`) is the ground there, so the bar gives up its own.
+        if #unavailable(iOS 26) {
+            let clear = UINavigationBarAppearance()
+            clear.configureWithTransparentBackground()
+            clear.shadowColor = .clear
+            navigationItem.standardAppearance = clear
+            navigationItem.scrollEdgeAppearance = clear
+            navigationItem.compactAppearance = clear
+        }
         chatBackground.frame = view.bounds
         chatBackground.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(chatBackground)
@@ -630,6 +649,13 @@ final class ChatController: UIViewController {
             welcome.isHidden = true
             welcome.stop()
         }
+    }
+
+    /// Keeps the paper still while the drawer slides the page: the page moves
+    /// `shift` points, the paper moves back the same, so it stays where the
+    /// screen is and the bar and composer keep reading it.
+    @objc dynamic func keepBackgroundStill(shift: CGFloat) {
+        chatBackground.transform = CGAffineTransform(translationX: -shift, y: 0)
     }
 
     /// The paper or the reader's picture, as Settings last left it.
@@ -1640,6 +1666,10 @@ extension ChatController: ComposerView.Delegate {
     /// reach) is a passing line, spoken too, since nothing else marks it;
     /// any other keeps its own words in an alert.
     private func saySendFailed(_ error: any Error) {
+        if (error as? LurosError)?.reason == .noModelConfigured {
+            askToConfigureModels()
+            return
+        }
         guard let reason = (error as? LurosError)?.reason, let cause = ChatFailure.title(for: reason) else {
             presentNotice(title: "Unable to Send Message", message: error.readableMessage)
             return
@@ -1647,6 +1677,20 @@ extension ChatController: ComposerView.Delegate {
         let title = String(localized: "Message Not Sent")
         SPIndicator.present(title: title, message: cause, preset: .error, haptic: .error)
         UIAccessibility.post(notification: .announcement, argument: [title, cause].joined(separator: ", "))
+    }
+
+    /// Nothing is signed in, so no model can answer: offer to open Model
+    /// Providers, in the reader's language, instead of the provider's words.
+    @objc private dynamic func askToConfigureModels() {
+        presentConfirmation(
+            title: "No Model Configured",
+            message: "Go to Model Providers now?",
+            cancelTitle: "Later",
+            confirmTitle: "OK",
+        ) { [weak self] in
+            guard let self else { return }
+            self.presentPageAsFormSheet(ModelProvidersController())
+        }
     }
 
     @objc dynamic func onComposerBeginEditing() {

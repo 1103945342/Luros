@@ -111,6 +111,18 @@ class ComposerView: ComposerSectionView {
             effectView.clipsToBounds = true
             addSubview(effectView)
             glassEffectView = effectView
+        } else {
+            // A solid sheet kept the words readable but turned the card into a
+            // white (or black) plate over the page; a blurred material keeps
+            // them readable and still lets the sheet behind it through, which
+            // is what the glass does on the newer system.
+            let effectView = UIVisualEffectView(effect: UIBlurEffect(style: .systemThinMaterial))
+            effectView.isUserInteractionEnabled = false
+            effectView.layer.cornerRadius = shadowContainer.layer.cornerRadius
+            effectView.layer.cornerCurve = .continuous
+            effectView.clipsToBounds = true
+            addSubview(effectView)
+            glassEffectView = effectView
         }
 
         applyShadowStyle()

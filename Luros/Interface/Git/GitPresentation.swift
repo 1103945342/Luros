@@ -326,6 +326,7 @@ final class GitTextField: UIView, UITextFieldDelegate {
     let field = UITextField()
     private let label = UILabel()
     private let border = UIView()
+    private let labelBackground: UIColor
     private var floating = false
     private var restingCenter: Constraint?
     private var floatingCenter: Constraint?
@@ -338,7 +339,13 @@ final class GitTextField: UIView, UITextFieldDelegate {
         }
     }
 
-    init(label title: String, placeholder: String? = nil, secure: Bool = false) {
+    init(
+        label title: String,
+        placeholder: String? = nil,
+        secure: Bool = false,
+        labelBackground: UIColor = GitTheme.cardSurface,
+    ) {
+        self.labelBackground = labelBackground
         super.init(frame: .zero)
         border.backgroundColor = .clear
         border.layer.borderWidth = 1
@@ -351,7 +358,7 @@ final class GitTextField: UIView, UITextFieldDelegate {
         label.font = GitTheme.labelSmall
         label.adjustsFontForContentSizeCategory = true
         label.textColor = GitTheme.onSurfaceVariant
-        label.backgroundColor = GitTheme.cardSurface
+        label.backgroundColor = labelBackground
         label.isUserInteractionEnabled = false
 
         field.font = GitTheme.bodyMedium
@@ -397,7 +404,7 @@ final class GitTextField: UIView, UITextFieldDelegate {
     override func traitCollectionDidChange(_ previous: UITraitCollection?) {
         super.traitCollectionDidChange(previous)
         border.layer.borderColor = (floating ? GitTheme.primary : GitTheme.outline).cgColor
-        label.backgroundColor = GitTheme.cardSurface
+        label.backgroundColor = labelBackground
     }
 
     @objc private func focus() {
@@ -423,7 +430,7 @@ final class GitTextField: UIView, UITextFieldDelegate {
         restingCenter?.isActive = !shouldFloat
         floatingCenter?.isActive = shouldFloat
         border.layer.borderColor = (shouldFloat ? GitTheme.primary : GitTheme.outline).cgColor
-        label.backgroundColor = GitTheme.cardSurface
+        label.backgroundColor = labelBackground
         if animated {
             UIView.animate(withDuration: 0.16) { self.layoutIfNeeded() }
         }

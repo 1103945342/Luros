@@ -10,6 +10,14 @@ final class DetailNavigator: UINavigationController {
         viewControllers = [NothingSelectedController()]
         // the detail side never grows a large title, whatever a page asks for
         navigationBar.prefersLargeTitles = false
+        // Before Liquid Glass a bar may decide it needs a ground of its own,
+        // and then UIKit shortens the page below it: a conversation with a
+        // picture behind it was cut off under an opaque black or white band.
+        // The page draws its own blur under the bar, so the page extends
+        // under this one and the bar keeps no ground.
+        if #unavailable(iOS 26) {
+            navigationBar.isTranslucent = true
+        }
     }
 
     /// Puts `page` at the root of the column.

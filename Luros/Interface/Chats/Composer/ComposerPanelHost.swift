@@ -34,17 +34,45 @@ class ComposerPanel: UIView {
     let body = UIView()
 
     private var wasExpandedBeforeSuppressing = true
+    /// The glass the composer itself is made of, so a panel opening over it
+    /// is the same surface rather than a white card.
+    private var glassView: UIVisualEffectView?
 
     required init() {
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         clipsToBounds = false
 
-        backgroundColor = .secondarySystemGroupedBackground
         layer.cornerRadius = ComposerMetrics.Radius.lg
         layer.cornerCurve = .continuous
-        layer.borderWidth = 1 / UIScreen.main.scale
-        layer.borderColor = UIColor.separator.cgColor
+        if #available(iOS 26, *) {
+            backgroundColor = .clear
+            layer.borderWidth = 0
+            let glass = UIGlassEffect()
+            let effect = UIVisualEffectView(effect: glass)
+            effect.isUserInteractionEnabled = false
+            effect.layer.cornerRadius = ComposerMetrics.Radius.lg
+            effect.layer.cornerCurve = .continuous
+            effect.clipsToBounds = true
+            effect.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            addSubview(effect)
+            glassView = effect
+        } else {
+            // The composer's own surface, so a panel opening over it is the
+            // same glass rather than a white card: a blurred material on the
+            // sheet the page is written on, with the card's hairline edge.
+            backgroundColor = .clear
+            layer.borderWidth = 1 / UIScreen.main.scale
+            layer.borderColor = UIColor.separator.cgColor
+            let effect = UIVisualEffectView(effect: UIBlurEffect(style: .systemThinMaterial))
+            effect.isUserInteractionEnabled = false
+            effect.layer.cornerRadius = ComposerMetrics.Radius.lg
+            effect.layer.cornerCurve = .continuous
+            effect.clipsToBounds = true
+            effect.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            insertSubview(effect, at: 0)
+            glassView = effect
+        }
 
         titleLabel.font = .preferredFont(forTextStyle: .subheadline)
         titleLabel.textColor = .secondaryLabel
@@ -166,6 +194,7 @@ class ComposerPanel: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
 
+        glassView?.frame = bounds
         let inset = ComposerMetrics.Spacing.md
         let chevronSize = chevron.isHidden ? 0 : chevron.intrinsicContentSize.width
         let chevronRoom = chevron.isHidden ? 0 : chevronSize + ComposerMetrics.Spacing.sm

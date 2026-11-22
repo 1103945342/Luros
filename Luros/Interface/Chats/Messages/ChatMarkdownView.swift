@@ -44,6 +44,20 @@ final class ChatMarkdownView: MarkdownStreamView {
         // Inline code is quieter than the text around it: half its colours'
         // opacity. Code blocks have their own background and are left alone.
         theme.colors.codeBackground = Self.halved(theme.colors.codeBackground)
+        // A table's head is the renderer's opaque `systemGray6`, a white band
+        // in the light and a black one in the dark laid over a page that has a
+        // sheet behind it. The tiles take the same faint shade a code block
+        // takes, so the table reads as part of the page instead of a slab.
+        theme.table.headerBackgroundColor = UIColor(
+            light: UIColor.black.withAlphaComponent(0.06),
+            dark: UIColor.white.withAlphaComponent(0.10),
+        )
+        theme.table.cellBackgroundColor = .clear
+        theme.table.stripeCellBackgroundColor = UIColor(
+            light: UIColor.black.withAlphaComponent(0.03),
+            dark: UIColor.white.withAlphaComponent(0.04),
+        )
+        theme.table.borderColor = .separator
         // Code blocks and table cells copy this configuration, so text
         // streamed into them is revealed the same way.
         animator = LTXFadeInAnimator(configuration: Self.reveal)

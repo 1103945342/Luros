@@ -10,7 +10,7 @@ struct SignInErrorTests {
     @Test
     func `it is answered by why`() {
         let missing = AgentWorker.signInError(.missingCredentials("github-copilot"), inboxRejected: ["a.json: not JSON"])
-        #expect(missing.code == .denied && missing.reason == nil)
+        #expect(missing.code == .denied && missing.reason == .noModelConfigured)
         #expect(missing.message.contains("github-copilot") && missing.message.contains("a.json: not JSON"))
         let offline = AgentWorker.signInError(.unresolved(message: "offline", reason: .offline))
         #expect(offline.code == .unavailable && offline.reason == .offline && offline.message == "offline")

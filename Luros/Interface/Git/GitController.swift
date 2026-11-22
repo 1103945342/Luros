@@ -126,9 +126,9 @@ final class GitController: UIViewController {
     private var notARepoButtons: [UIView] = []
     private var notARepoBusy: UIStackView?
 
-    init(projectName: String) {
+    init(projectName: String, modelSelection: ComposerModelSelection? = nil) {
         session = GitSession(projectName: projectName)
-        statusPage = GitStatusPage(session: session)
+        statusPage = GitStatusPage(session: session, modelSelection: modelSelection)
         branchesPage = GitBranchesPage(session: session)
         logPage = GitLogPage(session: session)
         super.init(nibName: nil, bundle: nil)

@@ -49,6 +49,13 @@ public struct ModelCatalogIndex: Sendable {
 
     public init() {}
 
+    /// Reads models.dev's copy from `dataRoot` rather than the process's own
+    /// home. A worker's `NSHomeDirectory()` is not promised to be mobile's;
+    /// its host hands it the home it uses for the data folder.
+    public static func use(dataRoot: LurosDataRoot) {
+        shared.use(dataRoot)
+    }
+
     /// The entry for a model, or nil when no catalog knows it.
     ///
     /// `catalogKey` is the provider key to ask first — kwwk's own
@@ -316,6 +323,17 @@ private final class SharedIndex: @unchecked Sendable {
     private let lock = NSLock()
     private var signature: String?
     private var table = ModelCatalogIndex.Table()
+    private var dataRoot: LurosDataRoot?
+
+    /// The home the worker was given, when its own is not mobile's.
+    func use(_ root: LurosDataRoot) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard dataRoot != root else { return }
+        dataRoot = root
+        signature = nil
+        table = ModelCatalogIndex.Table()
+    }
 
     /// Whole milliseconds since a `DispatchTime.now().uptimeNanoseconds` stamp.
     static func milliseconds(since start: UInt64) -> Int {
@@ -335,7 +353,10 @@ private final class SharedIndex: @unchecked Sendable {
     /// it was read from changed. A file that does not read is no copy at all:
     /// a conversation falls back to the catalog kwwk ships rather than fail.
     func snapshot() -> ModelCatalogIndex.Table {
-        let url = LurosDataRoot.current.modelDataFile
+        lock.lock()
+        let root = dataRoot
+        lock.unlock()
+        let url = (root ?? LurosDataRoot.current).modelDataFile
         let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
         let signature = [
             String(attributes?[.size] as? Int ?? -1),

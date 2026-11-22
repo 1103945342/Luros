@@ -21,7 +21,7 @@
   },
   "notices": {
     "app/Luros": {
-      "sha256": "79b8af7a9877c42384ecc70ee213d554ec4ba0c65a029ff3e6af2fe045595523",
+      "sha256": "a24a20a63c7685ab69ff7eab013e89e19cd9bdd3e81d14e847cadd14423df320",
       "license": "MIT"
     },
     "vendored/BoringSSL": {
@@ -458,6 +458,10 @@
     },
     "vendored/turndown": {
       "sha256": "a055e3a15db4b4cbb5af381230eba085603126d7d5d8c4dae45ee85b877a9729",
+      "license": "MIT"
+    },
+    "vendored/Apelin": {
+      "sha256": "79b8af7a9877c42384ecc70ee213d554ec4ba0c65a029ff3e6af2fe045595523",
       "license": "MIT"
     }
   },

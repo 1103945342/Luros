@@ -89,7 +89,9 @@ enum ProviderModels {
         _ provider: AgentProvider,
         credentials: OAuthCredentials,
         models: [String],
+        dataRoot: LurosDataRoot? = nil,
     ) -> CatalogFacts {
+        if let dataRoot { ModelCatalogIndex.use(dataRoot: dataRoot) }
         let started = DispatchTime.now().uptimeNanoseconds
         let catalog = catalogKey(provider, credentials: credentials)
         var efforts: [String: [AgentReasoningEffort]] = [:]

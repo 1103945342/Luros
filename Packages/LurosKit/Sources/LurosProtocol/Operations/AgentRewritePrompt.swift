@@ -16,11 +16,21 @@ public struct AgentRewritePromptRequest: OperationRequest {
     /// a message does.
     public var provider: AgentProvider?
     public var model: String?
+    /// The instructions this turn is given, in place of the shipped prompt
+    /// optimization file. The app uses it for a commit message, whose shape
+    /// is not a rewrite's; nil keeps the file's own words.
+    public var instructions: String?
 
-    public init(text: String, provider: AgentProvider? = nil, model: String? = nil) {
+    public init(
+        text: String,
+        provider: AgentProvider? = nil,
+        model: String? = nil,
+        instructions: String? = nil,
+    ) {
         self.text = text
         self.provider = provider
         self.model = model
+        self.instructions = instructions
     }
 }
 

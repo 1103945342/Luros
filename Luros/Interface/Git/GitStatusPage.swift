@@ -39,6 +39,9 @@ struct GitDirectoryItem {
 /// dialog, the stash sheet and every confirmation are the reference app's.
 final class GitStatusPage: UIViewController, GitPage {
     private let session: GitSession
+    /// The model the conversation this page was opened from is on: a commit
+    /// message is written by it, not by a default chosen elsewhere.
+    private let modelSelection: ComposerModelSelection?
     weak var host: GitPageHost?
 
     private let table = UITableView(frame: .zero, style: .plain)
@@ -52,8 +55,9 @@ final class GitStatusPage: UIViewController, GitPage {
         }
     }
 
-    init(session: GitSession) {
+    init(session: GitSession, modelSelection: ComposerModelSelection? = nil) {
         self.session = session
+        self.modelSelection = modelSelection
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -219,6 +223,8 @@ final class GitStatusPage: UIViewController, GitPage {
         let dialog = GitCommitDialogController(
             staged: stagedFiles,
             hasIdentity: session.hasIdentity,
+            projectID: session.scopeID,
+            selection: modelSelection,
             onCommit: { [weak self] message, amend in
                 guard let self else { return }
                 self.busy = true
@@ -749,19 +755,7 @@ private enum GitCellCard {
     /// corners, the middle rows meet square.
     static func apply(to card: UIView, position: GitGroupPosition) {
         card.backgroundColor = GitTheme.cardSurface
-        card.layer.cornerRadius = 14
-        card.layer.cornerCurve = .continuous
-        switch position {
-        case .single:
-            card.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner,
-                                        .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
-        case .first:
-            card.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        case .last:
-            card.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
-        case .middle:
-            card.layer.maskedCorners = []
-        }
+        card.layer.cornerRadius = 0
     }
 }
 
@@ -1095,7 +1089,7 @@ private final class GitFileCell: UITableViewCell {
         card.addGestureRecognizer(tap)
         contentView.addSubview(card)
         card.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(16)
+            make.leading.trailing.equalToSuperview()
             make.top.bottom.equalToSuperview()
         }
         card.addSubview(chipHost)
@@ -1228,7 +1222,7 @@ private final class GitDirCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         contentView.addSubview(card)
         card.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(16)
+            make.leading.trailing.equalToSuperview()
             make.top.bottom.equalToSuperview()
         }
         card.addSubview(chipHost)

@@ -232,9 +232,11 @@ public enum AgentWorker {
             }
         case .agentAccountList:
             await WorkerMain.serve(AgentAccountListRequest.self, request) { list in
-                await accounts.list(
+                let home = URL(fileURLWithPath: context.assignment.home, isDirectory: true)
+                return await accounts.list(
                     extraModels: list.extraModels ?? [:],
                     onlyExtraModels: list.onlyExtraModels ?? false,
+                    dataRoot: LurosDataRoot(home: home),
                 )
             }
         case .agentSkillList:
@@ -351,7 +353,7 @@ public enum AgentWorker {
             if !inboxRejected.isEmpty {
                 message += " (inbox: \(inboxRejected.joined(separator: "; ")))"
             }
-            return LurosError(.denied, message)
+            return LurosError(.denied, message, reason: .noModelConfigured)
         case let .unresolved(message, reason):
             guard let reason else { return LurosError(.internal, message) }
             return LurosError(.unavailable, message, reason: reason)

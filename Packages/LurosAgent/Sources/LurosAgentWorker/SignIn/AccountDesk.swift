@@ -101,6 +101,7 @@ public actor AccountDesk {
     public func list(
         extraModels: [String: [String]] = [:],
         onlyExtraModels: Bool = false,
+        dataRoot: LurosDataRoot? = nil,
     ) async -> AgentAccountListResponse {
         let started = DispatchTime.now().uptimeNanoseconds
         let stored = await Set(store.providerIds())
@@ -131,7 +132,12 @@ public actor AccountDesk {
                     // The whole list keeps every field it always carried, empty
                     // model list or not, so nothing else changes for it.
                     if !models.isEmpty || !onlyExtraModels {
-                        let facts = ProviderModels.catalogFacts(provider, credentials: credentials, models: models)
+                        let facts = ProviderModels.catalogFacts(
+                            provider,
+                            credentials: credentials,
+                            models: models,
+                            dataRoot: dataRoot,
+                        )
                         let tiers = ProviderModels.serviceTiers(provider, credentials: credentials)
                         if onlyExtraModels {
                             let asked = Set(models)
