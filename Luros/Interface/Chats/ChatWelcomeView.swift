@@ -12,11 +12,19 @@ import UIKit
 /// sentence even while it is still being written.
 final class ChatWelcomeView: UIView {
     /// The lines the page opens with, in the order they are written: each
-    /// cycle takes the next one, so both are seen.
+    /// cycle takes the next one, so all of them are seen.
     static var lines: [String] {
         [
             String(localized: "Hello, is there anything I can help you with?"),
             String(localized: "What would you like to do right now?"),
+            String(localized: "A thought in hand, waiting to set out."),
+            String(localized: "In this small square, thoughts become things!"),
+            String(localized: "Wherever thought turns, it can take shape."),
+            String(localized: "What would you like to explore?"),
+            String(localized: "Ready and waiting for your word."),
+            String(localized: "Ready when you are — let's begin!"),
+            String(localized: "One thought, a thousand things built."),
+            String(localized: "Waiting quietly for your next idea."),
         ]
     }
 
@@ -45,13 +53,14 @@ final class ChatWelcomeView: UIView {
         UIColor.label.withAlphaComponent(inkAlpha)
     }
 
-    /// Sized so the Chinese line — thirteen characters — stays on one line
-    /// inside the page's margins; the English one takes two, which reads fine
-    /// centred.
+    /// A step under the body's own size: the opening is read, not announced,
+    /// and every line here is short enough to stay on one line — the longest
+    /// Chinese one is ten characters — inside the page's margins. The English
+    /// ones take two, which reads fine centred.
     private static var font: UIFont {
         UIFontMetrics(forTextStyle: .title2).scaledFont(
-            for: .systemFont(ofSize: 24, weight: .regular),
-            maximumPointSize: 40,
+            for: .systemFont(ofSize: 20, weight: .regular),
+            maximumPointSize: 34,
         )
     }
 
