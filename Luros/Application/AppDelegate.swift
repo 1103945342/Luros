@@ -1,5 +1,6 @@
 import AlertController
 import LurosCore
+import LurosProtocol
 import UIKit
 
 /// Not `@main`: `main.swift` clears saved scenes before `UIApplicationMain`.
@@ -95,6 +96,10 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     @objc dynamic var window: UIWindow?
 
+    func sceneDidBecomeActive(_: UIScene) {
+        (window?.rootViewController as? RootInterfaceController)?.checkShareInbox()
+    }
+
     @objc dynamic func scene(
         _ scene: UIScene,
         willConnectTo _: UISceneSession,
@@ -103,27 +108,34 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let scene = scene as? UIWindowScene else { return }
         let window = UIWindow(windowScene: scene)
         window.tintColor = AppAccent.windowTint
-        window.rootViewController = RootInterfaceController()
+        let root = RootInterfaceController()
+        let urls = connectionOptions.urlContexts.map(\.url)
+        // Queue attachments before the view starts restoring the launch conversation.
+        root.attachFiles(urls.filter(Self.isAttachment).sorted { $0.absoluteString < $1.absoluteString })
+        window.rootViewController = root
         window.makeKeyAndVisible()
         self.window = window
         // A cold launch by Open in Luros or an `lurosdev://` link: the URL
         // comes with the scene. Opened on the next turn, once the root is on
         // screen to present from.
-        DispatchQueue.main.async { [weak self] in self?.openURLs(connectionOptions.urlContexts, in: scene) }
+        DispatchQueue.main.async { [weak self] in self?.openSpecialURL(in: urls, scene: scene) }
     }
 
     /// Open in Luros, or an `lurosdev://` link, while the app runs.
     @objc dynamic func scene(_ scene: UIScene, openURLContexts contexts: Set<UIOpenURLContext>) {
         guard let scene = scene as? UIWindowScene else { return }
-        openURLs(contexts, in: scene)
+        let urls = contexts.map(\.url).sorted { $0.absoluteString < $1.absoluteString }
+        (window?.rootViewController as? RootInterfaceController)?.attachFiles(urls.filter(Self.isAttachment))
+        openSpecialURL(in: urls, scene: scene)
     }
 
-    /// An `lurosdev://` link goes to its conversation or project
-    /// (`LurosLinkRouter`); anything else is a transfer file, and the
-    /// opener refuses what is not one with a notice. One at a time: a
-    /// second sheet could not be presented over the first.
-    @objc private dynamic func openURLs(_ contexts: Set<UIOpenURLContext>, in scene: UIWindowScene) {
-        guard let context = contexts.first, !LurosLinkRouter.open(context.url, in: scene) else { return }
-        TransferOpener.open(context.url, in: scene)
+    private static func isAttachment(_ url: URL) -> Bool {
+        url.isFileURL && TransferKind(fileName: url.lastPathComponent) == nil
+    }
+
+    private func openSpecialURL(in urls: [URL], scene: UIWindowScene) {
+        if let special = urls.first(where: { !Self.isAttachment($0) }), !LurosLinkRouter.open(special, in: scene) {
+            TransferOpener.open(special, in: scene)
+        }
     }
 }

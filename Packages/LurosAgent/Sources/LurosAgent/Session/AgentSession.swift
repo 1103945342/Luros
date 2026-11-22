@@ -849,6 +849,7 @@ public actor AgentSession {
         _ text: String,
         messageID: UUID? = nil,
         files: [(name: String, mimeType: String, data: Data)] = [],
+        fileDescriptors: [(name: String, mimeType: String, descriptor: OwnedDescriptor)] = [],
         from sender: ConversationSender? = nil,
         source: String? = nil,
         delivery: AgentMessageDelivery = .queue,
@@ -879,7 +880,23 @@ public actor AgentSession {
             && (runTask == nil || aborted || runEnding || runFailed)
             && (pendingBlocked || pending.state.paused || aborted || runFailed)
             ? stopGeneration : nil
-        let attachments = try files.map { try saveAttachment(name: $0.name, mimeType: $0.mimeType, data: $0.data) }
+        var attachments: [AgentAttachment] = []
+        var accepted = false
+        defer {
+            if !accepted {
+                for attachment in attachments {
+                    if let path = try? workspace.resolveExisting(attachment.path) { unlink(path) }
+                }
+            }
+        }
+        for file in files {
+            attachments.append(try saveAttachment(name: file.name, mimeType: file.mimeType, data: file.data))
+        }
+        for file in fileDescriptors {
+            let path = "Attachments/" + UUID().uuidString.lowercased()
+            try workspace.resolveForWrite(path).commit(copying: file.descriptor.rawValue, exclusive: true)
+            attachments.append(AgentAttachment(path: path, name: String(file.name.prefix(255)), mimeType: file.mimeType))
+        }
         let item = PendingMessage(id: id, text: text, attachments: attachments, sender: sender,
                                   source: source, delivery: delivery, modelChoice: modelChoice,
                                   reports: reports == nil ? nil : fresh)
@@ -888,6 +905,7 @@ public actor AgentSession {
             // Claim the idle slot synchronously. This is a handoff, not a
             // waiting message: no pendingQueue snapshot may list this ID.
             try pending.beginDirect(item)
+            accepted = true
             rememberTitleSource(text)
             submitted.insert(id)
             pendingBlocked = false
@@ -902,6 +920,7 @@ public actor AgentSession {
             return
         }
         try pending.enqueue(item)
+        accepted = true
         acceptedReportKeys.formUnion(item.reports?.map(\.key) ?? [])
         // A report is about another conversation: it does not name this chat.
         if item.reports == nil { rememberTitleSource(text) }
@@ -1083,13 +1102,16 @@ public actor AgentSession {
                 await restoreSavedConversation()
             }
             if !steering, snapshotStale { takeSnapshot() }
-            var images = try item.attachments.filter { $0.mimeType.hasPrefix("image/") }.map { attachment in
+            var images = try item.attachments.filter { $0.mimeType.hasPrefix("image/") }.compactMap { attachment -> ImageContent? in
                 let path = try workspace.resolveExisting(attachment.path)
                 // persisted-read: read-only image bytes; failure pauses the intact queue, never writes back a partial list.
-                let bytes = try Data(contentsOf: URL(fileURLWithPath: path))
-                guard bytes.count <= Self.maximumAttachmentBytes else {
-                    throw LurosError(.badRequest, "Attachment too large.")
-                }
+                // Larger originals still reach the model as workspace file references.
+                let handle = try FileHandle(forReadingFrom: URL(fileURLWithPath: path))
+                defer { try? handle.close() }
+                guard try handle.seekToEnd() <= UInt64(Self.maximumAttachmentBytes) else { return nil }
+                try handle.seek(toOffset: 0)
+                let bytes = try handle.read(upToCount: Self.maximumAttachmentBytes + 1) ?? Data()
+                guard bytes.count <= Self.maximumAttachmentBytes else { return nil }
                 return ImageContent(data: bytes.base64EncodedString(), mimeType: attachment.mimeType)
             }
             let repository = !steering && needsProjectContext

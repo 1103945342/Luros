@@ -4,6 +4,7 @@
 import LurosCore
 import LurosProtocol
 import PDFKit
+import ImageIO
 import PhotosUI
 import ScrubberKit
 import UIKit
@@ -17,6 +18,8 @@ final class ComposerAttachmentImport: NSObject, UIImagePickerControllerDelegate,
 {
     @objc dynamic private weak var presenter: UIViewController?
     private let receive: (ComposerAttachment) -> Void
+
+    func accept(_ item: ComposerAttachment) { receive(item) }
 
     init(presenter: UIViewController, receive: @escaping (ComposerAttachment) -> Void) {
         self.presenter = presenter
@@ -48,7 +51,7 @@ final class ComposerAttachmentImport: NSObject, UIImagePickerControllerDelegate,
     }
 
     @objc dynamic func files() {
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.data, .image, .text, .pdf, .audio])
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.data], asCopy: true)
         picker.allowsMultipleSelection = true
         picker.delegate = self
         presenter?.present(picker, animated: true)
@@ -81,6 +84,10 @@ final class ComposerAttachmentImport: NSObject, UIImagePickerControllerDelegate,
     }
 
     @objc dynamic func documentPicker(_: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        importFiles(urls)
+    }
+
+    func importFiles(_ urls: [URL]) {
         Task { @MainActor [self] in
             for url in urls {
                 do {
@@ -91,7 +98,14 @@ final class ComposerAttachmentImport: NSObject, UIImagePickerControllerDelegate,
                                 url.stopAccessingSecurityScopedResource()
                             }
                         }
-                        return try Self.readAttachment(at: url, name: url.lastPathComponent)
+                        var coordinationError: NSError?
+                        var result: Result<ComposerAttachment, Error>?
+                        NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &coordinationError) { local in
+                            result = Result { try Self.readAttachment(at: local, name: url.lastPathComponent) }
+                        }
+                        if let coordinationError { throw coordinationError }
+                        guard let result else { throw CocoaError(.fileReadUnknown) }
+                        return try result.get()
                     }.value
                     receive(attachment)
                 } catch {
@@ -120,12 +134,7 @@ final class ComposerAttachmentImport: NSObject, UIImagePickerControllerDelegate,
                 }
                 Task { @MainActor in
                     do {
-                        let attachment = try read.get()
-                        if attachment.isImage, let image = UIImage(data: attachment.data) {
-                            importImage(image)
-                        } else {
-                            receive(attachment)
-                        }
+                        receive(try read.get())
                     } catch {
                         presenter?.presentNotice(title: "Unable to Import File", message: error.readableMessage)
                     }
@@ -134,41 +143,48 @@ final class ComposerAttachmentImport: NSObject, UIImagePickerControllerDelegate,
         }
     }
 
-    /// `url` as an attachment named `name`: a regular file of at most 32 MB,
-    /// read by its canonical path, an image or else text (a PDF's own).
-    nonisolated static func readAttachment(at url: URL, name: String) throws -> ComposerAttachment {
+    enum Origin {
+        case provider, history, shareInbox(UUID)
+    }
+
+    /// Only a short preview enters the draft JSON. A share keeps its inbox ID as its receipt.
+    nonisolated static func readAttachment(at url: URL, name: String, origin: Origin = .provider, mimeType: String? = nil) throws -> ComposerAttachment {
         guard let path = CanonicalPath.resolve(url.path) else {
             throw LurosError(.badRequest, String(localized: "The selected file could not be read."))
         }
         let source = URL(fileURLWithPath: path)
         let values = try source.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
-        guard values.isRegularFile == true, let size = values.fileSize, size <= 32 * 1024 * 1024 else {
-            throw LurosError(
-                .badRequest,
-                String(localized: "Choose a regular file smaller than 32 MB."),
-            )
+        guard values.isRegularFile == true, let size = values.fileSize else {
+            throw CocoaError(.fileReadUnsupportedScheme)
         }
-        let data = try Data(contentsOf: source)
-        guard data.count <= 32 * 1024 * 1024 else {
-            throw LurosError(.badRequest, String(localized: "Choose a file smaller than 32 MB."))
+        let key: UUID
+        if case let .shareInbox(id) = origin { key = id } else { key = UUID() }
+        try DataFolder.app.makeLevels(to: ComposerAttachment.storage)
+        let dest = ComposerAttachment.storage.appendingPathComponent(key.uuidString)
+        // An interrupted copy is an unreferenced UUID, reclaimed by the store at cold launch.
+        let stage = ComposerAttachment.storage.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: stage) }
+        // History is immutable and normally local. Inbox and provider files are always copied.
+        switch origin {
+        case .history where link(source.path, stage.path) == 0: break
+        default: try FileManager.default.copyItem(at: source, to: stage)
         }
-        let image = UIImage(data: data) != nil
-        let text = source.pathExtension.lowercased() == "pdf"
-            ? PDFDocument(data: data)?.string
-            : String(data: data, encoding: .utf8)
-        return ComposerAttachment(
-            name: name,
-            data: data,
-            text: image ? nil : text,
-            isImage: image,
-        )
+        let type = mimeType.flatMap { UTType(mimeType: $0) } ?? UTType(filenameExtension: (name as NSString).pathExtension)
+            ?? CGImageSourceCreateWithURL(stage as CFURL, nil).flatMap(CGImageSourceGetType).flatMap { UTType($0 as String) }
+        let handle = try FileHandle(forReadingFrom: stage)
+        defer { try? handle.close() }
+        let prefix = try handle.read(upToCount: 8192) ?? Data()
+        let image = type?.conforms(to: .image) == true
+        let text = image || prefix.contains(0) ? nil : String(data: prefix, encoding: .utf8)
+        guard rename(stage.path, dest.path) == 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
+        return ComposerAttachment(name: name, text: text, isImage: image, storedFile: key, storedBytes: size, mimeType: type?.preferredMIMEType)
     }
 
     @objc dynamic func importImage(_ image: UIImage) {
-        guard let data = image.jpegData(compressionQuality: 0.85), data.count <= 32 * 1024 * 1024 else {
+        guard let data = image.jpegData(compressionQuality: 0.85) else {
             presenter?.presentNotice(
                 title: "Unable to Import Image",
-                message: String(localized: "Choose an image smaller than 32 MB."),
+                message: String(localized: "The image could not be read."),
             )
             return
         }
@@ -256,6 +272,25 @@ final class ComposerAttachmentImport: NSObject, UIImagePickerControllerDelegate,
             } catch {
                 presenter.presentNotice(title: "Unable to Capture Webpage", message: error.readableMessage)
             }
+        }
+    }
+}
+
+extension ComposerAttachment {
+    static var storage: URL { DataFolder.app.root.appendingPathComponent("Chats/AttachmentFiles", isDirectory: true) }
+    var fileURL: URL? { storedFile.map { Self.storage.appendingPathComponent($0.uuidString) } }
+
+    func imageSource() -> CGImageSource? {
+        if let fileURL { return CGImageSourceCreateWithURL(fileURL as CFURL, nil) }
+        return CGImageSourceCreateWithData(data as CFData, nil)
+    }
+
+    func export(to url: URL) throws {
+        if let fileURL {
+            do { try FileManager.default.linkItem(at: fileURL, to: url) }
+            catch { try FileManager.default.copyItem(at: fileURL, to: url) }
+        } else {
+            try data.write(to: url, options: .atomic)
         }
     }
 }
