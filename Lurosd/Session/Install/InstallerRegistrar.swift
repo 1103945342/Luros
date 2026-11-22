@@ -59,26 +59,32 @@ enum InstallerRegistrar {
         guard FileManager.default.isExecutableFile(atPath: tool) else {
             throw Refusal("sbreload is not installed")
         }
-        let before = Set(springBoardPIDs())
+        let before = springBoardPIDs()
         let result = try ApplicationInstall.run(tool, [])
         guard result.status == 0 else {
             throw Refusal("sbreload answered \(result.status): \(result.output)")
         }
-        // Up to eight seconds for the home screen to come back: the pid it
-        // had before is gone once `sbreload` took.
-        for _ in 0 ..< 40 {
-            usleep(200_000)
-            let now = Set(springBoardPIDs())
-            if !now.isEmpty, now != before {
-                emit(.notice("The home screen restarted"))
-                return
-            }
+        guard waitForAFreshHomeScreen(since: before, within: 20) else {
+            throw Refusal("the home screen did not come back after sbreload")
         }
-        throw Refusal("the home screen did not come back after sbreload")
+        emit(.notice("The home screen restarted"))
+    }
+
+    /// Whether SpringBoard came back with another pid, checked every 200 ms
+    /// for `seconds`. The pid is the receipt: `sbreload` may answer before
+    /// the home screen is back, so its exit status alone is not one.
+    static func waitForAFreshHomeScreen(since before: Set<Int32>, within seconds: Double) -> Bool {
+        let deadline = Date().addingTimeInterval(seconds)
+        while Date() < deadline {
+            usleep(200_000)
+            let now = springBoardPIDs()
+            if !now.isEmpty, now != before { return true }
+        }
+        return false
     }
 
     /// SpringBoard's pids, by the executable the kernel names.
-    private static func springBoardPIDs() -> [Int32] {
-        processIDs().filter { executablePath(pid: $0)?.hasSuffix("/SpringBoard") == true }
+    static func springBoardPIDs() -> Set<Int32> {
+        Set(processIDs().filter { executablePath(pid: $0)?.hasSuffix("/SpringBoard") == true })
     }
 }

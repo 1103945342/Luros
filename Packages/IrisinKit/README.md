@@ -52,6 +52,14 @@ Re-apply these when updating; each is small and says why.
    `/var/log/luros-install.log`: these records are Luros's alone. The wire
    members kept beside them (`serviceName`, the operation list, the reply
    codes) are quiet in this copy and are kept for provenance.
+4. `Sources/IrisinInstaller/InstallerRunner.swift` — an app bundle a removal
+   leaves behind is unregistered before the transaction takes its files
+   (`uicache --unregister` reads the bundle for its identifier, and after it
+   the husk has none), and the husk is removed whether or not it was
+   registered. A bundle another installed package also lists stays.
+5. `Sources/IrisinInstaller/InstallerRunner+External.swift` — a removal writes
+   `package.json` (identity and the version the database held) as an install
+   does, so a removal's directory says what it removed.
 
 `#if targetEnvironment(simulator)` blocks stay as upstream wrote them: they are
 Irisin's Mac-test hooks, not a build variant of the installer, and the tests

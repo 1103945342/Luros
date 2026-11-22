@@ -33,6 +33,10 @@ extension InstallerRunner {
         case let .remove(identity):
             emit(.notice("Removing \(identity) for an external client"))
             do {
+                // The run's own record of what it removed, as an install
+                // writes what it read: the version the database held before
+                // anything went.
+                writeRemovalRecord(identity: identity, directory: directory)
                 return try runTransaction(
                     .init(install: [], remove: [identity], statusDigest: currentStatusDigest()),
                     client: .external,
@@ -121,6 +125,19 @@ extension InstallerRunner {
         let status = layout.resolve(layout.bootstrapPath("/Library/dpkg")) + "/status"
         let data = FileManager.default.contents(atPath: status) ?? Data()
         return SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// `package.json` for a removal: the identity and the version the
+    /// database held when the run started, so a removal's directory says what
+    /// it removed as an install's says what it installed. A version that
+    /// cannot be read leaves the file out; the removal goes on.
+    private func writeRemovalRecord(identity: String, directory: String) {
+        let dpkg = URL(fileURLWithPath: layout.resolve(layout.bootstrapPath("/Library/dpkg")))
+        guard let database = try? PackageDatabase(directory: dpkg),
+              let version = database.records[identity.lowercased()]?["version"],
+              let data = try? JSONEncoder().encode(ExternalTransaction.Package(identity: identity, version: version))
+        else { return }
+        try? data.write(to: URL(fileURLWithPath: directory + "/" + ExternalTransaction.File.package))
     }
 
     /// The transaction's directory: really a directory, this process's own

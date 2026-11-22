@@ -150,6 +150,13 @@ public final class InstallerRunner {
         emit(.notice("Install root \(installRoot.isEmpty ? "/" : installRoot)"))
         emit(.notice("Applications directory \(applicationsDirectory)"))
 
+        // LaunchServices hears about a leaving app while the bundle is still
+        // there: `uicache --unregister` reads it to learn its identifier, and
+        // after the transaction took the files a husk has none to give. What
+        // is told here, the reconciliation below only tidies; a run that stops
+        // before the removal took the app puts it back.
+        var leaving = transaction.dryRun ? Leaving() : unregisterLeavingApplications(of: transaction)
+
         let installer = PackageInstaller(
             installRoot: installRoot,
             layout: layout,
@@ -168,21 +175,25 @@ public final class InstallerRunner {
         do {
             try installer.run(transaction)
         } catch let error as PackageStepFailure {
+            leaving.done = restoreUnregistered(leaving.done)
             emit(.failure(error.problem))
             return 1
         } catch {
+            leaving.done = restoreUnregistered(leaving.done)
             emit(.failure(.installationStopped(detail: String(describing: error))))
             return 1
         }
 
         // The package database has committed. Do not invite a retry of that
         // transaction merely because LaunchServices or husk cleanup failed.
+        leaving.done = restoreUnregistered(leaving.done)
         if !transaction.dryRun,
            !reconcileApplications(
                previous: applicationsBefore,
                current: applicationBundles(),
                installed: installedApplications(of: transaction.install.map(\.identity)),
-               own: Set(installer.selfApplications.map { layout.resolve($0) })
+               own: Set(installer.selfApplications.map { layout.resolve($0) }),
+               leaving: leaving
            )
         {
             emit(.warning(.homeScreenNeedsAttention))
@@ -271,16 +282,32 @@ public final class InstallerRunner {
     /// Registration is verified by icli itself (it reads LaunchServices back
     /// after every call), so `.done` here means the record is there.
     ///
+    /// A bundle a removal leaves behind was already told to LaunchServices
+    /// before the transaction took its files (`unregisterLeavingApplications`),
+    /// while it could still be read for its identifier; this pass removes its
+    /// husk, or puts the bundle back when the removal did not take it.
+    ///
     /// Irisin's own bundles (`own`, kernel paths) are left alone: registering
     /// or unregistering the running app stops it before it has read the end
     /// of the run. An updated one the app registers as it exits
     /// (`registerOwnApplication`); a removed one waits for the app to be gone
     /// (`finishAfterExit`).
+    /// What a removal told LaunchServices before the transaction ran.
+    struct Leaving: Equatable {
+        /// Bundles it asked about; the reconciliation does not ask again.
+        var attempted = Set<String>()
+        /// Bundles LaunchServices refused, whose husk stays where it is.
+        var failed = Set<String>()
+        /// Bundles it did unregister, which come back if they survive the run.
+        var done = Set<String>()
+    }
+
     private func reconcileApplications(
         previous: [String: BundleStamp?],
         current: [String: BundleStamp?],
         installed: Set<String>,
-        own: Set<String>
+        own: Set<String>,
+        leaving: Leaving
     ) -> Bool {
         var succeeded = true
         var removed: [String] = []
@@ -291,6 +318,10 @@ public final class InstallerRunner {
             do {
                 if try RemovedApplicationBundle.isGone(path) {
                     removed.append(name)
+                } else {
+                    // A husk that still holds something is reported and left,
+                    // as the cleanup below does for one it cannot empty.
+                    try RemovedApplicationBundle.removeHusk(path)
                 }
             } catch {
                 emit(.warning(.leftoverBundle(path: path, detail: String(describing: error))))
@@ -326,14 +357,23 @@ public final class InstallerRunner {
         }
         for name in removed {
             let path = applicationsDirectory + "/" + name
-            let outcome = registrar.unregister(bundleAt: path)
-            switch outcome {
-            case .done:
-                emit(.notice("Unregistered \(path)"))
-            case .failed:
-                emit(.warning(.unregistrationFailed(bundle: path, detail: outcome.reason)))
+            if leaving.failed.contains(name) {
+                // LaunchServices refused this bundle before the run took its
+                // files; the husk stays, as it would have without the early
+                // attempt, and the screen needs attention.
                 succeeded = false
                 continue
+            }
+            if !leaving.attempted.contains(name) {
+                let outcome = registrar.unregister(bundleAt: path)
+                switch outcome {
+                case .done:
+                    emit(.notice("Unregistered \(path)"))
+                case .failed:
+                    emit(.warning(.unregistrationFailed(bundle: path, detail: outcome.reason)))
+                    succeeded = false
+                    continue
+                }
             }
             do {
                 try RemovedApplicationBundle.removeHusk(path)
@@ -343,6 +383,63 @@ public final class InstallerRunner {
             }
         }
         return succeeded
+    }
+
+    /// Tells LaunchServices about the app bundles a removal leaves behind,
+    /// while they can still be read for their identifier, and answers what it
+    /// heard. A bundle another installed package also lists stays.
+    private func unregisterLeavingApplications(of transaction: InstallerJob.Transaction) -> Leaving {
+        var leaving = Leaving()
+        guard !transaction.remove.isEmpty else { return leaving }
+        for path in leavingApplications(of: transaction.remove).sorted() {
+            guard BundleStamp(infoPlist: path + "/Info.plist") != nil else { continue }
+            let name = (path as NSString).lastPathComponent
+            leaving.attempted.insert(name)
+            let outcome = registrar.unregister(bundleAt: path)
+            switch outcome {
+            case .done:
+                leaving.done.insert(name)
+            case .failed:
+                leaving.failed.insert(name)
+                emit(.warning(.unregistrationFailed(bundle: path, detail: outcome.reason)))
+            }
+        }
+        return leaving
+    }
+
+    /// The `.app` bundles only the removing package lists, as kernel paths.
+    private func leavingApplications(of identities: [String]) -> Set<String> {
+        let removing = Set(identities.map { $0.lowercased() })
+        let infoDirectory = layout.resolve(layout.bootstrapPath("/Library/dpkg/info"))
+        var owners: [String: Set<String>] = [:]
+        for entry in directoryEntries(infoDirectory) where entry.hasSuffix(".list") {
+            let identity = String(entry.dropLast(".list".count)).lowercased()
+            guard let contents = try? String(contentsOfFile: infoDirectory + "/" + entry, encoding: .utf8)
+            else { continue }
+            for path in applications(inList: contents) {
+                owners[path, default: []].insert(identity)
+            }
+        }
+        return Set(owners
+            .filter { _, listed in !listed.isEmpty && listed.isSubset(of: removing) }
+            .keys
+            .map { layout.resolve($0) })
+    }
+
+    /// A bundle told to LaunchServices before the run that is still on disk
+    /// afterwards — the removal stopped, or another package kept it — is
+    /// registered again, and comes out of the set the reconciliation skips.
+    private func restoreUnregistered(_ unregistered: Set<String>) -> Set<String> {
+        var remaining = unregistered
+        for name in unregistered.sorted() {
+            let path = applicationsDirectory + "/" + name
+            guard BundleStamp(infoPlist: path + "/Info.plist") != nil else { continue }
+            remaining.remove(name)
+            if case .done = registrar.register(bundleAt: path) {
+                emit(.notice("Registered \(path) again"))
+            }
+        }
+        return remaining
     }
 
     // MARK: - Maintenance

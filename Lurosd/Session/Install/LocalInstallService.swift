@@ -69,11 +69,16 @@ final class LocalInstallService: InstallService, @unchecked Sendable {
     }
 
     /// A maintenance job, not a transaction: the installer is started for it
-    /// and waited for, because the answer is its exit status.
+    /// and waited for, and the home screen's new pid is the receipt.
     func respring(transaction: UUID) async throws -> InstallTransactionStatus {
+        let before = InstallerRegistrar.springBoardPIDs()
         let pid = try start(job: .respring, packageDescriptor: nil, journal: nil)
-        let status = waitForExit(pid, within: 30)
-        guard status == 0 else {
+        let status = waitForExit(pid, within: 20)
+        // The home screen's new pid is the receipt: `sbreload` can answer
+        // before SpringBoard is back, and a child that stopped at its own
+        // window still restarted it. Only when neither says so is this a
+        // refusal — and it says what it saw.
+        guard status == 0 || InstallerRegistrar.waitForAFreshHomeScreen(since: before, within: 10) else {
             throw InstallServiceError(.refused, "The home screen did not restart (exit status \(status)).")
         }
         return InstallTransactionStatus(
@@ -81,7 +86,7 @@ final class LocalInstallService: InstallService, @unchecked Sendable {
             kind: "respring",
             state: .succeeded,
             nextSequence: 1,
-            exitStatus: Int64(status),
+            exitStatus: 0,
             packageID: nil,
             version: nil,
             failure: nil,

@@ -790,7 +790,11 @@ actor ToolRunner {
                 artifactDigest: arguments.requireString("artifact_digest"),
                 packagingDescriptionDigest: state.digest,
             ))
-            if installed.succeeded {
+            // The hint is about the app the install replaced, so it is read
+            // from the project that built the package: another project's
+            // install says nothing about this conversation's app. A package
+            // with no project (a file handed over) keeps the old answer.
+            if installed.succeeded, installed.projectID == nil || installed.projectID == project.id {
                 installed.relaunchHint = AppRelaunch.hint(in: root)
             }
             return json(installed)
