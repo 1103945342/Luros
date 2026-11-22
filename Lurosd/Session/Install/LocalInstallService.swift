@@ -54,16 +54,16 @@ final class LocalInstallService: InstallService, @unchecked Sendable {
         )
     }
 
-    func removePackage(transaction: UUID, packageIdentity: String) async throws -> InstallTransactionStatus {
+    func removePackage(transaction: UUID, packageID: String) async throws -> InstallTransactionStatus {
         try submit(
             transaction: transaction,
             request: ExternalTransaction.Request(
                 kind: .remove,
-                identity: packageIdentity,
+                identity: packageID,
                 created: Date().timeIntervalSince1970,
                 client: hostPath,
             ),
-            action: .remove(identity: packageIdentity),
+            action: .remove(identity: packageID),
             packageDescriptor: nil,
         )
     }
@@ -91,22 +91,24 @@ final class LocalInstallService: InstallService, @unchecked Sendable {
     }
 
     func status(of transaction: UUID) async throws -> InstallTransactionStatus {
-        try currentStatus(of: transaction, duplicate: false)
+        try currentStatus(of: transaction.uuidString.lowercased(), duplicate: false)
     }
 
     func events(
         of transaction: UUID,
         after: UInt64,
     ) async throws -> (status: InstallTransactionStatus, events: [InstallTransactionEvent]) {
-        let record = try record(of: transaction)
+        let identifier = transaction.uuidString.lowercased()
+        let record = try record(of: identifier)
         return (
-            try currentStatus(of: transaction, duplicate: false),
+            try currentStatus(of: identifier, duplicate: false),
             record.events(after: after, limit: IrisinWire.maximumEventsPerReply).map(Self.event),
         )
     }
 
     func cancel(_ transaction: UUID) {
-        let pid = lock.withLock { running[transaction] }
+        let identifier = transaction.uuidString.lowercased()
+        let pid = lock.withLock { running[identifier] }
         guard let pid, pid > 1 else { return }
         // The installer leads its own session, so its group is its own.
         kill(-pid, SIGKILL)
@@ -328,12 +330,15 @@ final class LocalInstallService: InstallService, @unchecked Sendable {
             }
         }
 
-        if case let .external(external) = job {
-            lock.withLock { running[external.transaction] = pid }
+        let transaction: String? = if case let .external(external) = job { external.transaction } else { nil }
+        if let transaction {
+            lock.withLock { running[transaction] = pid }
         }
         reapWhenExited(pid, queue: reaping) { [weak self] _ in
-            guard let self, case let .external(external) = job else { return }
-            lock.withLock { if running[external.transaction] == pid { running[external.transaction] = nil } }
+            guard let self, let transaction else { return }
+            self.lock.withLock {
+                if self.running[transaction] == pid { self.running[transaction] = nil }
+            }
         }
         return pid
     }
