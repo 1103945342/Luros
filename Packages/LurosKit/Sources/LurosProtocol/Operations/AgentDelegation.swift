@@ -119,6 +119,26 @@ public enum AgentDelegationToolPolicy {
         }
     }
 
+    /// What a child checks before it asks the host: reads, bookkeeping and
+    /// file writes are decided here, and a confined operation is left to the
+    /// host's admission, which is also where a missing capability is recorded
+    /// for the opener. The revision is checked either way.
+    public static func authorizeBeforeForwarding(tool: String, path: String?, plan: AgentDelegationPlan,
+                                                 expectedRevision: UInt64) throws {
+        guard case .confined = effect(of: tool) else {
+            return try authorize(tool: tool, path: path, plan: plan, expectedRevision: expectedRevision)
+        }
+        try plan.validate()
+        let current = plan.currentStep
+        guard plan.revision == expectedRevision else {
+            throw AgentDelegationViolation(
+                stepID: current?.id ?? "end",
+                title: current?.title ?? "Assignment",
+                rule: "The brief changed. Read its current revision before another operation.",
+            )
+        }
+    }
+
     public static func authorize(tool: String, path: String?, plan: AgentDelegationPlan,
                                  expectedRevision: UInt64) throws {
         try plan.validate()

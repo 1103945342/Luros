@@ -31,6 +31,12 @@ enum AgentDelegationAdmission {
                           planTarget: request.operation == .agentDelegation
                           ? request.decode(AgentDelegationRequest.self).sessionID : nil,
                           saved: saved)
+                if request.operation == .agentDelegation {
+                    let action = try request.decode(AgentDelegationRequest.self)
+                    if action.action == .admit, let tool = action.tool {
+                        try capabilityAdmission(tool: tool, plan: saved.plan)
+                    }
+                }
                 try await AgentDelegationTargets.confine(request, saved: saved, host: host)
             } catch let refusal as CapabilityRefusal {
                 await record(refusal, saved: saved, host: host)
@@ -39,6 +45,25 @@ enum AgentDelegationAdmission {
             return nil
         } catch {
             return request.fail(LurosError(.denied, error.localizedDescription))
+        }
+    }
+
+    /// The capability a tool needs, checked where the worker asked to admit
+    /// it — the one place a child cannot record for itself what it lacked.
+    private static func capabilityAdmission(tool: String, plan: AgentDelegationPlan) throws {
+        guard let capability = AgentDelegationToolPolicy.capability(ofTool: tool) else { return }
+        do {
+            try plan.authorize(capability, expectedRevision: plan.revision)
+        } catch let violation as AgentDelegationViolation {
+            throw CapabilityRefusal(
+                capability: capability,
+                tool: tool,
+                violation: AgentDelegationViolation(
+                    stepID: violation.stepID,
+                    title: violation.title,
+                    rule: "\(tool) needs the \(capability.rawValue) capability. \(violation.rule)",
+                ),
+            )
         }
     }
 

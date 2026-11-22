@@ -288,7 +288,7 @@ extension ToolRunner {
             )
         }
         do {
-            try AgentDelegationToolPolicy.authorize(
+            try AgentDelegationToolPolicy.authorizeBeforeForwarding(
                 tool: tool,
                 path: path,
                 plan: plan,

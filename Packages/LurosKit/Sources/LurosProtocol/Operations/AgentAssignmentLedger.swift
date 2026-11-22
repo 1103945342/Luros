@@ -300,9 +300,10 @@ public struct AgentAssignment: Codable, Sendable, Equatable {
     }
 
     /// Records that the child met a refusal for a capability its open step
-    /// does not hold. Idempotent for the same capability, tool, step and
-    /// plan revision, so a repeated call adds nothing and never moves the
-    /// revision twice; the newest `maximumCapabilityRequests` are kept.
+    /// does not hold. Idempotent for the same capability, step and plan
+    /// revision — whichever call met it — so a repeated refusal adds nothing
+    /// and never moves the revision twice; the newest
+    /// `maximumCapabilityRequests` are kept.
     public func requestingCapability(_ request: CapabilityRequest,
                                      expectedRevision: UInt64) throws -> Self {
         try requireRevision(expectedRevision)
@@ -314,8 +315,8 @@ public struct AgentAssignment: Codable, Sendable, Equatable {
             throw refusal("A capability request names the capability, the tool and the step.")
         }
         if capabilityRequests?.contains(where: {
-            $0.capability == request.capability && $0.tool == request.tool
-                && $0.stepID == request.stepID && $0.planRevision == request.planRevision
+            $0.capability == request.capability && $0.stepID == request.stepID
+                && $0.planRevision == request.planRevision
         }) == true {
             return self
         }

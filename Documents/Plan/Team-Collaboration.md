@@ -191,7 +191,7 @@ mutation stays closed whatever a step declares: shell commands, toolchains,
 SDKs, pushes, branch and history resets, MCP and extension tools,
 sub-delegation and `file_show`. A refusal for a capability the step does not
 hold is recorded in the opener's ledger (`capabilityRequests`, bounded and
-idempotent per capability, tool, step and plan revision) and names the
+idempotent per capability, step and plan revision) and names the
 capability in words; the opener grants it by amending that step (`amend`),
 never by an approval, and the child's next call reads the amended revision.
 

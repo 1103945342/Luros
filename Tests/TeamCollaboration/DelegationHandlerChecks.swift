@@ -400,6 +400,25 @@ struct DelegationHandlerChecks {
                 "the refusal names the capability and the amendment: \(error.localizedDescription)")
         }
 
+        if let forwarded = buildAdmitted.plan {
+            try AgentDelegationToolPolicy.authorizeBeforeForwarding(
+                tool: "luros_project_build", path: nil, plan: forwarded,
+                expectedRevision: forwarded.revision,
+            )
+            check(true, "a confined tool is left to the host's admission")
+            do {
+                try AgentDelegationToolPolicy.authorizeBeforeForwarding(
+                    tool: "shell_run", path: nil, plan: forwarded,
+                    expectedRevision: forwarded.revision,
+                )
+                fatalError("allowed: shell_run forwarded")
+            } catch {
+                check(true, "an unsupported tool is still refused before forwarding")
+            }
+        } else {
+            check(false, "the admitted plan reads back")
+        }
+
         // The target: the conversation's own project, its own artifact and
         // installation, never another's.
         host.artifacts.add(id: "artifact-own", path: "/Builds/own/x.deb", projectID: "project-1")
@@ -447,9 +466,15 @@ struct DelegationHandlerChecks {
         check(!(await askTarget(.distributionPublish, otherPublish)),
               "another project's package does not")
 
-        // A refused capability is recorded where the opener reads it, once.
+        // A refused capability is recorded where the opener reads it, once:
+        // the child asks the host to admit the tool, which is the one place
+        // it cannot record for itself what the step lacked.
         _ = try await assignments.register(child: builder, opener: opener, brief: building)
-        check(!(await askTarget(.gitCommit, Data())), "a capability the step lacks is refused")
+        let admitCommit = try JSONEncoder().encode(AgentDelegationRequest(
+            sessionID: builder, action: .admit, expectedRevision: 1, tool: "git_commit",
+        ))
+        check(!(await askTarget(.agentDelegation, admitCommit)),
+              "an admit for a capability the step lacks is refused")
         let ledger = try await assignments.read(opener: opener)
         let group = ledger?.groups.first { $0.assignment(builder) != nil }
         check(group?.assignment(builder)?.capabilityRequests?.map(\.capability) == ["gitCommit"],
