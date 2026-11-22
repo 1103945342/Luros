@@ -100,11 +100,20 @@ enum ProviderModels {
         }
         // Nothing to read for an account with no model, and an empty batch
         // would check models.dev's file for nothing.
+        let index = ModelCatalogIndex()
         let found: [String: ModelCatalogIndex.Entry] = models.isEmpty
             ? [:]
-            : ModelCatalogIndex().entries(for: models, catalogKey: catalog)
-        for id in models where efforts[id] == nil {
-            guard let levels = found[id]?.reasoningEfforts, !levels.isEmpty else { continue }
+            : index.entries(for: models, catalogKey: catalog)
+        // A copy that names a model but not its levels must not shut the
+        // others out: kwwk's row for an OpenAI model says it reasons and names
+        // no level, and models.dev's copy of the same name is where a relay's
+        // `gpt-6.2-astra` gets the levels its endpoint reports. The levels are
+        // the first copy's that names any.
+        let named = models.isEmpty
+            ? [:]
+            : index.reasoningEfforts(for: models, catalogKey: catalog)
+        for id in models where (efforts[id] ?? []).isEmpty {
+            guard let levels = named[id], !levels.isEmpty else { continue }
             efforts[id] = levels
         }
         var capabilities: [String: AgentModelCapabilities] = [:]
@@ -113,8 +122,11 @@ enum ProviderModels {
             capabilities[id] = entry.capabilities
         }
         // A model the live config named keeps its own levels; one it did not
-        // is what the catalogs above say.
-        let levels = efforts.merging(WorkBuddyEffortCache.shared.efforts(for: provider.storeID) ?? [:]) { _, live in live }
+        // is what the catalogs above say. A live entry that names none is no
+        // answer and is stepped over, exactly as a catalog copy with none is.
+        let live = (WorkBuddyEffortCache.shared.efforts(for: provider.storeID) ?? [:])
+            .filter { !$0.value.isEmpty }
+        let levels = efforts.merging(live) { _, live in live }
         // Says in the device log how the catalogs read this account's models: a
         // model with no entry and a page that has not reloaded look the same on
         // screen, and this tells the two apart. The timing is the whole read:

@@ -131,13 +131,74 @@ public struct ModelCatalogIndex: Sendable {
         return bundled.values.sorted { $0.id < $1.id }
     }
 
+    /// The levels each of several models is offered, from the first copy that
+    /// names any.
+    ///
+    /// A name is read exactly as `entry(for:catalogKey:)` reads it — the
+    /// provider's own copy first, then every copy of every provider — and a
+    /// copy that says a model reasons without saying at which levels is
+    /// stepped over instead of answering with nothing. kwwk's catalog names an
+    /// OpenAI model and no level for it; models.dev's copy of the same name
+    /// names the levels, and they are the whole answer a relay's
+    /// `gpt-6.2-astra` has.
+    public func reasoningEfforts(for ids: [String], catalogKey: String? = nil) -> [String: [AgentReasoningEffort]] {
+        Self.reasoningEfforts(
+            for: ids,
+            catalogKey: catalogKey,
+            bundled: Self.shared.bundled,
+            snapshot: Self.shared.snapshot(),
+        )
+    }
+
+    public func reasoningEfforts(for id: String, catalogKey: String? = nil) -> [AgentReasoningEffort] {
+        reasoningEfforts(for: [id], catalogKey: catalogKey)[id] ?? []
+    }
+
+    /// The same batch over two tables, so the rules are read without a
+    /// device's files behind them.
+    static func reasoningEfforts(
+        for ids: [String],
+        catalogKey: String?,
+        bundled: Table,
+        snapshot: Table,
+    ) -> [String: [AgentReasoningEffort]] {
+        let namesAny = { (entry: Entry) in !entry.reasoningEfforts.isEmpty }
+        var found: [String: [AgentReasoningEffort]] = [:]
+        for id in ids where found[id] == nil {
+            let candidates = ModelIdentity.candidates(id)
+            guard !candidates.isEmpty else { continue }
+            var copies: [[AgentReasoningEffort]] = []
+            if let key = catalogKey?.lowercased(), !key.isEmpty {
+                copies += [
+                    best(in: bundled.byProvider[key] ?? [:], for: candidates, where: namesAny)?.reasoningEfforts ?? [],
+                    bestByName(in: bundled.byProviderName[key] ?? [:], for: candidates, where: namesAny)?.reasoningEfforts ?? [],
+                    best(in: snapshot.byProvider[key] ?? [:], for: candidates, where: namesAny)?.reasoningEfforts ?? [],
+                    bestByName(in: snapshot.byProviderName[key] ?? [:], for: candidates, where: namesAny)?.reasoningEfforts ?? [],
+                ]
+            }
+            copies += [
+                best(in: bundled.byID, for: candidates, where: namesAny)?.reasoningEfforts ?? [],
+                bestByName(in: bundled.byName, for: candidates, where: namesAny)?.reasoningEfforts ?? [],
+                best(in: snapshot.byID, for: candidates, where: namesAny)?.reasoningEfforts ?? [],
+                bestByName(in: snapshot.byName, for: candidates, where: namesAny)?.reasoningEfforts ?? [],
+            ]
+            guard let levels = copies.first(where: { !$0.isEmpty }) else { continue }
+            found[id] = levels
+        }
+        return found
+    }
+
     // MARK: - Lookup
 
     /// The first candidate that answers, longest stretch of it first.
-    private static func best(in rows: [String: Entry], for candidates: [String]) -> Entry? {
+    private static func best(
+        in rows: [String: Entry],
+        for candidates: [String],
+        where matches: (Entry) -> Bool = { _ in true },
+    ) -> Entry? {
         for candidate in candidates {
             for stretch in ModelIdentity.stretches(candidate) {
-                if let entry = rows[stretch] { return entry }
+                if let entry = rows[stretch], matches(entry) { return entry }
             }
         }
         return nil
@@ -146,30 +207,42 @@ public struct ModelCatalogIndex: Sendable {
     /// The best of several providers' copies of one name: the provider the name
     /// itself mentions (`deepseek-v4.1-flash` is DeepSeek's), then the first by
     /// provider key, so the choice never depends on a dictionary's order.
-    private static func best(in rows: [String: [Entry]], for candidates: [String]) -> Entry? {
+    private static func best(
+        in rows: [String: [Entry]],
+        for candidates: [String],
+        where matches: (Entry) -> Bool = { _ in true },
+    ) -> Entry? {
         for candidate in candidates {
             for stretch in ModelIdentity.stretches(candidate) {
-                if let entries = rows[stretch], let entry = entries.first { return entry }
+                if let entries = rows[stretch], let entry = entries.first(where: matches) { return entry }
             }
         }
         return nil
     }
 
     /// The one entry a provider files under a name, read the same way as an id.
-    private static func bestByName(in rows: [String: Entry], for candidates: [String]) -> Entry? {
+    private static func bestByName(
+        in rows: [String: Entry],
+        for candidates: [String],
+        where matches: (Entry) -> Bool = { _ in true },
+    ) -> Entry? {
         for candidate in candidates {
             for stretch in ModelIdentity.stretches(ModelIdentity.normalized(candidate)) {
-                if let entry = rows[stretch] { return entry }
+                if let entry = rows[stretch], matches(entry) { return entry }
             }
         }
         return nil
     }
 
     /// The best of several providers' copies of one name.
-    private static func bestByName(in rows: [String: [Entry]], for candidates: [String]) -> Entry? {
+    private static func bestByName(
+        in rows: [String: [Entry]],
+        for candidates: [String],
+        where matches: (Entry) -> Bool = { _ in true },
+    ) -> Entry? {
         for candidate in candidates {
             for stretch in ModelIdentity.stretches(ModelIdentity.normalized(candidate)) {
-                if let entries = rows[stretch], let entry = entries.first { return entry }
+                if let entries = rows[stretch], let entry = entries.first(where: matches) { return entry }
             }
         }
         return nil

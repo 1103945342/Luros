@@ -179,4 +179,54 @@ struct ModelCatalogMatchingTests {
         #expect(found["deepseek-v4.1-flash"]?.id == "ds-41f")
         #expect(found["deepseek-v4.1-flash"]?.provider == "deepseek")
     }
+
+    /// A row that says a model reasons and names no level is a row that says
+    /// nothing about levels: the copy that names them answers instead, so a
+    /// relay's model whose bundled row has none still offers its own.
+    @Test func `a copy that names no level steps aside for the one that names them`() {
+        let silent = ModelCatalogIndex.table([
+            (
+                provider: "openai",
+                models: [(id: "gpt-6.2-astra", entry: Entry(
+                    id: "gpt-6.2-astra",
+                    provider: "openai",
+                    name: "GPT-6.2 Astra",
+                    contextWindow: 1_050_000,
+                    maxTokens: 128_000,
+                    acceptsImages: true,
+                    reasoning: true,
+                    efforts: [],
+                    thinkingLevelMap: nil,
+                    fromSnapshot: false,
+                ))],
+            ),
+        ])
+        let naming = ModelCatalogIndex.table([
+            (
+                provider: "openai",
+                models: [(id: "gpt-6.2-astra", entry: Entry(
+                    id: "gpt-6.2-astra",
+                    provider: "openai",
+                    name: "GPT-6.2 Astra",
+                    contextWindow: 1_050_000,
+                    maxTokens: 128_000,
+                    acceptsImages: true,
+                    reasoning: true,
+                    efforts: ["low", "medium", "high", "xhigh", "max"],
+                    thinkingLevelMap: nil,
+                    fromSnapshot: true,
+                ))],
+            ),
+        ])
+        let levels = ModelCatalogIndex.reasoningEfforts(
+            for: ["gpt-6.2-astra"], catalogKey: "openai", bundled: silent, snapshot: naming,
+        )
+        #expect(levels["gpt-6.2-astra"] == [.off, .low, .medium, .high, .xhigh, .max])
+        // The same row asked on its own still offers nothing: no level is
+        // invented for a model the catalogs only say reasons.
+        let alone = ModelCatalogIndex.reasoningEfforts(
+            for: ["gpt-6.2-astra"], catalogKey: "openai", bundled: silent, snapshot: none,
+        )
+        #expect(alone.isEmpty)
+    }
 }
