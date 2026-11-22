@@ -139,7 +139,10 @@ final class GitController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = GitTheme.pageBackground
+        // The app's background under the page: the top bar and the pages
+        // leave their ground to it.
+        view.backgroundColor = .clear
+        AppBackgroundView.install(in: view)
         navigationController?.setNavigationBarHidden(true, animated: false)
 
         statusPage.host = self
@@ -194,7 +197,10 @@ final class GitController: UIViewController {
     // MARK: - Building
 
     private func buildTopBar() {
-        topBar.backgroundColor = GitTheme.pageBackground
+        // The bar takes the background's colour, as the chat's does, so what
+        // scrolls under it is masked by the picture's own shade rather than a
+        // sheet of system grey.
+        topBar.backgroundColor = ChatBackground.surface(traits: traitCollection, fallback: .pageBackground)
         view.addSubview(topBar)
 
         // The page is a screen of its own: its leading end goes back, and

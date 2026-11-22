@@ -22,4 +22,13 @@ final class SheetNavigationController: UINavigationController {
         get { heldSize ?? super.preferredContentSize }
         set { super.preferredContentSize = newValue }
     }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // The app's background behind every page of the sheet: a page that
+        // leaves its ground open — the settings', between its rows — shows
+        // what the reader chose instead of a sheet of system grey.
+        view.backgroundColor = .clear
+        AppBackgroundView.install(in: view)
+    }
 }

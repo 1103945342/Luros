@@ -40,11 +40,17 @@ class ComposerPanel: UIView {
         translatesAutoresizingMaskIntoConstraints = false
         clipsToBounds = false
 
-        backgroundColor = .secondarySystemGroupedBackground
         layer.cornerRadius = ComposerMetrics.Radius.lg
         layer.cornerCurve = .continuous
         layer.borderWidth = 1 / UIScreen.main.scale
         layer.borderColor = UIColor.separator.cgColor
+        applyGround()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appearanceChanged),
+            name: ChatBackground.changed,
+            object: nil,
+        )
 
         titleLabel.font = .preferredFont(forTextStyle: .subheadline)
         titleLabel.textColor = .secondaryLabel
@@ -76,6 +82,26 @@ class ComposerPanel: UIView {
     @available(*, unavailable)
     required init?(coder _: NSCoder) {
         fatalError("Use init()")
+    }
+
+    /// The panel's ground: the app's own card colour, or the colour of the
+    /// background the reader chose — the same one the chat's bar takes — so a
+    /// panel belongs to the picture behind it instead of cutting a grey hole in
+    /// it.
+    @objc dynamic func applyGround() {
+        backgroundColor = ChatBackground.surface(
+            traits: traitCollection,
+            fallback: .secondarySystemGroupedBackground,
+        )
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        applyGround()
+    }
+
+    @objc dynamic private func appearanceChanged() {
+        applyGround()
     }
 
     /// Builds what the body holds. Overrides call `super` first.
