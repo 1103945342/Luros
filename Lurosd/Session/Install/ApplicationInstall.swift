@@ -4,13 +4,13 @@ import Foundation
 
 /// An app onto the device the way the bootstrap's own tools put one there:
 /// the bundle copied under `Applications`, every Mach-O signed with `ldid`,
-/// and `uicache` registering or unregistering it.
+/// and the icli carried by Luros registering or unregistering it.
 ///
 /// Nothing here links libarchive or MobileInstallation: the daemon links no
 /// third-party code (`AGENTS.md`), and the three tools a roothide or rootless
 /// bootstrap already ships do the work, run as root by the host that owns
-/// these paths. The tools see the bootstrap as `/` on roothide, so every path
-/// handed to one goes through `toolPath(_:)`.
+/// these paths. `ldid` sees the bootstrap as `/` on roothide, so its paths go
+/// through `toolPath(_:)`; icli receives the real bundle path.
 enum ApplicationInstall {
     struct Layout: Sendable {
         /// The bootstrap root: `/var/jb` on rootless, the `.jbroot-…` folder on roothide.
@@ -18,14 +18,16 @@ enum ApplicationInstall {
         /// `<install root>/Applications`, where a private app lives.
         var applications: String
         var ldid: String
-        var uicache: String
+        /// The icli Luros carries in its own bundle. It replaces uicache for
+        /// app registration, including on iOS 27.
+        var icli: String
 
         init(installRoot: String) {
             self.installRoot = installRoot
             let root = installRoot == "/" ? "" : installRoot
             applications = root + "/Applications"
             ldid = root + "/usr/bin/ldid"
-            uicache = root + "/usr/bin/uicache"
+            icli = applications + "/Luros.app/Vendor/bin/icli"
         }
     }
 
@@ -78,8 +80,8 @@ enum ApplicationInstall {
     /// `Info.plist` claims, an executable that is there, and Mach-O code.
     /// `AppBundle.find` checked the `.ipa`'s own copy before anything ran;
     /// this checks the copy staging signed, so a copy that did not survive
-    /// cannot take the place of an app that worked. `uicache` is no check:
-    /// it answers zero for a folder that holds no app at all.
+    /// cannot take the place of an app that worked. A registrar's exit status
+    /// is no check on its own.
     static func validate(_ bundle: URL, expecting bundleID: String) throws {
         guard let info = AppBundle.describe(bundleAt: bundle.path) else {
             throw Failure.io("\(bundle.lastPathComponent) holds no readable Info.plist")
@@ -231,7 +233,7 @@ enum ApplicationInstall {
             // The app that was here is registered by the path the system
             // names — with the root it went in under.
             if AppBundle.describe(bundleAt: entry.original.path) != nil {
-                try? register(entry.original, layout: layout, installRoot: layout.installRoot)
+                try? register(entry.original, layout: layout)
             }
         }
         try? FileManager.default.removeItem(at: failed)
@@ -321,41 +323,49 @@ enum ApplicationInstall {
 
     // MARK: Registering
 
-    static func register(_ bundle: URL, layout: Layout, installRoot: String) throws {
-        try uicache(["-p", toolPath(bundle.path, installRoot: installRoot)], layout: layout)
+    static func register(_ bundle: URL, layout: Layout) throws {
+        try runICli(["app", "register", bundle.path], layout: layout)
     }
 
     /// Takes the bundle at `path` out of LaunchServices; the files are the
     /// caller's to delete.
-    static func unregister(_ path: String, layout: Layout, installRoot: String) throws {
-        try uicache(["-u", toolPath(path, installRoot: installRoot)], layout: layout)
+    static func unregister(_ path: String, layout: Layout) throws {
+        try runICli(["app", "unregister", "--force", path], layout: layout)
     }
 
-    /// The same for a bundle whose files may already be gone. roothide's
-    /// `uicache` has its root put in front of the paths it is given, so the
-    /// path it understands for a bundle that is there is the bootstrap's;
-    /// a registration left behind by a bundle that is no longer there is
-    /// keyed by the real path instead, which only `/rootfs/…` names. The real
-    /// path is tried first — it names the registration whichever root the
-    /// bootstrap had when it was made — and the bootstrap's second.
-    static func unregisterAnywhere(_ path: String, layout: Layout, installRoot: String) throws {
-        var refusal: Failure?
-        for argument in ["/rootfs" + path, toolPath(path, installRoot: installRoot)] {
-            do {
-                try uicache(["-u", argument], layout: layout)
-                return
-            } catch let failure as Failure {
-                refusal = failure
-            }
+    /// The same for a bundle whose files may already be gone. icli normalises
+    /// the path before matching LaunchServices' record, so the kernel path is
+    /// enough even after roothide renames its bootstrap root.
+    static func unregisterAnywhere(_ path: String, layout: Layout) throws {
+        try unregister(path, layout: layout)
+    }
+
+    /// The registration of one bundle, read back through icli. `app info` is
+    /// deliberately used instead of `app list`: the full list is larger than
+    /// the runner's captured output on a device with many installed apps.
+    static func registration(
+        _ bundleID: String,
+        layout: Layout,
+    ) -> (bundleID: String, path: String)? {
+        guard FileManager.default.isExecutableFile(atPath: layout.icli),
+              let result = try? run(layout.icli, ["app", "info", bundleID]),
+              result.status == 0,
+              let data = result.output.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let id = object["bundle_id"] as? String,
+              let path = object["bundle_path"] as? String,
+              id == bundleID, path.hasPrefix("/")
+        else { return nil }
+        return (id, path)
+    }
+
+    private static func runICli(_ arguments: [String], layout: Layout) throws {
+        guard FileManager.default.isExecutableFile(atPath: layout.icli) else {
+            throw Failure.unsupported("Luros's bundled icli is missing; reinstall Luros")
         }
-        if let refusal { throw refusal }
-    }
-
-    private static func uicache(_ arguments: [String], layout: Layout) throws {
-        let result = try run(layout.uicache, arguments)
-        // A path it cannot match is printed as an error under a zero status.
-        guard result.status == 0, !result.output.hasPrefix("Error") else {
-            throw Failure.tool("uicache answered \(result.status): \(result.output)")
+        let result = try run(layout.icli, arguments)
+        guard result.status == 0 else {
+            throw Failure.tool("icli answered \(result.status): \(result.output)")
         }
     }
 

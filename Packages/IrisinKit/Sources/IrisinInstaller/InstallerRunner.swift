@@ -151,7 +151,7 @@ public final class InstallerRunner {
         emit(.notice("Applications directory \(applicationsDirectory)"))
 
         // LaunchServices hears about a leaving app while the bundle is still
-        // there: `uicache --unregister` reads it to learn its identifier, and
+        // there: `icli app unregister` reads it to learn its identifier, and
         // after the transaction took the files a husk has none to give. What
         // is told here, the reconciliation below only tidies; a run that stops
         // before the removal took the app puts it back.
@@ -625,8 +625,8 @@ public final class InstallerRunner {
     }
 
     /// mobile's home as this bootstrap's apps are registered with it: inside
-    /// the jbroot on roothide, where icli sets HOME as roothide's uicache
-    /// does, and the system's own elsewhere.
+    /// the jbroot on roothide, where registration gives it the same HOME as
+    /// the bootstrap's uicache did, and the system's own elsewhere.
     private var userHome: String {
         if case .roothide = layout.kind {
             layout.resolve("/var/mobile")

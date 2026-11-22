@@ -1564,8 +1564,10 @@ do {
     check(byName["Owned"]?.source == .package && byName["Owned"]?.packageID == "com.example.owner"
         && byName["Owned"]?.removable == false, "an app a package now lists is the package manager's")
     check(!rows.contains { $0.bundleID == "com.example.stranger" }, "an app Luros never installed is not listed")
-    check(ApplicationCensus.parseRegistered("local.luros.demo : /Applications/Demo.app\nnonsense\n")
-        .first?.bundleID == "local.luros.demo", "uicache's own list is read")
+    let appList = #"{"apps":[{"bundle_id":"local.luros.demo","bundle_path":"/Applications/Demo.app","type":"System"},{"bundle_id":"local.luros.scan","bundle_path":"/Applications/Scan.app"}]}"#
+    let parsedApps = ApplicationCensus.parseRegistered(appList)
+    check(parsedApps.count == 1 && parsedApps.first?.bundleID == "local.luros.demo",
+          "icli's app list is read, without its scan-only entries")
 }
 
 // MARK: - Deb control

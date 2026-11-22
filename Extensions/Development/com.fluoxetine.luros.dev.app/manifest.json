@@ -19,10 +19,7 @@
       "rootless": ["arm64", "arm64e"],
       "roothide": ["arm64e"]
     },
-    "runtimeDependencies": {
-      "rootless": ["uikittools"],
-      "roothide": ["uikittools"]
-    }
+    "runtimeDependencies": {}
   },
   "templates": [
     {
@@ -51,7 +48,7 @@
         { "path": "Resources/Info.plist", "format": "plist-xml" },
         { "path": "Packaging/App.entitlements", "format": "plist-xml" }
       ],
-      "digest": "sha256:14c44dde29e7f9fe5291bd5c3d951e4d337e8bac3ddcf97a93481a0df76b8584"
+      "digest": "sha256:827b7a2f23a6e7f31b7bc6538dbfd4ca6022e2dd842e7b6eb542e44b88e936b2"
     },
     {
       "id": "uikit-swift",
@@ -75,7 +72,7 @@
         { "path": "Resources/Info.plist", "format": "plist-xml" },
         { "path": "Packaging/App.entitlements", "format": "plist-xml" }
       ],
-      "digest": "sha256:3b04e2ccd2a93cdb82efc623d772c04b2e651c282906bbf20243be0199c090c1"
+      "digest": "sha256:e9e616841ed5956522e49eef4c51b0cc299bfc1f291c62258a1dbcf055ec2099"
     }
   ],
   "provenance": [
@@ -86,7 +83,7 @@
       "commit": "0aac1f88779f86e4288cd99fd6e330ce4df56d3f",
       "paths": ["template/App/main.swift", "template/App/SceneRestorationReset.swift", "template/App/RootViewController.swift", "template/Packaging/APP.entitlements", "template/Packaging/DEBIAN/control", "template/APP.xcodeproj/project.pbxproj"],
       "adaptations": [
-        "Kept: the manual main that deletes this bundle's .savedState before UIApplicationMain, the first screen's layout, the GPU IOKit user-client list with its reason, platform-application and no-sandbox, and the uikittools dependency whose triggers register the app.",
+        "Kept: the manual main that deletes this bundle's .savedState before UIApplicationMain, the first screen's layout, the GPU IOKit user-client list with its reason, platform-application and no-sandbox. Registration is Luros's bundled icli, not a template dependency.",
         "Changed: SceneRestorationReset is folded into main.swift; the Info.plist keys the Xcode project generated (INFOPLIST_KEY_*) are written out in Resources/Info.plist; the scene delegate gets a fixed Objective-C name because there is no Xcode module prefix.",
         "Added: package.icon, this extension's icon on Luros's Pages, written as the control's Icon so a package manager shows it beside the package; it is not the app's own icon.",
         "Dropped: the daemon, the XPC client and its entitlements, the App Group, the storage entitlements, ExecutableWatch, QuietExit, the string catalogue and the Xcode project (luros-build has no Xcode)."

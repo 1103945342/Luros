@@ -303,9 +303,9 @@ check:
 		|| { echo "error: a redirect is glued to the word before it above — launchctl would be handed '<label>2' and its errors would show" >&2; exit 65; }
 	@python3 "$(ROOT_DIR)/Scripts/test-daemon-registration.py"
 	@! grep -nw 'uicache' "$(ROOT_DIR)"/Packaging/DEBIAN/* \
-		|| { echo "error: a maintainer hook calls uicache — uikittools' triggers register the app" >&2; exit 65; }
-	@grep -qE '^Depends:.*firmware \(>= $(IOS_DEPLOYMENT_FLOOR)\).*uikittools.*launchctl' "$(CONTROL_TEMPLATE)" \
-		|| { echo "error: control must depend on firmware (>= $(IOS_DEPLOYMENT_FLOOR)), uikittools and launchctl" >&2; exit 65; }
+		|| { echo "error: a maintainer hook calls uicache — the bundled icli registers the app" >&2; exit 65; }
+	@grep -qE '^Depends:.*firmware \(>= $(IOS_DEPLOYMENT_FLOOR)\).*launchctl' "$(CONTROL_TEMPLATE)" \
+		|| { echo "error: control must depend on firmware (>= $(IOS_DEPLOYMENT_FLOOR)) and launchctl" >&2; exit 65; }
 	@# The four development extensions ride inside the app bundle, so the IDE
 	@# depends on none of them and recommends none of them: a package manager
 	@# installs the IDE alone, and one of the four installed on its own only

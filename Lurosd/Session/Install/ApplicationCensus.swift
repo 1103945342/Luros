@@ -20,14 +20,20 @@ enum ApplicationCensus {
         (installRoot == "/" ? "" : installRoot) + "/Applications"
     }
 
-    /// `uicache -l`: one `bundleID : /path/App.app` a line.
+    /// `icli app list`, whose records carry `bundle_id` and `bundle_path`.
+    /// The scan-only entries it adds for bundles LaunchServices does not
+    /// have carry neither `type` nor `data_path`, so they are not registered.
     static func parseRegistered(_ output: String) -> [(bundleID: String, path: String)] {
-        output.split(separator: "\n").compactMap { line in
-            let parts = line.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
-            guard parts.count == 2 else { return nil }
-            let bundleID = parts[0].trimmingCharacters(in: .whitespaces)
-            let path = parts[1].trimmingCharacters(in: .whitespaces)
-            guard !bundleID.isEmpty, path.hasPrefix("/") else { return nil }
+        guard let data = output.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let apps = object["apps"] as? [[String: Any]]
+        else { return [] }
+        return apps.compactMap { app in
+            guard let bundleID = app["bundle_id"] as? String,
+                  let path = app["bundle_path"] as? String,
+                  !bundleID.isEmpty, path.hasPrefix("/"),
+                  app["type"] != nil || app["data_path"] != nil
+            else { return nil }
             return (bundleID, path)
         }
     }
@@ -71,7 +77,7 @@ enum ApplicationCensus {
     /// whose app is gone from both is left out — there is nothing to remove.
     ///
     /// - Parameters:
-    ///   - registered: what `uicache -l` answered.
+    ///   - registered: what `icli app list` answered.
     ///   - records: Luros's installation records, oldest first.
     ///   - owners: `packageOwners`' answer.
     ///   - describe: `describe(bundleAt:)`, or a test's stand-in.

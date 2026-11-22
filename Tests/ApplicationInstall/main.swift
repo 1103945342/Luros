@@ -233,6 +233,35 @@ func check() throws {
         print("skip: no sleep binary to start from a bundle")
     }
 
+    // Registration prefers the icli carried by Luros: iOS 27 rejects
+    // uicache's per-bundle registration even though its status is zero.
+    do {
+        let root = base.appendingPathComponent("Registrar/.jbroot-0123456789ABCDEF")
+        let bundle = root.appendingPathComponent("Applications/Probe.app")
+        let record = base.appendingPathComponent("Registrar/arguments.txt")
+        let icli = root.appendingPathComponent("Applications/Luros.app/Vendor/bin/icli")
+        try fm.createDirectory(at: icli.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try fm.createDirectory(at: bundle, withIntermediateDirectories: true)
+        let script = "#!/bin/sh\nprintf '%s\\n' \"$@\" > " + record.path.replacingOccurrences(of: "'", with: "'\\''") + "\n"
+        try Data(script.utf8).write(to: icli)
+        try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: icli.path)
+        let layout = ApplicationInstall.Layout(installRoot: root.path)
+
+        try ApplicationInstall.register(bundle, layout: layout)
+        let registeredArguments = String(data: try Data(contentsOf: record), encoding: .utf8)
+        try require(
+            registeredArguments == "app\nregister\n\(bundle.path)\n",
+            "registration uses bundled icli",
+        )
+        try ApplicationInstall.unregister(bundle.path, layout: layout)
+        let unregisteredArguments = String(data: try Data(contentsOf: record), encoding: .utf8)
+        try require(
+            unregisteredArguments == "app\nunregister\n--force\n\(bundle.path)\n",
+            "unregistration uses bundled icli",
+        )
+        print("ok: bundled icli registers and unregisters the app")
+    }
+
     // Optional on-device integration: a copy of a signed fixture, never installed
     // or executed. This calls the production posix_spawn runner and real ldid.
     if CommandLine.arguments.count >= 5 {

@@ -62,8 +62,8 @@ the same executable in session mode; the workers are its children.
   `.ipa` installs as an app, never as a
   package: `installPackage` on an ipa artifact unpacks it inside the host,
   signs its one `Payload/*.app` where staging holds it, reads the signed
-  copy back (`uicache -p` answers zero for a folder holding no app, so the
-  listing from `uicache -l` is the receipt), ends whatever still runs from
+  copy back (the bundled icli registers it; the listing from `icli app list` is
+  the receipt), ends whatever still runs from
   the bundle it replaces, and only then puts it at
   `<install root>/Applications` — a bundle staged on another volume is copied
   beside it first, so every move that changes what the device holds is a
@@ -443,7 +443,7 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   `toolchainSelfTest`, `toolchainSetDefault`; `sdkList`,
   `sdkImport`, `sdkRemove`; `environmentAttach`, `environmentCancel`;
   `developmentTools` (Settings ▸ Environment ▸ Third-Party Tools: `ldid`,
-  `git`, `python3`, `dpkg-deb` and `uikittools`, read only — a missing one is
+  `git`, `python3` and `dpkg-deb`, read only — a missing one is
   the user's package manager's, which the row opens at that package's page);
   `extensionList`, `projectCreate`, `projectCheck`, `projectRename`,
   `projectDelete`; `buildStart`,
@@ -4245,8 +4245,8 @@ manifest.json            the owngoal-packages entry
   --yes <deb>`, as root), never apt or dpkg; `install-device.sh` and
   `device.py install` do so.
 - `make install` — build for `FLAVOR` and update the installation on
-  `DEVICE_HOST:DEVICE_PORT` over ssh, register the bundle with `uicache -p`,
-  and open the app.
+  `DEVICE_HOST:DEVICE_PORT` over ssh, register the bundle through the
+  bundled icli, and open the app.
 - `make vphone` — the same, roothide, onto the vphone VM: `VPHONE=<name>`
   as vphone-launchpad names it (its address is read from the guest),
   `VPHONE_HOST=<address>`, or with neither the one that is running.
@@ -4313,18 +4313,19 @@ second changelog implementation or edit generated release notes by hand.
 The copied publishing workflow must be named `Release` so Pages refreshes after
 it succeeds. Deploy from `main`, including when an older release is edited.
 
-Keep the `uikittools` dependency: its triggers register and unregister the app.
-Maintainer hooks manage the daemon only; never add explicit `uicache` calls.
+App registration belongs to the icli carried in Luros's own bundle; the IDE no
+longer depends on `uikittools`. Maintainer hooks manage the daemon only; never
+add explicit `uicache` calls.
 
-That trigger is `uicache -a`, which registers only what is not registered yet.
 A package manager's UI re-registers an upgrade itself; an install from a
-`.deb` file over an installed copy may not, and LaunchServices keeps the previous build's
-Info.plist — version, document types, URL schemes, every key SpringBoard reads
-from the record rather than from disk. After installing by hand, run
-`uicache -p <prefix>/Applications/<App>.app` in the terminal, and respring if
-SpringBoard has to read it again. When a plist or entitlement change "does not
-take", check the record's `CFBundleVersion` against the bundle's before
-anything else.
+`.deb` file over an installed copy may not, and LaunchServices keeps the
+previous build's Info.plist — version, document types, URL schemes, every key
+SpringBoard reads from the record rather than from disk. After installing by
+hand, run
+`<prefix>/Applications/Luros.app/Vendor/bin/icli app register <prefix>/Applications/<App>.app`
+in the terminal, and respring if SpringBoard has to read it again. When a plist
+or entitlement change "does not take", check the record's `CFBundleVersion`
+against the bundle's before anything else.
 
 ## Where things get tested
 
@@ -4394,12 +4395,13 @@ adding a dated record beside it.
   keyboard-interactive, and an agent's keys used up the attempts first.
   `install-device.sh` clears `SSH_AUTH_SOCK`, turns public keys off and asks
   for keyboard-interactive, which sshpass answers.
-- **"Unable to register" from uicache is not always a failure.** On the
-  iOS 27 iPad vphone, uikittools' trigger and `uicache -p` both print it for
-  `Luros.app`, and `uicache -i com.fluoxetine.luros` still shows the app
-  registered at the bundle's path, and it opens. Check the record before
-  chasing the message. `install-device.sh` runs `uicache -p` after every
-  install anyway, for the install-from-a-file case above.
+- **App registration uses the bundled icli, never uicache.** A new app bundle
+  cannot be registered by `uicache -p` on iOS 27: it prints "Unable to
+  register" and `uicache -l` still omits the bundle. `ApplicationInstall`
+  therefore asks `Luros.app/Vendor/bin/icli app register`, which registers the
+  bundle and its containers; unregistration uses `icli app unregister
+  --force`. `uikittools` is not a package dependency of Luros, and the app
+  templates do not pull it in either.
 - **An iPad keeps the other app.** On the iOS 27 iPad vphone, opening
   Settings and then Luros, to make Luros come to the foreground, left
   Settings beside it with the focus: the UI tree read Settings, a tap meant

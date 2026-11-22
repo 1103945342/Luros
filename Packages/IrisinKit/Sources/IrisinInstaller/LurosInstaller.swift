@@ -2,7 +2,7 @@ import Foundation
 import IrisinProtocol
 
 /// Luros starts the installer itself, from the session host: the registrar is
-/// Luros's own (`InstallerRegistrar`: `uicache` and the respring), and the
+/// Luros's own (`InstallerRegistrar`: its bundled icli and the respring), and the
 /// launchd maintenance jobs Irisin's app sends are never asked for. The
 /// process table is the kernel's, the same `ProcessTable` upstream signals
 /// with.

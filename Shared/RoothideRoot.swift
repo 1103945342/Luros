@@ -28,7 +28,7 @@ enum RoothideRoot {
     /// Mobile's home as the package makes it and the session host's workers
     /// use it, for a process whose own path is `path`: inside the roothide
     /// root, else the system's. Never the process's own home: on rootless,
-    /// uicache gives an app without `no-container` a data container and
+    /// LaunchServices registration gives an app without `no-container` a data container and
     /// points HOME and CFFIXED_USER_HOME at it (issue #37).
     static func mobileHome(for path: String) -> String {
         (containing(path) ?? "") + "/var/mobile"

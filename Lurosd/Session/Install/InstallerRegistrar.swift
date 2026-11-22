@@ -3,13 +3,12 @@ import IrisinInstaller
 import IrisinProtocol
 
 /// What the installer asks when it has to tell the system about a bundle, or
-/// restart the home screen. Luros answers with the tools its bootstrap ships
-/// — `uicache` for LaunchServices, `sbreload` for the graceful respring — and
-/// with nothing else: no icli, no LaunchServices library of its own.
+/// restart the home screen. Luros answers with its bundled icli registrar and
+/// `sbreload` for the graceful respring: it links no LaunchServices library
+/// of its own.
 ///
-/// The bundle paths arrive as kernel paths; `ApplicationInstall` spells them
-/// the way `uicache` reads them (`toolPath`), exactly as it does for an
-/// `.ipa`.
+/// The bundle paths arrive as kernel paths; `ApplicationInstall` gives icli
+/// the real path and gives `ldid` the bootstrap's spelling (`toolPath`).
 enum InstallerRegistrar {
     /// A request Luros does not carry out. The installer prints the sentence.
     struct Refusal: Error, CustomStringConvertible {
@@ -32,12 +31,11 @@ enum InstallerRegistrar {
                 try ApplicationInstall.register(
                     URL(fileURLWithPath: bundle),
                     layout: layout,
-                    installRoot: installRoot,
                 )
                 emit(.notice("Registered \(bundle)"))
                 return [:]
             case let .unregister(bundle):
-                try ApplicationInstall.unregister(bundle, layout: layout, installRoot: installRoot)
+                try ApplicationInstall.unregister(bundle, layout: layout)
                 emit(.notice("Unregistered \(bundle)"))
                 return [:]
             case .refresh:

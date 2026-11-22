@@ -7,8 +7,8 @@ import IrisinProtocol
 ///
 /// Upstream fills this with icli's library. Luros supplies its own
 /// implementation (`InstallerRegistrar` in lurosd): bundles are registered
-/// with `uicache`, the same tool `ApplicationInstall` runs, and the respring
-/// is `sbreload`'s. The request is public so that host can answer it.
+/// with the icli carried by Luros, and the respring is `sbreload`'s. The
+/// request is public so that host can answer it.
 public struct ApplicationRegistrar {
     public enum Request: Equatable {
         /// Register, or re-register an updated app at the same path. icli
@@ -108,7 +108,7 @@ public struct ApplicationRegistrar {
 
     #else
         /// Luros supplies its own registrar (`InstallBridge`): the home screen
-        /// is told about a bundle with `uicache`, and nothing here names
+        /// is told about a bundle with Luros's bundled icli, and nothing here names
         /// LaunchServices without it.
         static func live(emit _: @escaping (InstallerEvent) -> Void) -> (Request) throws -> [String: Any] {
             { _ in throw Refusal(message: "no application registrar was supplied") }

@@ -33,8 +33,8 @@ no daemon, no service name and no shipped binary of Irisin's remain.
 - `IrisinClient`, `IrisinVendor`, the app, the CLI, the Launchpad, the WebUI
   and `Packages/{AptRepository,IrisinWeb,MarkdownView,PackageDepiction,Runestone}`.
 - The `IcliKit` dependency (icli's library). Its two uses are replaced:
-  Luros supplies the application registrar (uicache, the same tool
-  `ApplicationInstall` runs) and a respring of its own, and it never sends
+  Luros supplies the application registrar (the icli Luros carries) and a
+  respring of its own, and it never sends
   Irisin's own launchd maintenance jobs.
 
 ## Patches against upstream
@@ -54,7 +54,7 @@ Re-apply these when updating; each is small and says why.
    codes) are quiet in this copy and are kept for provenance.
 4. `Sources/IrisinInstaller/InstallerRunner.swift` — an app bundle a removal
    leaves behind is unregistered before the transaction takes its files
-   (`uicache --unregister` reads the bundle for its identifier, and after it
+   (`icli app unregister` reads the bundle for its identifier, and after it
    the husk has none), and the husk is removed whether or not it was
    registered. A bundle another installed package also lists stays.
 5. `Sources/IrisinInstaller/InstallerRunner+External.swift` — a removal writes

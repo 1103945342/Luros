@@ -41,6 +41,24 @@ for directory in /var/mobile /var/mobile/Documents "$app_data"; do
     }
 done
 
+# Luros carries its own LaunchServices registrar. Registering here keeps the
+# IDE visible after a package-manager install without a separate hook.
+app="@PREFIX@/Applications/Luros.app"
+if [ -x "$app/Vendor/bin/icli" ]; then
+    register_app="$app"
+    if [ -z "@PREFIX@" ]; then
+        jbroot="$("$app/Vendor/bin/icli" env 2>/dev/null | sed -n 's/.*"jbroot" : "\([^"]*\)".*/\1/p' | tr -d '\\')"
+        if [ -n "$jbroot" ]; then
+            case "$jbroot" in
+                /var/*) register_app="/private$jbroot/Applications/Luros.app" ;;
+                *) register_app="$jbroot/Applications/Luros.app" ;;
+            esac
+        fi
+    fi
+    "$app/Vendor/bin/icli" app register "$register_app" >/dev/null 2>&1 ||
+        echo "warning: Luros could not register itself with LaunchServices; reinstall it if it does not appear." >&2
+fi
+
 # The daemon id is named once, alone on its line. A rename that swallows the
 # space before a redirect turns `system/<id> 2>/dev/null` into
 # `system/<id>2>/dev/null`: still valid sh, so `sh -n` passes, but launchctl is

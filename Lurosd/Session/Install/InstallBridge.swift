@@ -376,7 +376,8 @@ actor InstallBridge {
 
     /// An `.ipa` onto the device: unpacked into root's staging, its one
     /// `Payload/*.app` copied under `Applications`, every Mach-O signed, and
-    /// registered with `uicache`. dpkg and irisind take no part — an app is
+    /// registered through the bundled icli registrar. dpkg and irisind take
+    /// no part — an app is
     /// not a package — and the record keeps the bundle so a removal can take
     /// it away again.
     private func installApplication(_ artifact: ArtifactRegistry.Artifact) async throws -> TaskHandle {
@@ -528,7 +529,7 @@ actor InstallBridge {
                     "line": .string("Copied the app beside Applications: staging is on another volume"),
                 ]))
             }
-            try ApplicationInstall.register(destination, layout: layout, installRoot: paths.installRoot)
+            try ApplicationInstall.register(destination, layout: layout)
             guard registeredBundle(bundle.bundleID, at: destination.path, layout: layout) else {
                 throw LurosError(
                     .internal,
@@ -595,14 +596,10 @@ actor InstallBridge {
         Self.removeTree(workspace, inside: paths.staging.path)
     }
 
-    /// Whether `uicache -l` lists `bundleID` at `path`. `uicache -p` answers
-    /// zero for a path that holds no app and prints nothing, so its exit
-    /// status is not the receipt — the listing is.
+    /// Whether icli reads `bundleID` back at `path`. A registration tool's
+    /// exit status is not the receipt: the record is.
     private func registeredBundle(_ bundleID: String, at path: String, layout: ApplicationInstall.Layout) -> Bool {
-        guard let listed = try? ApplicationInstall.run(layout.uicache, ["-l"]) else { return false }
-        return ApplicationCensus.parseRegistered(listed.output).contains {
-            $0.bundleID == bundleID && $0.path == path
-        }
+        ApplicationInstall.registration(bundleID, layout: layout)?.path == path
     }
 
     /// What holds the path the app asks for, for `AppPlacement`: the bundle
@@ -652,7 +649,6 @@ actor InstallBridge {
                 try ApplicationInstall.unregisterAnywhere(
                     bundlePath,
                     layout: layout,
-                    installRoot: paths.installRoot
                 )
                 // LaunchServices may still name the path this record was
                 // written with, from the root the app went in under: an
@@ -661,7 +657,6 @@ actor InstallBridge {
                     _ = try? ApplicationInstall.unregisterAnywhere(
                         application.bundlePath,
                         layout: layout,
-                        installRoot: paths.installRoot
                     )
                 }
                 guard Self.removeTree(URL(fileURLWithPath: bundlePath), inside: layout.applications) else {
@@ -1012,16 +1007,24 @@ actor InstallBridge {
     /// there is nothing to keep.
     func applicationList() async throws -> ApplicationListResponse {
         let layout = ApplicationInstall.Layout(installRoot: paths.installRoot)
-        // A bootstrap without uicache still lists the records it holds.
-        let registered = ApplicationCensus.parseRegistered(
-            (try? ApplicationInstall.run(layout.uicache, ["-l"]))?.output ?? ""
-        )
+        // Read each recorded bundle's small icli record rather than the whole
+        // app list, which can exceed the tool output capture limit.
+        let records = await installations.all()
+        var registered: [(bundleID: String, path: String)] = []
+        var seen = Set<String>()
+        for record in records {
+            guard let bundleID = record.application?.bundleID,
+                  seen.insert(bundleID).inserted,
+                  let registration = ApplicationInstall.registration(bundleID, layout: layout)
+            else { continue }
+            registered.append(registration)
+        }
         let owners = ApplicationCensus.packageOwners(infoDirectory: (paths.installRoot == "/" ? "" : paths.installRoot)
             + "/var/lib/dpkg/info")
         return ApplicationListResponse(applications: ApplicationCensus.rows(
             installRoot: paths.installRoot,
             registered: registered,
-            records: await installations.all(),
+            records: records,
             owners: owners,
         ))
     }
@@ -1047,7 +1050,7 @@ actor InstallBridge {
         // The registration, by the path LaunchServices names — for a bundle
         // that is gone, the only thing left to take away.
         if let registered = app.registeredPath {
-            try ApplicationInstall.unregisterAnywhere(registered, layout: layout, installRoot: paths.installRoot)
+            try ApplicationInstall.unregisterAnywhere(registered, layout: layout)
         }
         if let path = app.path {
             guard Self.removeTree(URL(fileURLWithPath: path), inside: layout.applications) else {

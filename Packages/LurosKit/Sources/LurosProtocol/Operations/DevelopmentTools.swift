@@ -2,10 +2,10 @@ import Foundation
 
 // The device tools work on this device may need and its package does not
 // carry: `ldid` signs, `git` fetches a repository, `python3` runs what a
-// project's build script or a conversation's `run_code` hands it, `dpkg-deb`
-// makes a package for such a script (Luros's own builds and installs do
-// without it), and `uikittools` carries `uicache`, which registers a built
-// app. Settings ▸ Environment reads their state; a missing one is installed
+// project's build script or a conversation's `run_code` hands it, and
+// `dpkg-deb` makes a package for such a script (Luros's own builds and
+// installs do without it). App registration uses the icli carried by Luros.
+// Settings ▸ Environment reads their state; a missing one is installed
 // from the user's package manager, which the app opens at the package's page.
 
 /// One tool, as the device has it or not.
