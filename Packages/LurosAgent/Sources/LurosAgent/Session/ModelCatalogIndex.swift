@@ -1,4 +1,5 @@
 import LurosCore
+import LurosProtocol
 import Dispatch
 import Foundation
 import KWWKAI
@@ -162,30 +163,45 @@ public struct ModelCatalogIndex: Sendable {
         bundled: Table,
         snapshot: Table,
     ) -> [String: [AgentReasoningEffort]] {
-        let namesAny = { (entry: Entry) in !entry.reasoningEfforts.isEmpty }
         var found: [String: [AgentReasoningEffort]] = [:]
         for id in ids where found[id] == nil {
             let candidates = ModelIdentity.candidates(id)
             guard !candidates.isEmpty else { continue }
-            var copies: [[AgentReasoningEffort]] = []
-            if let key = catalogKey?.lowercased(), !key.isEmpty {
-                copies += [
-                    best(in: bundled.byProvider[key] ?? [:], for: candidates, where: namesAny)?.reasoningEfforts ?? [],
-                    bestByName(in: bundled.byProviderName[key] ?? [:], for: candidates, where: namesAny)?.reasoningEfforts ?? [],
-                    best(in: snapshot.byProvider[key] ?? [:], for: candidates, where: namesAny)?.reasoningEfforts ?? [],
-                    bestByName(in: snapshot.byProviderName[key] ?? [:], for: candidates, where: namesAny)?.reasoningEfforts ?? [],
-                ]
-            }
-            copies += [
-                best(in: bundled.byID, for: candidates, where: namesAny)?.reasoningEfforts ?? [],
-                bestByName(in: bundled.byName, for: candidates, where: namesAny)?.reasoningEfforts ?? [],
-                best(in: snapshot.byID, for: candidates, where: namesAny)?.reasoningEfforts ?? [],
-                bestByName(in: snapshot.byName, for: candidates, where: namesAny)?.reasoningEfforts ?? [],
-            ]
-            guard let levels = copies.first(where: { !$0.isEmpty }) else { continue }
+            let levels = levels(for: candidates, catalogKey: catalogKey, bundled: bundled, snapshot: snapshot)
+            guard !levels.isEmpty else { continue }
             found[id] = levels
         }
         return found
+    }
+
+    /// One name's levels, the provider's own copy asked first: the first copy
+    /// of it that names any answers, and `[]` when none does.
+    private static func levels(
+        for candidates: [String],
+        catalogKey: String?,
+        bundled: Table,
+        snapshot: Table,
+    ) -> [AgentReasoningEffort] {
+        let namesAny: (Entry) -> Bool = { !$0.reasoningEfforts.isEmpty }
+        var copies: [[AgentReasoningEffort]] = []
+        if let key = catalogKey?.lowercased(), !key.isEmpty {
+            copies.append(answer(best(in: bundled.byProvider[key] ?? [:], for: candidates, where: namesAny)))
+            copies.append(answer(bestByName(in: bundled.byProviderName[key] ?? [:], for: candidates, where: namesAny)))
+            copies.append(answer(best(in: snapshot.byProvider[key] ?? [:], for: candidates, where: namesAny)))
+            copies.append(answer(bestByName(in: snapshot.byProviderName[key] ?? [:], for: candidates, where: namesAny)))
+        }
+        copies.append(answer(best(in: bundled.byID, for: candidates, where: namesAny)))
+        copies.append(answer(bestByName(in: bundled.byName, for: candidates, where: namesAny)))
+        copies.append(answer(best(in: snapshot.byID, for: candidates, where: namesAny)))
+        copies.append(answer(bestByName(in: snapshot.byName, for: candidates, where: namesAny)))
+        for copy in copies where !copy.isEmpty {
+            return copy
+        }
+        return []
+    }
+
+    private static func answer(_ entry: Entry?) -> [AgentReasoningEffort] {
+        entry?.reasoningEfforts ?? []
     }
 
     // MARK: - Lookup

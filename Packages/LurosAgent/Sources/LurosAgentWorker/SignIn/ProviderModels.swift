@@ -109,7 +109,7 @@ enum ProviderModels {
         // no level, and models.dev's copy of the same name is where a relay's
         // `gpt-6.2-astra` gets the levels its endpoint reports. The levels are
         // the first copy's that names any.
-        let named = models.isEmpty
+        let named: [String: [AgentReasoningEffort]] = models.isEmpty
             ? [:]
             : index.reasoningEfforts(for: models, catalogKey: catalog)
         for id in models where (efforts[id] ?? []).isEmpty {

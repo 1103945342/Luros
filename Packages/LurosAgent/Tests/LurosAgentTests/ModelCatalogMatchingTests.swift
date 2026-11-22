@@ -1,4 +1,5 @@
 import Testing
+import LurosProtocol
 @testable import LurosAgent
 
 /// What a name finds in the catalogs: a model id, or the name a catalog gives
