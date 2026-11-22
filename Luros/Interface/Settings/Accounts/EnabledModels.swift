@@ -37,13 +37,39 @@ enum EnabledModels {
         Set(UserDefaults.standard.stringArray(forKey: "hiddenModels.\(provider.rawValue)") ?? [])
     }
 
+    /// Every provider this device keeps enabled models for: the ones there
+    /// are to sign in to, and each further OpenAI-compatible endpoint.
+    ///
+    /// `AgentProvider.allCases` names only the providers a sign-in form
+    /// offers: a further endpoint (`openAICompatible.<number>`) exists once
+    /// the reader adds it, so it is read from the keys this device keeps for
+    /// it. Leaving it out here left the account listing no model to read a
+    /// catalog for, and a model only the catalogs know (`gpt-6.2-astra` on a
+    /// relay) came back with no reasoning levels at all, so its effort pill
+    /// never appeared.
+    static var providers: [AgentProvider] {
+        var providers = AgentProvider.allCases
+        let prefix = "enabledModels."
+        var endpoints: [AgentProvider] = []
+        for key in UserDefaults.standard.dictionaryRepresentation().keys where key.hasPrefix(prefix) {
+            let raw = String(key.dropFirst(prefix.count))
+            guard let provider = AgentProvider(rawValue: raw),
+                  !providers.contains(provider),
+                  !endpoints.contains(provider)
+            else { continue }
+            endpoints.append(provider)
+        }
+        providers.append(contentsOf: endpoints.sorted { $0.rawValue < $1.rawValue })
+        return providers
+    }
+
     /// The model ids this device keeps for each provider, keyed by the
     /// provider's own id: handed to the account listing so the catalogs are
     /// read over the models the app shows — a custom endpoint's own — and not
     /// only the ones the agent can list for itself.
     static func knownModelIDs() -> [String: [String]] {
         var known: [String: [String]] = [:]
-        for provider in AgentProvider.allCases {
+        for provider in providers {
             let models = ids(for: provider)
                 .union(customIDs(for: provider))
                 .subtracting(hiddenIDs(for: provider))
@@ -58,7 +84,7 @@ enum EnabledModels {
     /// separate from knownModelIDs(), which settings needs in full.
     static func selectedModelIDs() -> [String: [String]] {
         var selected: [String: [String]] = [:]
-        for provider in AgentProvider.allCases {
+        for provider in providers {
             let models = ids(for: provider).subtracting(hiddenIDs(for: provider))
             if !models.isEmpty { selected[provider.rawValue] = models.sorted() }
         }
