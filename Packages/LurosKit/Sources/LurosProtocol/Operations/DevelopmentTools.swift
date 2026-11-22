@@ -1,10 +1,12 @@
 import Foundation
 
-// The device tools Luros's own work needs and its package does not carry:
-// `ldid` signs, `git` fetches a repository, `dpkg-deb` reads a package, and
-// `uikittools` carries `uicache`, which registers a built app. Settings ▸
-// Environment reads their state; a missing one is installed from the user's
-// package manager, which the app opens at the package's page.
+// The device tools work on this device may need and its package does not
+// carry: `ldid` signs, `git` fetches a repository, `python3` runs what a
+// project's build script or a conversation's `run_code` hands it, `dpkg-deb`
+// makes a package for such a script (Luros's own builds and installs do
+// without it), and `uikittools` carries `uicache`, which registers a built
+// app. Settings ▸ Environment reads their state; a missing one is installed
+// from the user's package manager, which the app opens at the package's page.
 
 /// One tool, as the device has it or not.
 public struct DevelopmentToolRow: Codable, Sendable, Equatable, Hashable {
@@ -27,7 +29,7 @@ public struct DevelopmentToolRow: Codable, Sendable, Equatable, Hashable {
     }
 }
 
-/// Reads the four tools, and nothing else: installing one is the user's
+/// Reads the tools, and nothing else: installing one is the user's
 /// package manager's, which the app opens at that package's page.
 public struct DevelopmentToolsRequest: OperationRequest {
     public typealias Response = DevelopmentToolsResponse

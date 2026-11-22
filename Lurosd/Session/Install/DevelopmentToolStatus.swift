@@ -1,9 +1,16 @@
 import LurosProtocol
 import Foundation
 
-/// The four programs Luros's own work needs, and whether this device has
-/// each: the program must be an executable in `usr/bin`, and the package that
-/// carries it installed, for the row to say so.
+/// The programs that building, installing and talking to this device may
+/// need, and whether this device has each: the program must be an executable
+/// in `usr/bin`, and the package that carries it installed, for the row to say
+/// so.
+///
+/// `uicache` registers and unregisters the app an `.ipa` install puts on the
+/// device; `python3` is one of the interpreters a conversation's `run_code`
+/// and a project's external build script may name; `dpkg-deb` is no longer
+/// Luros's own — its builds write their package and its installer unpacks one
+/// without it — but a project's build script may make its package with it.
 ///
 /// Reading only. Installing one is the user's package manager's — the app
 /// opens it at the package's page — so nothing here fetches, resolves or
@@ -13,6 +20,7 @@ enum DevelopmentToolStatus {
     static let definitions: [(package: String, program: String)] = [
         ("ldid", "ldid"),
         ("git", "git"),
+        ("python3", "python3"),
         ("dpkg-deb", "dpkg-deb"),
         ("uikittools", "uicache"),
     ]
