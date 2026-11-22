@@ -1,56 +1,52 @@
 # Bundled tools
 
-Luros carries the device tools it cannot work without, so its package depends
-on no package for them:
+Luros carries the one device tool it cannot work without, so its package
+depends on no package for it:
 
 | File | From | Version | SHA-256 |
 |---|---|---|---|
 | `bin/icli` | `com.icli.icli` | 0.11.0 | `728f350e54a0101793506e4771342dc68cde2ee5e4f6cb9579b5293d20b87cfb` |
-| `libexec/irisind` | `wiki.qaq.irisin` | 5.1.8 | `b42392b8709831e6846342ae4dc0b49633757fb39b56d0ab604910f5b087d293` |
-| `libexec/irisin-install` | `wiki.qaq.irisin` | 5.1.8 | `1fd12cc983903ebb7dded8dd0cb448da9d127a2607740a4bd3efd7ad67ede5f9` |
 
-`irisind` is only the front: it takes a transaction and runs the install
-through `/usr/libexec/irisin-install`, the helper at that exact path. A daemon
-without it answers every transaction with `helperUnreachable` and exit 69, and
-the client asking about the transaction afterwards is told Irisin does not
-know it — the install fails without ever naming the helper. A device that had
-Irisin and lost it keeps a working `irisind` only if this second file is
-carried and put back beside it.
-
-`Scripts/package-deb.sh` copies them into `Luros.app/Vendor/`, so the
-installed app finds them beside itself:
+`Scripts/package-deb.sh` copies it into `Luros.app/Vendor/`, so the installed
+app finds it beside itself:
 
 - `Luros.app/Vendor/bin` goes on the `PATH` every run gets
   (`DevelopmentEnvironment.searchPath`), behind the bootstrap's own
   directories, so an `icli` the device installed still wins.
-- `Luros.app/Vendor/libexec/irisind` is the daemon the app needs to install a
-  package, register an app or remove either. `postinst` registers it under
-  the label `com.fluoxetine.luros.irisind` with the Mach service name `irisind`
-  serves, and only when no Irisin of its own is installed: a device that has
-  the real package keeps its daemon, and this copy is never started beside it.
 
-Both commands link nothing but system libraries and Swift, so a copy is
-enough; neither reads a resource from the rest of its original package.
+## The installer is not here any more
+
+Irisin's `irisind` and `irisin-install` used to be carried as binaries and
+talked to over `wiki.qaq.irisin.service`. Two launchd jobs cannot own one Mach
+service name, so a device that also had another program's irisind job made
+Luros's never start, and a request sent to the name waited for an answer that
+never came.
+
+The installer is now source: `Packages/IrisinKit` (Irisin `v5.1.8`, MIT, pinned
+in its README) is compiled into `lurosd`'s installer mode. The session host
+spawns `lurosd --installer` for one job, hands it the package by descriptor
+and reads its transcript; there is no daemon to register, no name to look up,
+and nothing of Irisin's on disk to replace or remove.
 
 ## Updating
 
-Replace the file, then update the version and digest in this table. Take the
-binaries from a device that has the package installed:
+icli: replace the file, then update the version and digest in this table. Take
+the binary from a device that has the package installed:
 
     cp /usr/bin/icli Vendor/bin/icli
-    cp /usr/libexec/irisind Vendor/libexec/irisind
-    chmod 0755 Vendor/bin/icli Vendor/libexec/irisind
-    shasum -a 256 Vendor/bin/icli Vendor/libexec/irisind
+    chmod 0755 Vendor/bin/icli
+    shasum -a 256 Vendor/bin/icli
 
-The copies are committed rather than fetched at build time because the
-package is built on macOS, where neither package is installed, and a build
-that reaches GitHub for them would fail offline.
+The copy is committed rather than fetched at build time because the package is
+built on macOS, where the package is not installed, and a build that reached
+GitHub for it would fail offline. The installer is updated in
+`Packages/IrisinKit` instead, by the steps in its README.
 
 ## Licensing
 
 `icli` is MIT, © OwnGoal Studio, and its licence ships beside it in the
 package at `/usr/share/doc/icli/LICENSE`.
 
-`irisind` comes from Irisin. Its licence is not stated in the installed
-package, so redistribution of this copy should be confirmed with its author
-before the package is published outside this device.
+The installer is Irisin's, MIT, © OwnGoal Studio; its upstream `LICENSE`
+ships in `Packages/IrisinKit`, and the package's `Licenses.json` lists it with
+the rest.

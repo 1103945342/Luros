@@ -17,11 +17,16 @@ Packages/LurosDiagnostics, whose closure may hold only LurosLogReader, its
 Objective-C shim and the shared request types, plus LurosCore and
 LurosProtocol — never icli.
 
-In the Xcode project, the Lurosd target may link those products and no
-other; WorkerLogReader links LurosCore, LurosProtocol and
-LurosLogReaderWorker only. The vendored
-IrisinExternalClient is source compiled into lurosd, not a package, and
-imports system modules only (checked below).
+In the Xcode project, the Lurosd target may link those products, the
+vendored installer's three, and no other; WorkerLogReader links LurosCore,
+LurosProtocol and LurosLogReaderWorker only.
+
+The installer is the one third-party link a root process carries, and it
+carries it because an install has to run from the same executable the host
+already is (`AGENTS.md`). `Packages/IrisinKit` is Irisin's own code, MIT,
+pinned in its README; it reads a `.deb` through `ArchiveKit` (libarchive),
+which nothing else in lurosd touches. Its sources import the installer's
+modules and system modules, and never UIKit or XPC, checked below.
 
 Usage: check-system-only.py <LurosKit> [--scratch-path <dir>]
            [--toolhost-scratch-path <dir>] [--diagnostics-scratch-path <dir>]
@@ -36,17 +41,29 @@ import sys
 
 KIT_SYSTEM_ONLY = {"LurosCore", "LurosProtocol"}
 TOOLHOST_SYSTEM_ONLY = {"LurosToolCore", "LurosToolHost"}
+INSTALLER_SOURCES = ["Packages/IrisinKit/Sources"]
+INSTALLER_MODULES = {
+    "ArchiveKit",
+    "CIrisinDB",
+    "CIrisinSpawn",
+    "CryptoKit",
+    "Darwin",
+    "Dispatch",
+    "Foundation",
+    "IrisinInstaller",
+    "IrisinPreparation",
+    "IrisinProtocol",
+}
+# lurosd may link these from Packages/IrisinKit (the installer) beside its own.
+INSTALLER_PRODUCTS = {"IrisinProtocol", "IrisinPreparation", "IrisinInstaller"}
+
 ROOT_XCODE_TARGETS = {
-    "Lurosd": KIT_SYSTEM_ONLY | TOOLHOST_SYSTEM_ONLY,
+    "Lurosd": KIT_SYSTEM_ONLY | TOOLHOST_SYSTEM_ONLY | INSTALLER_PRODUCTS,
     "WorkerLogReader": KIT_SYSTEM_ONLY | {"LurosLogReaderWorker"},
 }
 # Packages/LurosDiagnostics: what LurosLogReaderWorker may reach.
 LOG_READER_ROOT = "LurosLogReaderWorker"
 LOG_READER_CLOSURE = {"LurosLogReaderWorker", "LurosLogReader", "LurosLogReaderSPI", "LurosDiagnosticsCore"}
-VENDORED_SOURCES = ["Lurosd/Vendor/IrisinExternalClient"]
-SYSTEM_MODULES = {"CIrisinExternalXPC", "CryptoKit", "Darwin", "Dispatch", "Foundation", "XPC"}
-
-
 def fail(message):
     print(f"error: check-system-only: {message}", file=sys.stderr)
     sys.exit(1)
@@ -115,19 +132,18 @@ def check_project(project):
             fail(f"{name} links {', '.join(sorted(extra))}; it may link {', '.join(sorted(allowed))} only")
 
 
-def check_vendored(repository):
-    for relative in VENDORED_SOURCES:
-        directory = os.path.join(repository, relative)
-        if not os.path.isfile(os.path.join(directory, "LICENSE")):
-            fail(f"{relative} has no LICENSE beside it")
-        for root, _, files in os.walk(directory):
+def check_installer(repository):
+    if not os.path.isfile(os.path.join(repository, "Packages/IrisinKit/LICENSE")):
+        fail("Packages/IrisinKit has no LICENSE beside it")
+    for relative in INSTALLER_SOURCES:
+        for root, _, files in os.walk(os.path.join(repository, relative)):
             for name in files:
                 if not name.endswith(".swift"):
                     continue
                 source = open(os.path.join(root, name), encoding="utf-8").read()
                 for module in re.findall(r"^\s*(?:@\w+\s+)*import\s+(\w+)", source, re.M):
-                    if module not in SYSTEM_MODULES:
-                        fail(f"{relative}/{name} imports {module}; vendored code in lurosd takes system modules only")
+                    if module not in INSTALLER_MODULES:
+                        fail(f"{relative}/{name} imports {module}; the installer takes its own modules and system code only")
 
 
 def main():
@@ -143,8 +159,8 @@ def main():
     check_package(os.path.join(packages, "LurosToolHost"), arguments.toolhost_scratch_path, TOOLHOST_SYSTEM_ONLY)
     check_log_reader(os.path.join(packages, "LurosDiagnostics"), arguments.diagnostics_scratch_path)
     check_project(os.path.join(repository, "Luros.xcodeproj"))
-    check_vendored(repository)
-    print("ok: lurosd and luros-log-reader link system code only")
+    check_installer(repository)
+    print("ok: lurosd and luros-log-reader link system code only, and the installer its own modules")
 
 
 if __name__ == "__main__":

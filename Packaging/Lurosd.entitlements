@@ -17,12 +17,9 @@
 	`com.apple.private.security.storage.<Class>` on *this* process. A sampler
 	or a thin proxy does not.
 
-	`wiki.qaq.irisin.client` is what irisind (Irisin 4.7 and later) asks of a
-	client, beside `platform-application` and `no-sandbox`: the session host,
-	which is this executable started with `--session`, installs, removes
-	and resprings through it. It is eligibility, not identity — any
-	installed package can carry it (Irisin's Documentation/ExternalClients.md).
-	The app never carries it: installing is the host's alone.
+	No client entitlement of Irisin's is here any more: installing is the
+	session host's own installer (`lurosd --installer`), not a request to
+	Irisin's daemon, so there is no service to be admitted to.
 
 	`usernotifications.bundle-identifiers` lets the session host post as
 	the app — a conversation's turn ended, or it waits for approval — while
@@ -43,8 +40,6 @@
 		<string>com.fluoxetine.luros</string>
 	</array>
 	<key>platform-application</key>
-	<true/>
-	<key>wiki.qaq.irisin.client</key>
 	<true/>
 </dict>
 </plist>

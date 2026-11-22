@@ -155,15 +155,6 @@
 			);
 			target = AA0000000000000000000040 /* Lurosd */;
 		};
-		A10000000000000000000006 /* Exceptions for "Lurosd" folder in "Lurosd" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Vendor/IrisinExternalClient/CIrisinExternalXPC/module.modulemap,
-				Vendor/IrisinExternalClient/CIrisinExternalXPC/shim.h,
-				Vendor/IrisinExternalClient/LICENSE,
-			);
-			target = AA0000000000000000000040 /* Lurosd */;
-		};
 		A50000000000000000000105 /* Exceptions for "Widgets/Extension" folder in "LurosWidgets" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -198,9 +189,6 @@
 		};
 		AA0000000000000000000014 /* Lurosd */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				A10000000000000000000006 /* Exceptions for "Lurosd" folder in "Lurosd" target */,
-			);
 			path = Lurosd;
 			sourceTree = "<group>";
 		};
@@ -442,6 +430,9 @@
 				AA000000000000000000010A /* LurosProtocol */,
 				A10000000000000000000002 /* LurosToolHost */,
 				A10000000000000000000004 /* LurosToolCore */,
+				A60000000000000000000002 /* IrisinProtocol */,
+				A60000000000000000000003 /* IrisinPreparation */,
+				A60000000000000000000004 /* IrisinInstaller */,
 			);
 			productName = lurosd;
 			productReference = AA0000000000000000000041 /* lurosd */;
@@ -629,6 +620,7 @@
 				AA0000000000000000000401 /* XCLocalSwiftPackageReference "Packages/LurosDiagnostics" */,
 				AA0000000000000000000402 /* XCLocalSwiftPackageReference "Packages/LurosAgent" */,
 				A10000000000000000000001 /* XCLocalSwiftPackageReference "Packages/LurosToolHost" */,
+				A60000000000000000000001 /* XCLocalSwiftPackageReference "Packages/IrisinKit" */,
 				A20000000000000000000007 /* XCLocalSwiftPackageReference "Packages/Runestone" */,
 				A20000000000000000000001 /* XCRemoteSwiftPackageReference "DisplayLink" */,
 				A20000000000000000000002 /* XCRemoteSwiftPackageReference "ListViewKit" */,
@@ -872,7 +864,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				SWIFT_INCLUDE_PATHS = "$(inherited) $(SRCROOT)/Lurosd/Vendor/IrisinExternalClient/CIrisinExternalXPC";
 				PRODUCT_BUNDLE_IDENTIFIER = com.fluoxetine.lurosd;
 				PRODUCT_NAME = lurosd;
 				SKIP_INSTALL = YES;
@@ -884,7 +875,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				SWIFT_INCLUDE_PATHS = "$(inherited) $(SRCROOT)/Lurosd/Vendor/IrisinExternalClient/CIrisinExternalXPC";
 				PRODUCT_BUNDLE_IDENTIFIER = com.fluoxetine.lurosd;
 				PRODUCT_NAME = lurosd;
 				SKIP_INSTALL = YES;
@@ -1189,6 +1179,10 @@
 		A20000000000000000000007 /* XCLocalSwiftPackageReference "Packages/Runestone" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/Runestone;
+		};
+		A60000000000000000000001 /* XCLocalSwiftPackageReference "Packages/IrisinKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/IrisinKit;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -1511,6 +1505,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A40000000000000000000103 /* XCRemoteSwiftPackageReference "ScrubberKit" */;
 			productName = ScrubberKit;
+		};
+		A60000000000000000000002 /* IrisinProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A60000000000000000000001 /* XCLocalSwiftPackageReference "Packages/IrisinKit" */;
+			productName = IrisinProtocol;
+		};
+		A60000000000000000000003 /* IrisinPreparation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A60000000000000000000001 /* XCLocalSwiftPackageReference "Packages/IrisinKit" */;
+			productName = IrisinPreparation;
+		};
+		A60000000000000000000004 /* IrisinInstaller */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A60000000000000000000001 /* XCLocalSwiftPackageReference "Packages/IrisinKit" */;
+			productName = IrisinInstaller;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

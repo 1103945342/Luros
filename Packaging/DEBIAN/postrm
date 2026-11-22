@@ -24,24 +24,4 @@ if [ "${1:-}" = remove ] || [ "${1:-}" = purge ]; then
     fi
 fi
 
-# Luros wrote this job file itself in postinst, so no package removes it:
-# dpkg does not know it, and postrm is the last chance to take it away. A file
-# Irisin's own package wrote is a different name and is never touched.
-iris_label=com.fluoxetine.luros.irisind
-iris_plist="@PREFIX@/Library/LaunchDaemons/$iris_label.plist"
-if [ "${1:-}" = remove ] || [ "${1:-}" = purge ]; then
-    if launchctl="$(find_tool launchctl)"; then
-        "$launchctl" bootout "system/$iris_label" 2>/dev/null || true
-        "$launchctl" bootout "user/501/$iris_label" 2>/dev/null || true
-        "$launchctl" bootout "gui/501/$iris_label" 2>/dev/null || true
-    fi
-    rm -f "${iris_plist:?}"
-    # The copies postinst made are no package's; the ones an Irisin package
-    # owns are left where they are. irisind alone is useless anyway: its
-    # helper is the half that installs.
-    if [ ! -f "@PREFIX@/var/lib/dpkg/info/wiki.qaq.irisind.list" ]; then
-        rm -f "@PREFIX@/usr/libexec/irisind" "@PREFIX@/usr/libexec/irisin-install"
-    fi
-fi
-
 exit 0

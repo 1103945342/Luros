@@ -28,7 +28,7 @@
       "sha256": "756a61a8300d105ae68e7f2993e27d41a765c946f3400422e2403b01e7ded527",
       "license": "OpenSSL / SSLeay / ISC (BoringSSL), with MIT for fiat"
     },
-    "vendored/IrisinExternalClient": {
+    "vendored/Irisin": {
       "sha256": "79b8af7a9877c42384ecc70ee213d554ec4ba0c65a029ff3e6af2fe045595523",
       "license": "MIT"
     },

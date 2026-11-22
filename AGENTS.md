@@ -76,7 +76,7 @@ the same executable in session mode; the workers are its children.
   The record keeps the bundle so a removal unregisters and deletes it, and
   an earlier record of the same bundle is `superseded` rather than left
   claiming the app — it may not be removed in the newer one's place. dpkg
-  and irisind never see an `.ipa`, no package repository takes one, and the
+  and the installer never see an `.ipa`, no package repository takes one, and the
   Distribute… page offers Share `.ipa` alone. The two formats are never one
   renamed into the other, and a deb keeps every check it had.
 - **A project made from a template also carries an Xcode project.**
@@ -286,7 +286,13 @@ the same executable in session mode; the workers are its children.
   the floor and warns nowhere. `make check` checks it against CoreGlyphs.
 - **No new dependency without a reason that survives the ladder**: what it
   replaces, and why the hand-written version would be worse rather than merely
-  longer. Nothing third-party links into the daemon.
+  longer. Nothing third-party links into the daemon — except the installer
+  (`Packages/IrisinKit`: Irisin's own installer, MIT, pinned in its README),
+  which reads a `.deb` through libarchive and must run from the same
+  executable the session host already is; a second shipped root binary is
+  exactly what the vendored-daemon work removed. `Scripts/check-system-only.py`
+  allows those three products and no other, and fails on UIKit or XPC anywhere
+  in that package.
 - **The Licenses screen is generated, not written.** The app target's
   **Collect Licenses** build phase runs `Scripts/collect-licenses.py`, which
   writes `Licenses.json` into the app bundle from the repository `LICENSE`,
@@ -640,10 +646,11 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   adds to LurosCore and LurosProtocol only LurosLogReaderWorker, whose
   closure is LurosLogReader, its Objective-C shim and the shared request
   types; lurosd links those two, LurosToolHost and LurosToolCore
-  (Packages/LurosToolHost) and compiles the vendored IrisinExternalClient
-  (`Lurosd/Vendor/`, MIT, Irisin 4.7.0, its LICENSE beside it) — every one
-  of them system code that depends on nothing else. `make harness` checks
-  all of it (`Scripts/check-system-only.py`). The agent, diagnostics and
+  (Packages/LurosToolHost) and the vendored installer (`Packages/IrisinKit`,
+  MIT, Irisin v5.1.8, pinned in its README) — the one third-party link a root
+  process here carries, because an install has to run from the same executable
+  the session host is. `make harness` checks all of it
+  (`Scripts/check-system-only.py`). The agent, diagnostics and
   log-reader workers' `main.swift` is one call into a package library
   (`LurosAgentWorker`, `LurosDiagnosticsWorker`, `LurosLogReaderWorker`),
   so the logic is tested by `make harness`.
@@ -665,7 +672,7 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
     resume plan or a cancel, never for an ordinary event (a reopened
     conversation relays tens of thousands), so `load` takes `lastSeq` and
     `updatedAt` from the last event that reads, the time only forward. Installs resume: a staged one is
-    submitted again under its own transaction ID (irisind answers `dup`), a
+    submitted again under its own transaction ID (the installer answers `dup`), a
     submitted one is followed again from the last event relayed. Builds and
     environment tasks resume (`Session/TaskResume.swift`): `startTask(…,
     resumable: true)` writes the operation, its payload and the calling
@@ -698,11 +705,14 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
     report counts tasks by kind (build, environment, terminal, agent,
     install, load check, sign-in) — resumed ones included —, live workers and tool
     extensions; the proxy counts the app.
-  - *Install bridge* (`Session/Install/`). The host is irisind's client:
-    lurosd carries `wiki.qaq.irisin.client` (with `platform-application` and
-    `no-sandbox`; the app and the workers never do), and the package carries
-    its own `irisind` inside the app bundle, so it depends on no Irisin
-    package — from 4.7.3 irisind takes an external client only at euid 0, which the session host is; nothing running as mobile may call it. `installPackage{artifactID,
+  - *Install bridge* (`Session/Install/`). The host installs itself: `lurosd`
+    starts its own installer (`--installer`: the same executable, in a session
+    of its own, with the job on standard input and the package on descriptor
+    3) over `Packages/IrisinKit`, Irisin's installer compiled from source.
+    There is no Mach service, no daemon to register and no client entitlement;
+    nothing outside the session host can start an install, and the transaction
+    directory `/var/lib/luros/install-transactions/<id>` is what says how it
+    went. `installPackage{artifactID,
     digest}` takes a build's artifact — recorded by the host from the build
     worker's own `artifact` event (`path` inside the data folder, `digest`,
     `packageID`, `version`, `projectID`, `packagingDigest`, `packageFiles`) —, a toolchain
@@ -714,22 +724,22 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
     `file:<path inside ~/Documents/com.fluoxetine.luros>`. A writer for the
     bridge sets `DebPackageWriter.controlCompression = .gzip`: a zstd
     control member is judged by the ID its source promised and failed
-    loudly if irisind reports another. The host
+    loudly if the installer reports another. The host
     copies it into `staging/` while hashing, refuses a digest that is not
     the request's and the build's, reads the control file itself (gzip, xz
     or plain control members), applies the managed-package rules, writes
     the installation record (`installations/<id>.json`: project and build,
     artifact digest, package, version, the lowercase-UUID transaction ID it
-    chose, then irisind's receipt) and submits the staged copy by
-    descriptor. When irisind refuses it, and only then, the host names who
+    chose, then the installer's receipt) and submits the staged copy by
+    descriptor. When the installer refuses it, and only then, the host names who
     is in the way (`InstallConflicts`): each installed package whose
     `var/lib/dpkg/info/<package>.list` lists a file the build recorded
     (unless the deb Replaces it), or that the deb's unversioned Conflicts
     or Breaks names (the host compares no versions), as a `conflict` event
     (`InstallConflict`, with the installation `removePackage` takes when
     Luros made it); the failure says who and how to clear it before
-    irisind's own words, which stand alone when nothing is found. irisind
-    decided already, and nothing is removed. `removePackage{installationID}`
+    the installer's own words, which stand alone when nothing is found. The
+    installer decided already, and nothing is removed. `removePackage{installationID}`
     acts only on a record whose install succeeded and whose package is
     still installed at that version, with no newer record of the package
     (whose ID the refusal names);
@@ -751,7 +761,8 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
     away the folders roothide's `.jbroot` links kept (`ToolchainTreePruner`):
     only when every entry is a folder or a `.jbroot` link, the links
     unlinked without being followed and the folders removed bottom up; a
-    file or any other link keeps the whole tree. `respring` is irisind's.
+    file or any other link keeps the whole tree. `respring` is the installer's: `sbreload` for the graceful restart, `backboardd`'s
+    signal when that fails.
   - *Approvals* (`Session/Approval/`). The host keeps the Confirm-mode ledger:
     per project the template's build and packaging digests (recorded from
     `projectCreate`'s `descriptionDigests`) and every digest the user
@@ -956,7 +967,7 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   (`Tests/SessionHost/`): record persistence and resume (a build restarted
   over a real channel, the refusals, the cancel, the retry bound), CallerPolicy, the
   edit rules on a temporary root, the managed-package rules, the bridge
-  against a fake irisind, the folders a removed toolchain leaves, the
+  against a fake install service, the folders a removed toolchain leaves, the
   ledger, the control reader, the attachment
   copies, ordinary events leaving the record alone and its number and time
   read back from the log, one `agentOpen` of a session at a time, Ask
@@ -1243,7 +1254,8 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   CS_ADHOC and the first-page hash in memory, then requires the original
   whole-file SHA-256. Code, dependencies and entitlements remain covered;
   neither the installed tool nor its manifest is rewritten. The install is
-  never abandoned: a cancel waits for irisind's answer.
+  never abandoned: a cancel ends the installer's process group, so the run
+  stops with the task rather than outliving it.
   job.json holds the host's install task from `installPackage`'s answer to
   its end, so a setup resumed past it — re-run, or re-sent by the host under
   the same task ID — follows that task (`buildAttach`) instead of handing
@@ -1279,7 +1291,7 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   runs only a Mach-O carrying the CoreTrust-bypass signature its dpkg
   hook writes (Bootstrap-basebin `autosign.m`: its own `ldid`, then
   `fastPathSign`), and what Luros signs is ad hoc and goes through
-  irisind, never dpkg — on the reporter's iPhone clang was "Bad
+  the installer, never dpkg — on the reporter's iPhone clang was "Bad
   executable" at the self-test.
   It is known by the mark Bootstrap writes in its root, `.thebootstrapped`
   (`.bootstrapped` in its betas), which Dopamine-roothide refuses to
@@ -1374,7 +1386,7 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   `ToolchainTests` and the session host's end-to-end test
   (`Tests/SessionHost/ToolchainEndToEnd.swift`: `luros-environment-harness`,
   the real worker with a fake backend, against the install bridge and a fake
-  irisind); on a device by `Documents/Console/scripts/t1-toolchain-setup.json`,
+  install service); on a device by `Documents/Console/scripts/t1-toolchain-setup.json`,
   `t2-toolchain-remove.json` and `t3-toolchain-side-by-side.json`.
 - **Transfer files** (2026-10-21; `Operations/Transfer.swift`,
   `LurosEnvironment/Transfer/`, `Lurosd/Dispatch/TransferHandler.swift`,
@@ -1398,7 +1410,7 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   (`ToolchainTransfer.exportCopy` in Packages/LurosToolchain: every file
   checked against the toolchain manifest's digest, RootHide's runtime brand
   undone, folders and links as they are), and the importing device packages
-  it for its own bootstrap with `ToolchainPackager`, so what irisind gets is
+  it for its own bootstrap with `ToolchainPackager`, so what the installer gets is
   always built on that device from checked bytes, never a deb's data member
   from elsewhere, and a toolchain moves between rootless and roothide (the
   file records the bootstrap and architecture it came from; the inspection
@@ -4036,12 +4048,12 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   prompt has the agent say what it will open, read or do and wait for the
   user's reply first. Off, those calls go as the mode says. Screenshots
   stay the conversation's rule (2026-10-29).
-- **Install** always packages a deb and hands it to Irisin's daemon. irisind
-  is changed to accept a peer by its entitlement and an executable under the
-  jailbreak root or the system, not by Irisin's own path, and ships in a new
-  Irisin release; Luros depends on that version and installs through it
-  from there on. No CLI, no symlinks into the load directory. Nothing in
-  Luros couples to the `apt` or `dpkg` binaries: both are on their way out.
+- **Install** always packages a deb and hands it to Luros's own installer:
+  `lurosd --installer`, Irisin's installer compiled from source
+  (`Packages/IrisinKit`), started by the session host that approved it. No
+  CLI, no symlinks into the load directory, and no other program's service.
+  Nothing in Luros couples to the `apt` or `dpkg` binaries: both are on their
+  way out.
 - **Reuse before writing**: everything the five sibling apps already do comes
   across — iGhostVT's terminal, log viewing, Fila's binary parsing and its
   file-descriptor editing through the privileged process, Irisin's signing —
@@ -4082,19 +4094,19 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   framework. Templates from OwnGoal's open-source template repositories reach
   the extensions by a file convention, and the app discovers extensions and
   templates at launch.
-- **The two device tools ride inside the app too**: `icli` and `irisind` are
-  committed under `Vendor/` with their digests (`Vendor/README.md`), staged
-  into `Applications/Luros.app/Vendor/`, and the package depends on neither
-  `com.icli.icli` nor `wiki.qaq.irisin`. The bundle's `bin` goes last on every
-  run's `PATH`, behind the bootstrap's own directories, so an `icli` the
-  device installed still wins. `postinst` registers the bundled `irisind`
-  under the label `com.fluoxetine.luros.irisind` with the Mach service irisind
-  serves, and only when no Irisin job is on disk: a device with the real
-  package keeps its daemon, and `prerm`/`postrm` stop and remove only
-  Luros's. `Scripts/check-vendored-tools.py` fails when a binary, the table,
-  the packaging script, the control file or the maintainer scripts stop
-  agreeing. Neither copy reads a resource from the rest of its original
-  package, and both link only system libraries.
+- **The device tool rides inside the app, and the installer is source**:
+  `icli` is committed under `Vendor/` with its digest (`Vendor/README.md`),
+  staged into `Applications/Luros.app/Vendor/`, and the package depends on
+  neither `com.icli.icli` nor `wiki.qaq.irisin`. The bundle's `bin` goes last
+  on every run's `PATH`, behind the bootstrap's own directories, so an `icli`
+  the device installed still wins. The installer Irisin used to be is gone
+  from `Vendor/`: `Packages/IrisinKit` (Irisin's own installer, MIT, pinned in
+  its README) is compiled into `lurosd`, which runs it as `lurosd
+  --installer` — no daemon, no launchd job, no Mach service name. `postinst`
+  and `prerm`/`postrm` only know Luros's own job. `Scripts/check-vendored-tools.py`
+  fails when the binary, its table, the packaging script, the control file or
+  the maintainer scripts stop agreeing, and when an irisind job or binary
+  comes back.
 - **The two agent tool extensions ride inside the app as well**: `assembler`
   and `disassembler` are built by `deb-agent-tools`, and the package carries
   each one's executable and manifest under
@@ -4125,7 +4137,7 @@ Lurosd/                 the daemon, product `lurosd`: main.swift (mode switch), 
                          (listener, WorkLedger, SessionLink), Session/ (SessionHost,
                          TaskRegistry, WorkerSupervisor, CallerPolicy, Approval/, Install/,
                          Files/, Terminal/, ToolHost/, Notice/), Dispatch/ (Dispatcher,
-                         <Domain>Handler.swift), Vendor/ (IrisinExternalClient),
+                         <Domain>Handler.swift),
                          PeerAuthenticator, Spawn, syscalls
 Workers/<Name>/          one tool target each: Environment, Build, Agent, Diagnostics,
                          LogReader (products luros-environment … luros-log-reader)

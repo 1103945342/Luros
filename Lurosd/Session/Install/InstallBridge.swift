@@ -1207,6 +1207,10 @@ actor InstallBridge {
                 }
             }
             if let record = await registry.record(taskID), record.state.isTerminal {
+                // The task was cancelled or stopped: the installer this host
+                // started is ended with it, rather than left running a job
+                // nobody is watching.
+                service.cancel(transaction)
                 throw LurosError(.cancelled, "the task ended")
             }
             try? await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))

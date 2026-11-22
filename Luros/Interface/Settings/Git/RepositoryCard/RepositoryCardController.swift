@@ -104,7 +104,7 @@ final class RepositoryCardController: UIViewController, PHPickerViewControllerDe
         updateCard()
     }
 
-    /// Irisin is a dependency of Luros's, so it is there to take the link.
+    /// Irisin is not a dependency; when it is installed, it takes the link.
     @objc private dynamic func openInIrisin() {
         guard let url = URL(string: RepositoryCard.irisinLink(source: repository.sourceURL)) else { return }
         UIApplication.shared.open(url)

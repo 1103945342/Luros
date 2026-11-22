@@ -1,8 +1,9 @@
 import Foundation
 
-/// The install service as the bridge sees it: irisind's external operations
-/// (Irisin's Documentation/ExternalClients.md). `IrisinInstallService` is the
-/// real one, over the vendored IrisinExternalClient; the harness drives the
+/// The install service as the bridge sees it: one `.deb` installed, one
+/// package removed, a respring, each a transaction this host names and can
+/// read back. `LocalInstallService` is the real one, over the installer this
+/// same executable carries in its `--installer` mode; the harness drives the
 /// bridge with a fake.
 protocol InstallService: Sendable {
     func serviceInfo() async throws -> InstallServiceInfo
@@ -15,6 +16,13 @@ protocol InstallService: Sendable {
         of transaction: UUID,
         after: UInt64,
     ) async throws -> (status: InstallTransactionStatus, events: [InstallTransactionEvent])
+    /// Ends the run a transaction started, when the task it belonged to was
+    /// cancelled. A service that cannot do it leaves the run to finish.
+    func cancel(_ transaction: UUID)
+}
+
+extension InstallService {
+    func cancel(_ transaction: UUID) {}
 }
 
 struct InstallServiceInfo: Equatable, Sendable {

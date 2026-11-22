@@ -238,15 +238,14 @@ for extension in "$repository_root"/Extensions/Development/com.fluoxetine.luros.
 done
 find "$installed_development" -type d -exec chmod 0755 {} +
 find "$installed_development" -type f -exec chmod 0644 {} +
-# The device tools Luros cannot work without ride inside the app as well:
-# icli goes on the PATH every run gets, and the two copies from Irisin are the
-# daemon postinst registers when the device has no Irisin of its own, and the
-# helper that daemon runs to install anything. They are committed under
-# Vendor/ with their digests: the package is built on macOS, where neither
-# package is installed.
+# The device tool Luros cannot work without rides inside the app as well: icli
+# goes on the PATH every run gets. It is committed under Vendor/ with its
+# digest: the package is built on macOS, where the package is not installed.
+# The installer is not a binary here: it is compiled from Packages/IrisinKit
+# into lurosd's installer mode.
 installed_vendor="$installed_app/Vendor"
-mkdir -p "$installed_vendor/bin" "$installed_vendor/libexec"
-for tool in Vendor/bin/icli Vendor/libexec/irisind Vendor/libexec/irisin-install; do
+mkdir -p "$installed_vendor/bin"
+for tool in Vendor/bin/icli; do
     destination="$installed_vendor/${tool#Vendor/}"
     /usr/bin/ditto "$repository_root/$tool" "$destination"
     chmod 0755 "$destination"
@@ -490,14 +489,13 @@ for key in com.fluoxetine.luros.client \
     require_absent "$widget_signed_entitlements" "$key" "$widget_appex"
 done
 
-# The daemon: platform, unsandboxed, the two storage classes, irisind's
-# client key (its session host installs through Irisin), and never Luros's
-# client marker — a daemon that could pass for its own client is an entrance
-# nobody designed.
+# The daemon: platform, unsandboxed, the two storage classes, and never
+# Luros's client marker — a daemon that could pass for its own client is an
+# entrance nobody designed. It installs through its own installer mode, so no
+# other program's service admits it.
 ldid -e "$installed_daemon" >"$daemon_signed_entitlements"
 for key in platform-application \
     com.apple.private.security.no-sandbox \
-    wiki.qaq.irisin.client \
     com.apple.private.security.storage.AppBundles \
     com.apple.private.security.storage.AppDataContainers; do
     require_true "$daemon_signed_entitlements" "$key"
@@ -563,10 +561,10 @@ if dpkg-deb -f "$temporary_deb" Depends Pre-Depends Recommends Suggests | grep -
     echo "error: the IDE must not depend on, recommend or suggest an extension" >&2
     exit 65
 fi
-# The IDE carries icli and irisind inside its own bundle, so it must not depend
-# on either package: a device without them installs in one go.
+# The IDE carries icli inside its own bundle and its installer as source, so it
+# must not depend on either package: a device without them installs in one go.
 if dpkg-deb -f "$temporary_deb" Depends Pre-Depends | grep -qE '(^|[ ,|])(wiki\.qaq\.irisin|com\.icli\.icli)([ ,($|]|$)'; then
-    echo "error: the IDE carries icli and irisind itself and must not depend on either package" >&2
+    echo "error: the IDE carries icli and its own installer and must not depend on either package" >&2
     exit 65
 fi
 contents="$(dpkg-deb --contents "$temporary_deb")"
@@ -578,10 +576,9 @@ for extension in com.fluoxetine.luros.dev.app com.fluoxetine.luros.dev.tweak com
     }
 done
 grep -F ".$install_prefix/Applications/Luros.app/Licenses.json" <<<"$contents" >/dev/null
-# The bundled tools carry no package of their own, so the package that carries
-# them must: a deb without them installs an IDE that can neither drive the
-# device nor install a package.
-for tool in Vendor/bin/icli Vendor/libexec/irisind; do
+# The bundled tool carries no package of its own, so the package that carries
+# it must: a deb without it installs an IDE that cannot drive the device.
+for tool in Vendor/bin/icli; do
     grep -F ".$install_prefix/Applications/Luros.app/$tool" <<<"$contents" >/dev/null || {
         echo "error: the app bundle does not carry $tool" >&2
         exit 65

@@ -8,7 +8,7 @@ import Foundation
 // restart, builds and environment tasks started again after one, the
 // caller policy, the protected-edit rules on a temporary
 // install root, the managed-package rules, the install bridge against a
-// fake irisind, the folders a removed toolchain leaves, the approval
+// fake install service, the folders a removed toolchain leaves, the approval
 // ledger, the deb control reader, the copies a tool call's attachments
 // travel as, one agentOpen of a session at a time, the note that the host
 // restarted, and a real PTY.
@@ -1670,9 +1670,12 @@ try await gitBranchChecks(scratch: scratch, scratchPath: scratchPath)
 appPlacementChecks()
 try await terminalChecks(scratch: scratch, scratchPath: scratchPath)
 
-// MARK: - Install bridge against a fake irisind
+// MARK: - Install bridge against a fake install service
 
-final class FakeIrisin: InstallService, @unchecked Sendable {
+/// The install service the bridge is tested against: a transaction it
+/// answers in place of the installer process, with the same shape of
+/// status and events.
+final class FakeInstallService: InstallService, @unchecked Sendable {
     struct Transaction {
         var kind: String
         var package: String?
@@ -1878,9 +1881,9 @@ final class FakeIrisin: InstallService, @unchecked Sendable {
     }
 }
 
-/// The package database as the fake irisind leaves it.
+/// The package database as the fake install service leaves it.
 struct FakeDatabase: InstalledPackageSource {
-    let irisin: FakeIrisin
+    let irisin: FakeInstallService
     var extra: [String: InstalledPackage] = [:]
 
     func installedPackages() throws -> [String: InstalledPackage] {
@@ -1903,7 +1906,7 @@ struct FakeDatabase: InstalledPackageSource {
 /// The package database's file lists, as a test lays them out.
 struct FakeFileLists: PackageFileLists {
     var lists: [String: [String]] = [:]
-    var irisin: FakeIrisin?
+    var irisin: FakeInstallService?
 
     func written(of packageID: String) -> Date? {
         irisin?.lock.withLock { irisin?.listWritten[packageID] }
@@ -1970,7 +1973,7 @@ do {
     makeDeb(at: deb, package: "com.example.hello", version: "1.0")
     let digest = sha256(deb)
 
-    let irisin = FakeIrisin(root: base)
+    let irisin = FakeInstallService(root: base)
     let registry = TaskRegistry(directory: state.appendingPathComponent("tasks"))
     await registry.load()
     let artifacts = ArtifactRegistry(file: state.appendingPathComponent("artifacts.json"))
@@ -2371,7 +2374,7 @@ do {
     let data = base + "/home/Documents/com.fluoxetine.luros"
     let state = URL(fileURLWithPath: base + "/state")
     try FileManager.default.createDirectory(atPath: data + "/Builds", withIntermediateDirectories: true)
-    let irisin = FakeIrisin(root: base)
+    let irisin = FakeInstallService(root: base)
     let registry = TaskRegistry(directory: state.appendingPathComponent("tasks"))
     await registry.load()
     let artifacts = ArtifactRegistry(file: state.appendingPathComponent("artifacts.json"))

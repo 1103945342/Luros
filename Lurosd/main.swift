@@ -25,6 +25,12 @@ private let installRoot: String = {
     return root.isEmpty ? "/" : root
 }()
 
+if CommandLine.arguments.dropFirst().first == InstallerMode.argument {
+    // One install job as root, spawned by the session host with a job on
+    // standard input and its transcript on standard output.
+    InstallerMode.run(installRoot: installRoot, ownPath: ownPath)
+}
+
 if CommandLine.arguments.dropFirst().first == SessionLink.sessionArgument {
     SessionHost(installRoot: installRoot, ownPath: ownPath).run()
 } else {
