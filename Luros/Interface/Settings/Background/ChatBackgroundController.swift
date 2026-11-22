@@ -5,7 +5,7 @@ import UIKit
 import UniformTypeIdentifiers
 import os
 
-/// Settings ▸ Preferences ▸ Chat Background: the app's own background, one of
+/// Settings ▸ Preferences ▸ Theme: the app's own background, one of
 /// the papers Luros draws, or a picture of the reader's that the chat shows
 /// through by the opacity they pick.
 ///
@@ -23,6 +23,7 @@ final class ChatBackgroundController: TableController {
     private enum Row: Hashable {
         case none
         case paper(ChatBackground.Paper)
+        case image
         case choose
         case opacity
         case remove
@@ -46,7 +47,7 @@ final class ChatBackgroundController: TableController {
 
     init() {
         super.init(style: .insetGrouped)
-        title = String(localized: "Chat Background")
+        title = String(localized: "Theme")
     }
 
     @available(*, unavailable)
@@ -62,23 +63,9 @@ final class ChatBackgroundController: TableController {
         tableView.register(OpacityCell.self, forCellReuseIdentifier: "opacity")
         dataSource.headerTitle = { section in
             switch section {
-            case .papers: String(localized: "Papers")
+            case .papers: String(localized: "Chat Background")
             case .bubbles: String(localized: "Bubbles")
             case .plain, .picture: nil
-            }
-        }
-        dataSource.footerTitle = { section in
-            switch section {
-            case .plain:
-                return nil
-            case .papers:
-                return String(localized: "A paper is drawn by Luros and fills the chat as it is; only a picture of your own can be made see-through.")
-            case .bubbles:
-                return String(localized: "Only your own messages sit on the bubble; replies stay on the paper.")
-            case .picture:
-                return ChatBackground.hasImage
-                    ? String(localized: "Opacity lets the app's colours show through the picture. The picture is copied into Luros's folder and scaled down when it is very large, so it stays after the photo app's temporary file is gone.")
-                    : String(localized: "Choose a picture from your photo library. It is copied into Luros's folder and scaled down when it is very large, so it stays after the photo app's temporary file is gone.")
             }
         }
         updateRows()
@@ -109,20 +96,30 @@ final class ChatBackgroundController: TableController {
                 )
             }),
         ]
-        var picture: [RowContent] = [
-            RowContent(
-                row: .choose,
-                title: ChatBackground.hasImage
-                    ? String(localized: "Replace Image")
-                    : String(localized: "Choose Image"),
+        let hasImage = ChatBackground.hasImage
+        let picturePreview = hasImage
+            ? ChatBackgroundView.picturePreview(size: CGSize(width: 44, height: 44))
+            : nil
+        var picture: [RowContent] = []
+        if hasImage {
+            picture.append(RowContent(
+                row: .image,
+                title: String(localized: "Image"),
                 detail: nil,
-                selected: false,
-                preview: ChatBackground.hasImage
-                    ? ChatBackgroundView.picturePreview(size: CGSize(width: 44, height: 44))
-                    : nil,
-            ),
-        ]
-        if ChatBackground.hasImage {
+                selected: current == .image,
+                preview: picturePreview,
+            ))
+        }
+        picture.append(RowContent(
+            row: .choose,
+            title: hasImage
+                ? String(localized: "Replace Image")
+                : String(localized: "Choose Image"),
+            detail: nil,
+            selected: false,
+            preview: picturePreview,
+        ))
+        if hasImage {
             picture.append(RowContent(
                 row: .opacity,
                 title: String(localized: "Opacity"),
@@ -176,7 +173,7 @@ final class ChatBackgroundController: TableController {
         }
         cell.contentConfiguration = content
         switch value.row {
-        case .none, .paper, .bubble:
+        case .none, .paper, .image, .bubble:
             cell.accessoryType = value.selected ? .checkmark : .none
             cell.selectionStyle = .default
             cell.accessibilityTraits = value.selected ? [.button, .selected] : [.button]
@@ -206,13 +203,20 @@ final class ChatBackgroundController: TableController {
         case let .paper(paper):
             ChatBackground.current = .paper(paper)
             updateRows()
+        case .image:
+            ChatBackground.current = .image
+            updateRows()
         case .choose:
             choosePicture()
         case .opacity:
             break
         case let .bubble(style):
-            ChatBubbleStyle.current = style
-            updateRows()
+            if style == .custom {
+                chooseBubbleColor()
+            } else {
+                ChatBubbleStyle.current = style
+                updateRows()
+            }
         case .remove:
             confirmRemoval()
         }
@@ -226,6 +230,14 @@ final class ChatBackgroundController: TableController {
         configuration.selectionLimit = 1
         let picker = PHPickerViewController(configuration: configuration)
         picker.delegate = self
+        present(picker, animated: true)
+    }
+
+    @objc private dynamic func chooseBubbleColor() {
+        let picker = UIColorPickerViewController()
+        picker.delegate = self
+        picker.selectedColor = ChatBubbleStyle.customColor
+        picker.supportsAlpha = false
         present(picker, animated: true)
     }
 
@@ -333,6 +345,18 @@ extension ChatBackgroundController: PHPickerViewControllerDelegate {
                 continuation.resume(returning: object as? UIImage)
             }
         }
+    }
+}
+
+extension ChatBackgroundController: UIColorPickerViewControllerDelegate {
+    func colorPickerViewControllerDidSelectColor(_ viewController: UIColorPickerViewController) {
+        ChatBubbleStyle.customColor = viewController.selectedColor
+        ChatBubbleStyle.current = .custom
+        updateRows()
+    }
+
+    func colorPickerViewControllerDidFinish(_: UIColorPickerViewController) {
+        updateRows()
     }
 }
 

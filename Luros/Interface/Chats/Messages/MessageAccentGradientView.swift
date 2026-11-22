@@ -8,8 +8,9 @@ import UIKit
 /// so a row out of the pool would slide its ground from the size its
 /// previous message left it at.
 ///
-/// The ground itself is `ChatBubbleStyle`: five washes, one of which follows
-/// the app's tint. The style is read when the view is drawn, and again when
+/// The ground itself is `ChatBubbleStyle`: presets plus the reader's own
+/// colour, and one preset follows the app's tint. The style is read when the
+/// view is drawn, and again when
 /// the reader picks another one, so the transcript changes without being
 /// rebuilt.
 final class MessageAccentGradientView: UIView {
@@ -65,6 +66,7 @@ final class MessageAccentGradientView: UIView {
         let skin = ChatBubbleStyle.current.colours(
             dark: traitCollection.userInterfaceStyle == .dark,
             accent: tintColor.resolvedColor(with: traitCollection),
+            custom: ChatBubbleStyle.customColor,
         )
         gradient.colors = skin.fill.map(\.cgColor)
         // A message from another channel keeps its green edge, whatever the

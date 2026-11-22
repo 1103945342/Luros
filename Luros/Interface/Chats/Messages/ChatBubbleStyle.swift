@@ -16,8 +16,10 @@ enum ChatBubbleStyle: String, CaseIterable {
     case outline
     /// Warm brown, at a strength that reads as kraft rather than as a tint.
     case kraft
-    /// Cool ink, barely there: the quietest of the five.
+    /// Cool ink, barely there: the quietest preset.
     case inkWash
+    /// A colour the reader picks; its stored value is the ground's tint.
+    case custom
 
     var title: String {
         switch self {
@@ -26,6 +28,7 @@ enum ChatBubbleStyle: String, CaseIterable {
         case .outline: String(localized: "Outline")
         case .kraft: String(localized: "Kraft")
         case .inkWash: String(localized: "Ink Wash")
+        case .custom: String(localized: "Custom Color")
         }
     }
 
@@ -34,6 +37,7 @@ enum ChatBubbleStyle: String, CaseIterable {
     static let changed = Notification.Name("com.fluoxetine.luros.chatBubbleStyleChanged")
 
     private static let key = "chat.bubbleStyle"
+    private static let customColorKey = "chat.bubbleCustomColor"
 
     static var current: ChatBubbleStyle {
         get {
@@ -46,11 +50,39 @@ enum ChatBubbleStyle: String, CaseIterable {
         }
     }
 
+    /// The reader's own bubble colour, kept as four components so it survives
+    /// a relaunch without an archive or a named colour.
+    static var customColor: UIColor {
+        get {
+            guard let values = UserDefaults.standard.array(forKey: customColorKey) as? [NSNumber],
+                  values.count == 4
+            else { return .systemBlue }
+            return UIColor(
+                red: CGFloat(values[0].doubleValue),
+                green: CGFloat(values[1].doubleValue),
+                blue: CGFloat(values[2].doubleValue),
+                alpha: CGFloat(values[3].doubleValue),
+            )
+        }
+        set {
+            var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 1
+            let resolved = newValue.resolvedColor(with: UITraitCollection.current)
+            guard resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
+                return
+            }
+            UserDefaults.standard.set(
+                [Double(red), Double(green), Double(blue), Double(alpha)],
+                forKey: customColorKey,
+            )
+            NotificationCenter.default.post(name: changed, object: nil)
+        }
+    }
+
     // MARK: - The ground
 
     /// The two stops of the ground and the edge drawn round it. `accent` is
     /// the app's tint, which the `tinted` style follows; the others ignore it.
-    func colours(dark: Bool, accent: UIColor) -> (fill: [UIColor], border: UIColor?, width: CGFloat) {
+    func colours(dark: Bool, accent: UIColor, custom: UIColor? = nil) -> (fill: [UIColor], border: UIColor?, width: CGFloat) {
         switch self {
         case .tinted:
             // The wash of the accent, edged so it reads on a paper of any
@@ -80,6 +112,13 @@ enum ChatBubbleStyle: String, CaseIterable {
             return dark
                 ? ([Self.white(0.05), Self.white(0.09)], Self.white(0.10), 1)
                 : ([Self.rgb(0x0F1720, alpha: 0.05), Self.rgb(0x0F1720, alpha: 0.09)], Self.rgb(0x0F1720, alpha: 0.10), 1)
+        case .custom:
+            let colour = (custom ?? Self.customColor).resolvedColor(with: UITraitCollection.current)
+            return (
+                [colour.withAlphaComponent(dark ? 0.30 : 0.20), colour.withAlphaComponent(dark ? 0.40 : 0.28)],
+                colour.withAlphaComponent(dark ? 0.55 : 0.38),
+                1,
+            )
         }
     }
 
@@ -90,6 +129,7 @@ enum ChatBubbleStyle: String, CaseIterable {
         let skin = colours(
             dark: dark,
             accent: accent.resolvedColor(with: traits),
+            custom: Self.customColor,
         )
         let format = UIGraphicsImageRendererFormat.preferred()
         return UIGraphicsImageRenderer(size: size, format: format).image { context in

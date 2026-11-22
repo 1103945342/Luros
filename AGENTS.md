@@ -2706,15 +2706,13 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   then the rest under Sign In with an Account and API Keys, searchable)
   signs in to every login kwwk offers, plus DeepSeek. API-key fields use native inset
   grouped sections, with Fetch Models in the navigation bar. Setup stores
-  the key and gets the endpoint's model list before model selection; no
+  the key and opens model selection while the endpoint's list loads; no
   arbitrary default model is probed. The selection page allows custom IDs
   only for API-key accounts. A trailing swipe removes an API model locally;
   saved hidden IDs keep it out of later discovery, and adding the ID again
   restores it. Custom IDs, hidden IDs and enabled IDs commit together on
-  Save. Save probes every selected ID in the account
-  worker before changing the device's enabled list; a long press offers
-  Save Without Verification. A failure preserves the selection. These
-  validation tasks use the existing sign-in task lifetime and cancellation.
+  Save. Saving API-key models is local: neither a catalog response nor a
+  successful model probe is required.
   `ProviderProgress` uses AlertController's progress view for discovery and
   the existing AlertController-backed ProgressCard for cancellable work;
   Cancel stops both the UI task and backend task. Both dismiss before success.

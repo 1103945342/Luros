@@ -42,7 +42,7 @@ final class SidebarWorkspacesController: UIViewController {
 
     private let tableView = FirstFillTableView(frame: .zero, style: .insetGrouped).then {
         $0.backgroundColor = .clear
-        $0.register(UITableViewCell.self, forCellReuseIdentifier: "workspace")
+        $0.register(SidebarGlassCell.self, forCellReuseIdentifier: "workspace")
         $0.selectionFollowsFocus = false
         // No empty state: General Chat is always here, so the list is never
         // empty, and a sentence under a full list is only noise.
@@ -158,7 +158,6 @@ final class SidebarWorkspacesController: UIViewController {
         // A row the reader can act on from a long press; the swipes carry
         // the two destructive ones.
         cell.accessibilityValue = cell.accessoryView?.accessibilityLabel
-        cell.useGlassSidebarRow()
     }
 
     /// How many of the workspace's conversations are working, as aimini's

@@ -2,7 +2,7 @@ import UIKit
 
 /// A row is one accessible element; its disclosure has a matching custom
 /// action, so grouping the labels never hides the ability to expand it.
-final class SidebarTreeCell: UITableViewCell {
+final class SidebarTreeCell: SidebarGlassCell {
     private let nameLabel = UILabel()
     private let numberLabel = UILabel()
     private let disclosure = UIButton(type: .system)

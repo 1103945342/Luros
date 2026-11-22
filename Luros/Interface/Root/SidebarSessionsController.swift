@@ -113,7 +113,6 @@ final class SidebarSessionsController: UIViewController {
         }
         cell.configure(row: row, summary: summary, title: title)
         cell.onToggle = { [weak self] in self?.toggle(item) }
-        cell.useGlassSidebarRow()
         return cell
     }.then {
         $0.sectionTitle = { Self.title(for: $0) }

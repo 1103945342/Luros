@@ -144,27 +144,43 @@ private final class MetalHost: UIView {
     override class var layerClass: AnyClass { CAMetalLayer.self }
 }
 
-extension UITableViewCell {
-    /// A row of a sidebar's list as a pane of the drawer's glass rather than a
-    /// white card: the row itself keeps no ground, so the wallpaper behind the
-    /// drawer reads through the list, and a picked row wears the light ring
-    /// `SidebarFocusGlow` runs round it.
-    func useGlassSidebarRow() {
-        backgroundColor = .clear
+class SidebarGlassCell: UITableViewCell {
+    private var glow: SidebarFocusGlow?
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        isOpaque = false
+        contentView.isOpaque = false
+        automaticallyUpdatesBackgroundConfiguration = false
         backgroundConfiguration = .clear()
-        selectionStyle = .default
-        guard selectedBackgroundView == nil else { return }
-        selectedBackgroundView = SidebarFocusGlow()
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // contentConfiguration may replace contentView. Attach to the cell itself.
+        if isSelected || isHighlighted || isFocused {
+            let ring = glow ?? SidebarFocusGlow()
+            glow = ring
+            if ring.superview !== self { addSubview(ring) }
+            bringSubviewToFront(ring)
+            ring.frame = bounds
+        } else {
+            glow?.removeFromSuperview()
+        }
+    }
+
+    override func updateConfiguration(using state: UICellConfigurationState) {
+        super.updateConfiguration(using: state)
+        setNeedsLayout()
     }
 }
 
-/// The ring a picked sidebar row wears: light running round its edge, in a
-/// colour the wallpaper gave, with the inside left open so the row under it
-/// reads exactly as it did. A ring rather than a fill, because a fill laid
-/// over the glass turns into the grey band a picked row used to be.
+/// Two solid strokes on one closed path keep the outline visible on mixed wallpapers.
 final class SidebarFocusGlow: UIView {
-    private let sweep = CAGradientLayer()
     private let ring = CAShapeLayer()
+    private let keyline = CAShapeLayer()
     private var observer: NSObjectProtocol?
 
     override init(frame: CGRect) {
@@ -172,17 +188,11 @@ final class SidebarFocusGlow: UIView {
         isUserInteractionEnabled = false
         isAccessibilityElement = false
         backgroundColor = .clear
-        layer.cornerRadius = 10
-        layer.cornerCurve = .continuous
-        sweep.type = .conic
-        sweep.startPoint = CGPoint(x: 0.5, y: 0.5)
-        sweep.endPoint = CGPoint(x: 0.5, y: 0)
-        sweep.locations = [0, 0.40, 0.5, 0.60, 1]
-        layer.addSublayer(sweep)
-        ring.fillColor = UIColor.clear.cgColor
+        ring.fillColor = nil
         ring.lineWidth = 2
-        ring.lineCap = .round
-        layer.mask = ring
+        keyline.fillColor = nil
+        layer.addSublayer(keyline)
+        layer.addSublayer(ring)
         reloadColors()
         observer = NotificationCenter.default.addObserver(
             forName: ChatBackground.changed,
@@ -206,35 +216,17 @@ final class SidebarFocusGlow: UIView {
         super.layoutSubviews()
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        // Square and larger than the row, so the ring's light keeps covering
-        // it however far round it has turned.
-        let side = max(bounds.width, bounds.height) * 1.6
-        sweep.bounds = CGRect(x: 0, y: 0, width: side, height: side)
-        sweep.position = CGPoint(x: bounds.midX, y: bounds.midY)
-        let edge = UIBezierPath(
-            roundedRect: bounds.insetBy(dx: 1, dy: 1),
-            cornerRadius: max(0, layer.cornerRadius - 1),
-        ).cgPath
+        let pixel = 1 / max(1, traitCollection.displayScale)
+        // Leave room for the grouped section's corner clip and the row separator.
+        let rect = bounds.insetBy(dx: 8, dy: 4)
+        let radius = min(14, min(rect.width, rect.height) / 2)
+        let edge = radius > 0 ? CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil) : nil
+        keyline.frame = bounds
+        keyline.path = edge
+        keyline.lineWidth = ring.lineWidth + 2 * pixel
         ring.frame = bounds
         ring.path = edge
         CATransaction.commit()
-    }
-
-    override func didMoveToWindow() {
-        super.didMoveToWindow()
-        if window == nil {
-            sweep.removeAnimation(forKey: "flow")
-            return
-        }
-        setNeedsLayout()
-        guard sweep.animation(forKey: "flow") == nil else { return }
-        let flow = CABasicAnimation(keyPath: "transform.rotation.z")
-        flow.fromValue = 0
-        flow.toValue = Double.pi * 2
-        flow.duration = 2.6
-        flow.repeatCount = .infinity
-        flow.isRemovedOnCompletion = false
-        sweep.add(flow, forKey: "flow")
     }
 
     override func traitCollectionDidChange(_ previous: UITraitCollection?) {
@@ -244,40 +236,37 @@ final class SidebarFocusGlow: UIView {
         }
     }
 
-    /// The colour the ring runs in: the wallpaper's own, so a picked row
-    /// belongs to the sheet behind the drawer rather than to the system's blue.
-    private static func tint(traits: UITraitCollection) -> UIColor {
+    private func reloadColors() {
+        let traits = traitCollection
+        let base = UIColor.systemBackground.resolvedColor(with: traits)
+        let tint: UIColor
+        let opacity: CGFloat
         switch ChatBackground.current {
         case .image:
-            ChatBackgroundView.topTint() ?? UIColor.systemBlue
+            tint = ChatBackgroundView.pictureTint() ?? base
+            opacity = ChatBackground.opacity
         case let .paper(paper):
-            ChatBackgroundView.base(paper, traits: traits)
+            tint = ChatBackgroundView.base(paper, traits: traits)
+            opacity = 1
         case .none:
-            UIColor.systemBlue
+            tint = base
+            opacity = 1
         }
-    }
-
-    private func reloadColors() {
-        let tint = Self.tint(traits: traitCollection)
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        tint.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        // The light that runs round the ring: the wallpaper's colour, lifted
-        // towards white where the sweep's head is.
-        let head = UIColor(
-            red: min(1, red + 0.55),
-            green: min(1, green + 0.45),
-            blue: min(1, blue + 0.35),
-            alpha: 1,
-        )
-        sweep.colors = [
-            tint.withAlphaComponent(0).cgColor,
-            tint.withAlphaComponent(0.55).cgColor,
-            head.withAlphaComponent(0.95).cgColor,
-            tint.withAlphaComponent(0.55).cgColor,
-            tint.withAlphaComponent(0).cgColor,
-        ]
+        func rgb(_ color: UIColor) -> (CGFloat, CGFloat, CGFloat) {
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            color.resolvedColor(with: traits).getRed(&r, green: &g, blue: &b, alpha: &a)
+            return (r, g, b)
+        }
+        let (r, g, b) = rgb(tint), (br, bg, bb) = rgb(base)
+        func linear(_ channel: CGFloat, over ground: CGFloat) -> CGFloat {
+            let c = channel * opacity + ground * (1 - opacity)
+            return c <= 0.04045 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4)
+        }
+        let luminance = 0.2126 * linear(r, over: br) + 0.7152 * linear(g, over: bg) + 0.0722 * linear(b, over: bb)
+        let darkInk = (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05)
+        let ink: UIColor = darkInk ? .black : .white
+        // An opposite hairline keeps the edge visible over mixed patches in photos.
+        keyline.strokeColor = (darkInk ? UIColor.white : UIColor.black).withAlphaComponent(0.85).cgColor
+        ring.strokeColor = ink.cgColor
     }
 }

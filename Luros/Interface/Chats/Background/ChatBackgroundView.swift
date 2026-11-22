@@ -71,6 +71,7 @@ final class ChatBackgroundView: UIView {
     /// time it comes back on screen.
     private static var cachedPicture: UIImage?
     private static var cachedStamp: Date?
+    private static var cachedPictureTint: UIColor?
 
     static func picture() -> UIImage? {
         let url = ChatBackground.imageURL
@@ -81,6 +82,7 @@ final class ChatBackgroundView: UIView {
         let loaded = UIImage(contentsOfFile: url.path)
         cachedPicture = loaded
         cachedStamp = stamp
+        cachedPictureTint = nil
         return loaded
     }
 
@@ -125,6 +127,17 @@ final class ChatBackgroundView: UIView {
         guard let top = cg.cropping(to: CGRect(x: 0, y: 0, width: cg.width, height: band)) else {
             return nil
         }
+        return averageTint(top)
+    }
+
+    static func pictureTint() -> UIColor? {
+        guard let cg = picture()?.cgImage else { return nil }
+        if let cachedPictureTint { return cachedPictureTint }
+        cachedPictureTint = averageTint(cg)
+        return cachedPictureTint
+    }
+
+    private static func averageTint(_ image: CGImage) -> UIColor? {
         var pixel = [UInt8](repeating: 0, count: 4)
         guard let context = CGContext(
             data: &pixel,
@@ -136,7 +149,7 @@ final class ChatBackgroundView: UIView {
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue,
         ) else { return nil }
         context.interpolationQuality = .medium
-        context.draw(top, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+        context.draw(image, in: CGRect(x: 0, y: 0, width: 1, height: 1))
         return UIColor(
             red: CGFloat(pixel[0]) / 255,
             green: CGFloat(pixel[1]) / 255,

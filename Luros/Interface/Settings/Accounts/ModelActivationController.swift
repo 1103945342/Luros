@@ -38,15 +38,9 @@ final class ModelActivationController: TableController, UISearchResultsUpdating 
         super.viewDidLoad()
         title = String(localized: "Enable Models")
         navigationItem.largeTitleDisplayMode = .never
-        let menu = usesAPIKey
-            ? UIMenu(children: [UIAction(title: String(localized: "Save Without Verification")) { [weak self] _ in
-                self?.save(verify: false)
-            }])
-            : nil
         let save = UIBarButtonItem(
             title: String(localized: "Save"),
             primaryAction: UIAction { [weak self] _ in self?.save() },
-            menu: menu,
         )
         if usesAPIKey {
             let add = UIBarButtonItem(
@@ -96,18 +90,20 @@ final class ModelActivationController: TableController, UISearchResultsUpdating 
         guard usesAPIKey, loader == nil else { return }
         dataSource.beginLoad()
         loader = Task { [weak self] in
-            guard let self else { return }
             do {
-                let fetched = try await ProviderProgress.run(title: "Fetching Models", from: self) {
-                    try await LurosService.app.agentModelList(provider: self.account.provider).models
-                }
+                guard let provider = self?.account.provider else { return }
+                let fetched = try await LurosService.app.agentModelList(provider: provider).models
+                guard let self, !Task.isCancelled else { return }
                 models = Array(Set(fetched).union(custom).union(selected).subtracting(hidden)).sorted()
                 updateSearchResults(for: search)
             } catch {
-                presentNotice(title: "Unable to Fetch Models", message: error.readableMessage)
+                guard !Task.isCancelled else { return }
+                self?.navigationItem.prompt = String(localized: "Unable to Fetch Models")
             }
         }
     }
+
+    deinit { loader?.cancel() }
 
     @objc dynamic func updateSearchResults(for searchController: UISearchController) {
         let query = (searchController.searchBar.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -190,10 +186,11 @@ final class ModelActivationController: TableController, UISearchResultsUpdating 
         present(alert, animated: true)
     }
 
-    @objc private dynamic func save(verify: Bool = true) {
+    @objc private dynamic func save() {
         guard !saving else { return }
-        guard usesAPIKey && verify || account.provider == .githubCopilot,
-              !selected.isEmpty
+        // Only Copilot OAuth needs a provider-side policy opt-in. An API key's
+        // model selection is local, even if its catalog is currently offline.
+        guard !usesAPIKey, account.provider == .githubCopilot, !selected.isEmpty
         else { finishSaving(); return }
         saving = true
         navigationController?.isModalInPresentation = true
@@ -210,8 +207,7 @@ final class ModelActivationController: TableController, UISearchResultsUpdating 
             }
             do {
                 try await ProviderProgress.run(
-                    title: usesAPIKey ? "Verifying Models" : "Enabling Models",
-                    message: "Waiting for a response from each selected model…",
+                    title: "Enabling Models",
                     from: self,
                     cancel: { [weak self] in
                         if let handle = self?.verification {
@@ -250,7 +246,7 @@ final class ModelActivationController: TableController, UISearchResultsUpdating 
                 finishSaving()
             } catch {
                 if !(error is CancellationError) {
-                    presentNotice(title: "Unable to Verify Models", message: error.readableMessage)
+                    presentNotice(title: "Unable to Save", message: error.readableMessage)
                 }
             }
         }

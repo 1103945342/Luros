@@ -92,7 +92,6 @@ final class SidebarFilesController: UIViewController {
         tableView: tableView,
     ) { [unowned self] tableView, indexPath, path in
         let cell = tableView.dequeueReusableCell(withIdentifier: "file", for: indexPath) as! SidebarFileCell
-        cell.useGlassSidebarRow()
         let file = rows.first { $0.relativePath == path }
         // A content hit says where in the file the text is, under its name.
         let hit = contentHitsByPath[path]
@@ -581,7 +580,7 @@ private extension ProjectFiles.NameProblem {
 /// One row of the file list: the icon and the name indented by how deep the
 /// row sits, a line for every folder above it, and — for a folder — whether
 /// it is open.
-final class SidebarFileCell: UITableViewCell {
+final class SidebarFileCell: SidebarGlassCell {
     private let guides = FileGuideLinesView()
 
     private let icon = UIImageView().then {
@@ -627,9 +626,6 @@ final class SidebarFileCell: UITableViewCell {
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        // A file row is a pane of the drawer's glass too, so the wallpaper
-        // reads through the tree instead of a white card covering it.
-        useGlassSidebarRow()
         // The lines go under everything the row shows.
         contentView.addSubview(guides)
         contentView.addSubview(chevron)

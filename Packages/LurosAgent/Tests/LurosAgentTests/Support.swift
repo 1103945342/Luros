@@ -1,4 +1,6 @@
 @testable import LurosAgent
+import struct LurosProtocol.AgentDelegationRequest
+import struct LurosProtocol.AgentDelegationResponse
 import struct LurosProtocol.LurosError
 import struct LurosProtocol.GitBranchComparison
 import struct LurosProtocol.GitCommitSummary
