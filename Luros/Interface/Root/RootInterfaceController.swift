@@ -191,10 +191,6 @@ final class RootInterfaceController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .panelBackground
-        // What the reader chose, at the lowest layer: the sidebar and the
-        // detail column leave their ground open over it, and nothing shows
-        // where nothing was chosen.
-        AppBackgroundView.install(in: view)
         Task { await chatRuntime.load(keeping: Self.savedChatID) }
         NotificationCenter.default.addObserver(
             self,

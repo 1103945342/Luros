@@ -41,21 +41,4 @@ class TableController: UITableViewController {
         table.delegate = self
         tableView = table
     }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // A page drawn over the app's background — a sheet's page: the table
-        // leaves the ground to it, so the rows sit on what the reader chose
-        // instead of on a sheet of system grey that hides it.
-        if navigationController?.view.subviews.contains(where: { $0 is AppBackgroundView }) == true {
-            leaveTableGroundOpen()
-        }
-    }
-
-    /// A page drawn on the app's background leaves its table's ground open. A
-    /// subclass whose table paints a ground of its own overrides this to keep
-    /// it.
-    func leaveTableGroundOpen() {
-        tableView.backgroundColor = .clear
-    }
 }

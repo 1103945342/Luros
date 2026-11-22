@@ -182,12 +182,6 @@ class ComposerView: ComposerSectionView {
 
         // Last, so it sees touches that no control above it took.
         installFocusTap()
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(appearanceChanged),
-            name: ChatBackground.changed,
-            object: nil,
-        )
 
         heightPublisher
             .removeDuplicates()
@@ -540,25 +534,15 @@ class ComposerView: ComposerSectionView {
         dropColorView.backgroundColor = tintColor.withAlphaComponent(0.05)
     }
 
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        applyShadowStyle()
-    }
-
-    /// The reader chose another background: the card takes its colour again.
-    @objc dynamic private func appearanceChanged() {
-        applyShadowStyle()
-    }
-
-    /// The ground under the composer's bands: glass on iOS 26, a card with a
-    /// soft shadow before it.
+    /// The ground under the composer's bands: glass on iOS 26, a white card
+    /// with a soft shadow before it.
     private func applyShadowStyle() {
         if let glassEffectView {
             shadowContainer.backgroundColor = .clear
             shadowContainer.layer.shadowOpacity = 0
             glassEffectView.isHidden = false
         } else {
-            shadowContainer.backgroundColor = ChatBackground.surface(traits: traitCollection, fallback: handlerColor)
+            shadowContainer.backgroundColor = handlerColor
             shadowContainer.layer.shadowColor = UIColor.black.cgColor
             shadowContainer.layer.shadowOpacity = 0.08
             shadowContainer.layer.shadowRadius = 8

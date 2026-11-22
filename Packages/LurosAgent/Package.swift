@@ -95,9 +95,6 @@ let package = Package(
                 .product(name: "KWWKAgent", package: "kwwk"),
                 .product(name: "KWWKAI", package: "kwwk"),
                 .product(name: "LurosToolCore", package: "LurosToolHost"),
-                // The levels a catalog entry offers, named where a test reads
-                // them back.
-                .product(name: "LurosProtocol", package: "LurosKit"),
             ],
             path: "Tests/LurosAgentTests",
         ),

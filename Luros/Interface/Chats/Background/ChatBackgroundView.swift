@@ -6,7 +6,7 @@ import UIKit
 ///
 /// It never takes a touch: everything above it — the message list, the
 /// composer — keeps working as if it were the app's background.
-class ChatBackgroundView: UIView {
+final class ChatBackgroundView: UIView {
     /// What to draw.
     var background: ChatBackground = .none {
         didSet { apply() }
@@ -116,15 +116,13 @@ class ChatBackgroundView: UIView {
         PaperBackgroundView.base(paper, traits: traits)
     }
 
-    /// The colour the reader's picture shows across a band of it, one averaged
-    /// pixel: the top band, where the chat's bar frost sits, or the bottom one,
-    /// where the composer and its panels stand. A surface over the picture takes
-    /// its colour rather than a white or black sheet.
-    static func tint(_ band: ChatBackground.Band) -> UIColor? {
+    /// The colour the reader's picture shows across its top band, where the
+    /// bar's frost sits: one averaged pixel, so the bar takes the picture's
+    /// colour instead of a white or black sheet over it.
+    static func topTint() -> UIColor? {
         guard let image = picture(), let cg = image.cgImage else { return nil }
-        let height = max(1, cg.height / 8)
-        let y = band == .top ? 0 : max(0, cg.height - height)
-        guard let slice = cg.cropping(to: CGRect(x: 0, y: y, width: cg.width, height: height)) else {
+        let band = max(1, cg.height / 8)
+        guard let top = cg.cropping(to: CGRect(x: 0, y: 0, width: cg.width, height: band)) else {
             return nil
         }
         var pixel = [UInt8](repeating: 0, count: 4)
@@ -138,18 +136,12 @@ class ChatBackgroundView: UIView {
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue,
         ) else { return nil }
         context.interpolationQuality = .medium
-        context.draw(slice, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+        context.draw(top, in: CGRect(x: 0, y: 0, width: 1, height: 1))
         return UIColor(
             red: CGFloat(pixel[0]) / 255,
             green: CGFloat(pixel[1]) / 255,
             blue: CGFloat(pixel[2]) / 255,
             alpha: 1,
         )
-    }
-
-    /// The colour the reader's picture shows across its top band, where the
-    /// bar's frost sits.
-    static func topTint() -> UIColor? {
-        tint(.top)
     }
 }

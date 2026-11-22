@@ -6,8 +6,7 @@ import UIKit
 final class NothingSelectedController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
-        // The app's background shows where nothing is picked yet.
-        view.backgroundColor = .clear
+        view.backgroundColor = .pageBackground
 
         let icon = AppIconView()
         // the app, named once; the picture says nothing more

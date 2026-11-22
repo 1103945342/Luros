@@ -51,10 +51,7 @@ final class GitDiffPage: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // The app's background under the diff: its own sheets of colour are
-        // the added and removed lines, not the page.
-        view.backgroundColor = .clear
-        AppBackgroundView.install(in: view)
+        view.backgroundColor = GitTheme.pageBackground
         navigationController?.setNavigationBarHidden(true, animated: false)
         buildTopBar()
         buildBody()
