@@ -65,6 +65,10 @@ below need them.
   descriptor 3 and its transcript on standard output, in a session of its own.
 - `IrisinWire.transactionsPath` and `installerLogPath` are Luros's; Irisin's
   own paths are never read or written.
+- libarchive is pinned to `1.0.0`, the revision `Licenses/review.json`
+  records. Raising it changes the binary artifact, and `collect-licenses`
+  refuses a pin nobody reviewed: update that review, and the rows in
+  `Licenses/Compatibility.md`, in the same change.
 - A Swift 6 compiler is needed: `IrisinProtocol/Process/ProcessSpawn.swift`
   uses typed throws (`throws(Failure)`). Every other file here parses with
   Swift 5.10, which is what an on-device check can reach.

@@ -21,9 +21,9 @@ let package = Package(
     ],
     dependencies: [
         // The libarchive LurosKit and LurosFormats already name (ArchiveKit),
-        // here for `IrisinPreparation`: the same package, so the installer
-        // gains no second copy.
-        .package(url: "https://github.com/Lakr233/libarchive.xcframework.git", from: "1.0.1"),
+        // here for `IrisinPreparation`: the same package at the reviewed pin
+        // (1.0.0, `Licenses/review.json`), so the app links one copy of it.
+        .package(url: "https://github.com/Lakr233/libarchive.xcframework.git", from: "1.0.0"),
     ],
     targets: [
         // libSystem's spawn calls, which the SDK headers mark unavailable for
