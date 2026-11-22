@@ -137,14 +137,21 @@ jobs:
           { echo '```'; grep -E "error:" "$log" | head -60; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           grep -E "error:" "$log" | head -40 || true
 
+      # The package an install takes, by the name the build gave it: the agent
+      # tool extensions' own packages were built beside it for the package
+      # repository, and nobody downloads those to try the IDE.
+      - name: The package to keep
+        id: package
+        if: always()
+        shell: bash
+        run: echo "path=$(make -s print-deb-path 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
+
       - name: Keep the package artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: luros-${{ github.event.inputs.bootstrap || 'roothide' }}-${{ github.sha }}
-          path: |
-            build/Packages/*.deb
-            build/Packages/SHA256SUMS
+          path: ${{ steps.package.outputs.path }}
           if-no-files-found: ignore
           retention-days: 30
 

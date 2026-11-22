@@ -241,7 +241,9 @@ the same executable in session mode; the workers are its children.
   starts `ci.yml` on that commit, which compiles, packages and verifies both
   layouts and keeps `build/Packages/` as the artifact `luros-<sha>` for thirty
   days; a branch push starts nothing, and `Debug build` packages `main` only
-  as a try-out artifact that publishes nothing. `release.yml` runs on the
+  as a try-out artifact that publishes nothing, and keeps the one `.deb` the
+  IDE installs itself from — the agent tool packages built beside it stay on
+  the runner. `release.yml` runs on the
   tag, compiles nothing, waits for that commit's CI run, refuses to publish
   unless it passed, and ships the bytes CI verified. Never build a second
   time to publish: a second build is a different build number, a different
