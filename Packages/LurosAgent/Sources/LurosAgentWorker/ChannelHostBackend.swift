@@ -420,6 +420,7 @@ public struct ChannelHostBackend: AgentHostBackend {
             installationID: result?.installationID,
             packageID: result?.packageID ?? "",
             version: result?.version ?? "",
+            projectID: result?.projectID,
             succeeded: end.state == .succeeded,
             message: end.message ?? "",
             conflicts: conflicts.isEmpty ? nil : conflicts,

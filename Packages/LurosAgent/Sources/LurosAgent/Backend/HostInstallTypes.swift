@@ -30,6 +30,10 @@ public struct InstallResponse: Sendable, Hashable, Codable {
     public var installationID: String?
     public var packageID: String
     public var version: String
+    /// The project whose build the package was, as the host recorded the
+    /// artifact; nil for a file the app handed over and for a package no
+    /// build of this device made.
+    public var projectID: String?
     public var succeeded: Bool
     public var message: String
     /// When the installer refused it: each installed package in the way,
@@ -46,6 +50,7 @@ public struct InstallResponse: Sendable, Hashable, Codable {
         installationID: String?,
         packageID: String,
         version: String,
+        projectID: String? = nil,
         succeeded: Bool,
         message: String = "",
         conflicts: [InstallConflict]? = nil,
@@ -55,6 +60,7 @@ public struct InstallResponse: Sendable, Hashable, Codable {
         self.installationID = installationID
         self.packageID = packageID
         self.version = version
+        self.projectID = projectID
         self.succeeded = succeeded
         self.message = message
         self.conflicts = conflicts
