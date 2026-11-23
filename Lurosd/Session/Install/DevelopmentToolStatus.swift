@@ -2,36 +2,35 @@ import LurosProtocol
 import Foundation
 
 /// The programs that building, installing and talking to this device may
-/// need, and whether this device has each: the program must be an executable
-/// in `usr/bin`, and the package that carries it installed, for the row to say
-/// so.
+/// need, and whether this device has each: the executable must be where the
+/// package puts it, and that package installed, for the row to say so.
 ///
-/// App registration is the bundled icli's work; `python3` is one of the interpreters a conversation's `run_code`
-/// and a project's external build script may name; `dpkg-deb` is no longer
-/// Luros's own — its builds write their package and its installer unpacks one
-/// without it — but a project's build script may make its package with it.
+/// App registration is the bundled icli's work; `python3` is one of the
+/// interpreters a conversation's `run_code` and a project's external build
+/// script may name; Frida is the device instrumentation server.
 ///
 /// Reading only. Installing one is the user's package manager's — the app
 /// opens it at the package's page — so nothing here fetches, resolves or
 /// installs anything.
 enum DevelopmentToolStatus {
     /// The row's name, the program that proves it, and where it lives.
-    static let definitions: [(package: String, program: String)] = [
-        ("ldid", "ldid"),
-        ("git", "git"),
-        ("python3", "python3"),
-        ("dpkg-deb", "dpkg-deb"),
+    static let definitions: [(package: String, program: String, directory: String, title: String?)] = [
+        ("ldid", "ldid", "usr/bin", nil),
+        ("git", "git", "usr/bin", nil),
+        ("python3", "python3", "usr/bin", nil),
+        ("re.frida.server", "frida-server", "usr/sbin", "Frida"),
     ]
 
     static func rows(installRoot: String) -> [DevelopmentToolRow] {
         let status = installedPackages(installRoot: installRoot)
         let root = installRoot == "/" ? "" : installRoot
         return definitions.map { definition in
-            let path = root + "/usr/bin/" + definition.program
+            let path = root + "/" + definition.directory + "/" + definition.program
             let present = FileManager.default.isExecutableFile(atPath: path)
             return DevelopmentToolRow(
                 packageID: definition.package,
                 program: definition.program,
+                displayName: definition.title,
                 path: present ? path : nil,
                 version: present ? status[definition.package] : nil,
             )
