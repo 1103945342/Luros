@@ -234,8 +234,15 @@ final class GitSession {
         await perform { try await LurosService.app.gitDeletePaths(projectID: self.scopeID, paths: paths) }
     }
 
-    func ignore(_ pattern: String) async {
-        await perform { _ = try await LurosService.app.gitIgnoreAppend(projectID: self.scopeID, pattern: pattern) }
+    /// Appends `pattern` to the work tree's `.gitignore`; answers whether the
+    /// line was added, or nil when it was refused, with `failure` saying why.
+    @discardableResult
+    func ignore(_ pattern: String) async -> Bool? {
+        var added: Bool?
+        await perform {
+            added = try await LurosService.app.gitIgnoreAppend(projectID: self.scopeID, pattern: pattern).added
+        }
+        return added
     }
 
     /// Commits the index with `message`; `all` stages every change first, as

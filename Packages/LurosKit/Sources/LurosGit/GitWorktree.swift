@@ -113,9 +113,8 @@ public extension GitRepository {
     /// which it is not when the line is already one of them.
     func appendIgnore(_ pattern: String) throws -> Bool {
         guard !pattern.isEmpty else { throw GitError(.invalid, "the pattern is empty") }
-        guard !pattern.hasPrefix("/") else {
-            throw GitError(.invalid, "\(pattern.debugDescription) is an absolute path: give a pattern")
-        }
+        // A leading slash is Git's anchor to the work tree's root, not a
+        // filesystem path: `/Builds/Device/` names one folder there.
         guard !pattern.contains("\n"), !pattern.contains("\r"), !pattern.utf8.contains(0) else {
             throw GitError(.invalid, "a pattern is one line")
         }
