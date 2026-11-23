@@ -91,6 +91,10 @@ jobs:
           mkdir -p "$repo/debs"
           gh release download "$tag" --pattern '*.deb' --dir "$repo/debs"
           cp Documents/Site/icon.png "$repo/CydiaIcon.png"
+          # Browsers open <site>/repo/ too: a page there says what the folder
+          # is and carries the button that adds it to Sileo. A package manager
+          # reads Packages and Release and never asks for it.
+          cp Documents/Site/repo-index.html "$repo/index.html"
           # dpkg-scanpackages writes the index; it comes with dpkg-dev.
           if ! command -v dpkg-scanpackages > /dev/null 2>&1; then
             sudo apt-get update -qq

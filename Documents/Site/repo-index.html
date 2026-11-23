@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>Luros · Source</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+        background: Canvas;
+        color: CanvasText;
+      }
+      main { max-width: 30rem; padding: 2rem; text-align: center; }
+      img { width: 96px; height: 96px; border-radius: 22px; display: block; margin: 0 auto 1rem; }
+      h1 { font-size: 1.6rem; margin: 0 0 0.5rem; }
+      p { margin: 0 0 1rem; color: GrayText; }
+      .button {
+        display: inline-block;
+        padding: 0.7rem 1.2rem;
+        border-radius: 0.8rem;
+        background: LinkText;
+        color: Canvas;
+        text-decoration: none;
+        font-weight: 600;
+        border: 0;
+        font: inherit;
+        cursor: pointer;
+      }
+      .button:active { opacity: 0.8; }
+      code { font-size: 0.85rem; word-break: break-all; color: CanvasText; }
+      .small { font-size: 0.85rem; }
+      a { color: LinkText; }
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="CydiaIcon.png" alt="" onerror="this.remove()">
+      <h1>Luros</h1>
+      <p>这是 Luros 的 Sileo 软件源，不是网页 · This is Luros's package source for Sileo, not a web page.</p>
+      <p><a class="button" id="add" href="#">Add to Sileo</a></p>
+      <p class="small">Source address: <code id="address">…</code></p>
+      <p class="small">
+        RootHide 选 <code>iphoneos-arm64e</code>，rootless 选 <code>iphoneos-arm64</code>。<br>
+        Choose the <code>iphoneos-arm64e</code> package for RootHide, <code>iphoneos-arm64</code> for rootless.
+      </p>
+      <p class="small">在 iPhone 或 iPad 上打开本页，按钮才会唤出 Sileo · Open this page on the device for the button to reach Sileo.</p>
+      <p class="small">
+        <a href="../">the source's page</a> ·
+        <a href="Release">Release file</a> ·
+        <a href="Packages">the package index</a>
+      </p>
+    </main>
+    <script>
+      // The address this page was served from, so the same file works at any
+      // host or sub-path: a package manager takes this folder as its source.
+      const here = location.origin + location.pathname;
+      const source = here.endsWith("/") ? here : here.replace(/index\.html$/, "");
+      document.getElementById("address").textContent = source;
+      document.getElementById("add").href = "sileo://source/" + source;
+    </script>
+  </body>
+</html>
