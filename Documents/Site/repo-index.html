@@ -44,8 +44,8 @@
       <img src="CydiaIcon.png" alt="" onerror="this.remove()">
       <h1>Luros</h1>
       <p>这是 Luros 的 Sileo 软件源，不是网页 · This is Luros's package source for Sileo, not a web page.</p>
-      <p><a class="button" id="add" href="#">Add to Sileo</a></p>
-      <p class="small">Source address: <code id="address">…</code></p>
+      <p><a class="button" id="add" href="sileo://source/https://1103945342.github.io/Luros/repo/">Add to Sileo</a></p>
+      <p class="small">Source address: <code id="address">https://1103945342.github.io/Luros/repo/</code></p>
       <p class="small">
         RootHide 选 <code>iphoneos-arm64e</code>，rootless 选 <code>iphoneos-arm64</code>。<br>
         Choose the <code>iphoneos-arm64e</code> package for RootHide, <code>iphoneos-arm64</code> for rootless.
@@ -60,6 +60,8 @@
     <script>
       // The address this page was served from, so the same file works at any
       // host or sub-path: a package manager takes this folder as its source.
+      // The markup carries this site's address for a reader without scripts;
+      // what runs here replaces it with the one the page was served from.
       const here = location.origin + location.pathname;
       const source = here.endsWith("/") ? here : here.replace(/index\.html$/, "");
       document.getElementById("address").textContent = source;
