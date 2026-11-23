@@ -122,3 +122,22 @@ public enum ModelResolver {
         index.entry(for: id, catalogKey: catalogKey)
     }
 }
+
+extension Model {
+    /// A custom OpenAI-compatible endpoint has no promise that it takes
+    /// OpenAI's newer `developer` role, and kwwk writes a reasoning model's
+    /// system prompt under that role whenever it reads the endpoint as
+    /// standard OpenAI. DashScope's compatible mode answers `developer is not
+    /// one of ['system', 'assistant', 'user', 'tool', 'function']` and fails
+    /// the whole request, while `system` is taken there, by OpenAI itself and
+    /// by every endpoint that predates the role. Only a model whose compat is
+    /// silent about the role changes: one that states it keeps its word.
+    public var keepingSystemRole: Model {
+        guard compat?.supportsDeveloperRole == nil else { return self }
+        var model = self
+        var compat = model.compat ?? ModelCompat()
+        compat.supportsDeveloperRole = false
+        model.compat = compat
+        return model
+    }
+}

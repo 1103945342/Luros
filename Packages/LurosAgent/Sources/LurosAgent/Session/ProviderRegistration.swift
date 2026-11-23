@@ -52,9 +52,13 @@ public enum ProviderRegistration {
             catalogKey: catalogKey(storeID: storeID),
             parameters: parameters,
         )
+        // Nobody promised a hand-entered endpoint takes OpenAI's `developer`
+        // role, and a reasoning model sends its system prompt under it: the
+        // prompt goes as `system` instead, which every endpoint takes.
+        let spoken = CredentialProviderID.isOpenAICompatible(storeID) ? model.keepingSystemRole : model
         guard !CredentialProviderID.isOpenAICompatible(storeID) else {
             return ResolvedAuth(
-                model: model,
+                model: spoken,
                 modelLabel: resolved.modelLabel,
                 authResolver: resolved.authResolver,
                 providerSlots: resolved.providerSlots,
@@ -64,7 +68,7 @@ public enum ProviderRegistration {
         // The registry's transport is shared. Bind the key to this resolution
         // so another account verification cannot replace an in-flight key.
         return ResolvedAuth(
-            model: model,
+            model: spoken,
             modelLabel: resolved.modelLabel,
             authResolver: { _, _ in ResolvedProviderAuth(token: credentials.access, scheme: .bearer) },
             providerSlots: resolved.providerSlots,
