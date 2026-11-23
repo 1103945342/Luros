@@ -17,7 +17,12 @@ on:
     # GitHub's cron runs in UTC: 12:00 UTC is 20:00 in Asia/Shanghai.
     - cron: "0 12 * * *"
   # The first copy, and any change to how it is trimmed, without waiting a day.
+  # A tag is not one of these: it names a commit to publish, not a branch to
+  # commit onto, and a push of one still starts this workflow whatever `paths`
+  # says; the run it made on v1.0.1 could only push to the tag's own name,
+  # which GitHub refuses.
   push:
+    branches: [main]
     paths:
       - Scripts/refresh-models-dev.py
       - .github/workflows/model-catalog.yml
@@ -34,6 +39,8 @@ concurrency:
 jobs:
   refresh:
     name: Read models.dev and commit what changed
+    # Committing needs a branch to commit to; a run started on a tag has none.
+    if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 

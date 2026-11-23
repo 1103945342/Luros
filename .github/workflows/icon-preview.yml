@@ -8,6 +8,10 @@ name: Icon Sheet
 
 on:
   push:
+    # A tag names a commit to publish, not a branch to commit onto: a push of
+    # one still starts this workflow whatever `paths` says, and the commit it
+    # would make could only go to the tag's own name, which GitHub refuses.
+    branches: [main]
     paths:
       - Luros/Resources/Assets.xcassets/Provider*.imageset/**
       - .github/workflows/icon-preview.yml
@@ -23,6 +27,8 @@ concurrency:
 jobs:
   sheet:
     name: Draw every mark
+    # Committing needs a branch to commit to; a run started on a tag has none.
+    if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
