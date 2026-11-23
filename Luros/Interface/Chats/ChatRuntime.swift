@@ -596,17 +596,8 @@ final class ChatRuntime {
             touchAttachment(path)
             return cached
         }
-        guard let size = try? URL(fileURLWithPath: path).resourceValues(forKeys: [.fileSizeKey]).fileSize,
-              size <= 32 * 1024 * 1024, let data = try? Data(contentsOf: URL(fileURLWithPath: path))
+        guard let file = try? ComposerAttachmentImport.readAttachment(at: URL(fileURLWithPath: path), name: item.name, origin: .history, mimeType: item.mimeType)
         else { return nil }
-        let isText = item.mimeType.hasPrefix("text/")
-            || UTType(mimeType: item.mimeType)?.conforms(to: .text) == true
-        let file = ComposerAttachment(
-            name: item.name,
-            data: data,
-            text: isText ? String(decoding: data.prefix(8192), as: UTF8.self) : nil,
-            isImage: item.mimeType.hasPrefix("image/"),
-        )
         return keepAttachment(file, at: path)
     }
 
@@ -617,7 +608,7 @@ final class ChatRuntime {
         let previous = attachmentCache.updateValue(file, forKey: path)
         attachmentBytes += file.data.count - (previous?.data.count ?? 0)
         touchAttachment(path)
-        while attachmentBytes > Self.attachmentCacheBytes, attachmentOrder.count > 1 {
+        while attachmentBytes > Self.attachmentCacheBytes && attachmentOrder.count > 1 || attachmentOrder.count > 256 {
             let oldest = attachmentOrder.removeFirst()
             if let dropped = attachmentCache.removeValue(forKey: oldest) {
                 attachmentBytes -= dropped.data.count
@@ -733,20 +724,20 @@ final class ChatRuntime {
         }
         defer { try? FileManager.default.removeItem(at: staging) }
         for file in draft.attachments {
-            guard descriptors.count < 8, file.data.count <= 32 * 1024 * 1024 else {
-                throw LurosError(.badRequest, String(localized: "Send up to 8 files, each no larger than 32 MB."))
+            guard descriptors.count < 8 else {
+                throw LurosError(.badRequest, String(localized: "Send up to 8 files at a time."))
             }
-            let url = staging.appendingPathComponent(file.id.uuidString)
-            try file.data.write(to: url, options: .atomic)
+            let url = file.fileURL ?? staging.appendingPathComponent(file.id.uuidString)
+            if file.fileURL == nil { try file.data.write(to: url, options: .atomic) }
             let fd = Darwin.open(url.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
             guard fd >= 0 else { throw POSIXError(.EIO) }
             inputs.append(AgentInputAttachment(
                 descriptor: DescriptorSlot(index: descriptors.count),
                 name: file.name,
-                mimeType: file.isImage
+                mimeType: file.mimeType ?? (file.isImage
                     ? imageMIME(file.data)
                     : (UTType(filenameExtension: (file.name as NSString).pathExtension)?.preferredMIMEType
-                        ?? "application/octet-stream"),
+                        ?? "application/octet-stream")),
             ))
             descriptors.append(OwnedDescriptor(adopting: fd))
         }

@@ -44,6 +44,7 @@ files += [
     "Luros/Interface/Chats/ChatSummary.swift",
     "Luros/Interface/Chats/Composer/ComposerDraft.swift",
     "Luros/Interface/Chats/ChatStore.swift",
+    "Luros/Application/ShareInbox.swift",
     "Luros/Interface/Chats/ChatFork.swift",
     "Luros/Interface/Chats/ChatEventsFile.swift",
     "Tests/ChatStore/Check.swift",

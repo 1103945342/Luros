@@ -1,4 +1,6 @@
 @testable import LurosAgent
+import struct LurosProtocol.AgentDelegationRequest
+import struct LurosProtocol.AgentDelegationResponse
 import struct LurosProtocol.LurosError
 import struct LurosProtocol.GitBranchComparison
 import struct LurosProtocol.GitCommitSummary
@@ -311,6 +313,14 @@ actor MockBackend: AgentHostBackend {
         installSucceeds = succeeds
     }
 
+    /// The project the host says the installed package was built by; nil,
+    /// as for a file the app handed over, unless a test says otherwise.
+    var installProjectID: String?
+
+    func setInstallProjectID(_ projectID: String?) {
+        installProjectID = projectID
+    }
+
     func install(_ request: InstallRequest) -> InstallResponse {
         calls.append(.install(artifact: request.artifactID, digest: request.artifactDigest, packaging: request.packagingDescriptionDigest, evidence: request.context.approval))
         return InstallResponse(
@@ -318,6 +328,7 @@ actor MockBackend: AgentHostBackend {
             installationID: installSucceeds ? "inst-1" : nil,
             packageID: "wiki.qaq.hello",
             version: "1.0",
+            projectID: installProjectID,
             succeeded: installSucceeds,
         )
     }

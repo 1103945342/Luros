@@ -34,6 +34,8 @@ final class SidebarController: UIViewController {
     var onProjectsLoaded: (() -> Void)?
     /// A message to send in the conversation just picked, as if typed.
     var onSendPrompt: ((String) -> Void)?
+    /// Settings as a page of its own, pushed where the app's pages are.
+    var onOpenSettings: (() -> Void)?
     private(set) var hasLoadedProjects = false
 
     var runtime: ChatRuntime! {
@@ -80,6 +82,10 @@ final class SidebarController: UIViewController {
     private lazy var tabs: UISegmentedControl = {
         let control = UISegmentedControl(items: Page.allCases.map { String(localized: $0.title) })
         control.selectedSegmentIndex = Page.sessions.rawValue
+        // The picked page is a pane of the drawer's glass, not a white pill
+        // laid on it: a faint tint of the text's own colour, so the wallpaper
+        // behind the sidebar reads through the selection as well.
+        control.selectedSegmentTintColor = UIColor.label.withAlphaComponent(0.14)
         control.addAction(
             UIAction { [weak self, weak control] _ in
                 guard let self, let control else { return }
@@ -93,21 +99,37 @@ final class SidebarController: UIViewController {
     /// Where a page is put; the other two stay loaded behind it, keeping
     /// their scroll position and what is expanded.
     private let content = UIView()
+    /// The paper or picture the conversation is written on, drawn here too:
+    /// the drawer comes out from under the page, so what is behind this
+    /// column is the empty ground the page left, not the page's own sheet.
+    /// The glass above it is thin, so the sheet reads through as it does on
+    /// the page rather than as a pale plate.
+    private let background = ChatBackgroundView()
 
     private lazy var settingsRow = SidebarFooterRow(
         symbol: "gearshape",
         title: String(localized: "Settings"),
     ) { [weak self] in
         guard let self else { return }
-        presentPageAsFormSheet(SettingsViewController())
+        onOpenSettings?()
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // The sidebar is a material, not a panel: the page behind it stays
+        // The sidebar is a material, not a panel: the sheet behind it stays
         // legible through the glass, as the system's own sidebars do.
         view.backgroundColor = .clear
-        let glass = GlassSurfaceView()
+        background.frame = view.bounds
+        background.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.addSubview(background)
+        reloadBackground()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(reloadBackground),
+            name: ChatBackground.changed,
+            object: nil,
+        )
+        let glass = GlassSurfaceView(material: .systemThinMaterial)
         view.addSubview(glass)
         glass.snp.makeConstraints { x in x.edges.equalToSuperview() }
 
@@ -191,6 +213,11 @@ final class SidebarController: UIViewController {
 
     /// Shows the page. A file list and a conversation list both go stale
     /// behind the reader's back, so the one arriving reads its source again.
+    @objc private func reloadBackground() {
+        background.opacity = ChatBackground.opacity
+        background.background = ChatBackground.current
+    }
+
     private func applyPage() {
         tabs.selectedSegmentIndex = page.rawValue
         let shown: UIViewController = switch page {

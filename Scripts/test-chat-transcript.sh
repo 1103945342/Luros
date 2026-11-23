@@ -42,6 +42,7 @@ sources=(
     "$root/Luros/Interface/Chats/ChatTranscriptCache.swift"
     "$root/Luros/Interface/Chats/ModelSwitchFit.swift"
     "$root/Luros/Interface/Chats/ChatStore.swift"
+    "$root/Luros/Application/ShareInbox.swift"
     "$root/Luros/Interface/Chats/ChatEventsFile.swift"
     "$root/Luros/Interface/Chats/ChatFork.swift"
     "$root/Luros/Interface/Chats/ChatAdoption.swift"

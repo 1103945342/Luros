@@ -420,6 +420,7 @@ public struct ChannelHostBackend: AgentHostBackend {
             installationID: result?.installationID,
             packageID: result?.packageID ?? "",
             version: result?.version ?? "",
+            projectID: result?.projectID,
             succeeded: end.state == .succeeded,
             message: end.message ?? "",
             conflicts: conflicts.isEmpty ? nil : conflicts,
@@ -428,12 +429,26 @@ public struct ChannelHostBackend: AgentHostBackend {
 
     public func removePackage(_ request: LurosAgent.RemovePackageRequest) async throws -> RemovePackageResponse {
         let handle = try await service.removePackage(installationID: request.installationID)
-        let end = try await read(handle) { _ in }
+        var transactionID: String?
+        let end = try await read(handle) { event in
+            // The task's own `removed` event names the installer's
+            // transaction; the task id is only a fallback for a run that
+            // ended before it was recorded.
+            if event.kind == "removed", let payload = event.payload,
+               let removed = try? payload.decode(RemovalTransaction.self) {
+                transactionID = removed.transactionID
+            }
+        }
         return RemovePackageResponse(
-            transactionID: handle.taskID.rawValue,
+            transactionID: transactionID ?? handle.taskID.rawValue,
             succeeded: end.state == .succeeded,
             message: end.message ?? "",
         )
+    }
+
+    /// The `removed` event's payload, as the host writes it.
+    private struct RemovalTransaction: Decodable {
+        var transactionID: String
     }
 
     /// The host's rows, with the folder each project is under now, which is

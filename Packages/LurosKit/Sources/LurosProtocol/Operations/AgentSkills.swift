@@ -82,4 +82,20 @@ public extension LurosService {
     ) async throws -> AgentRewritePromptResponse {
         try await send(AgentRewritePromptRequest(text: text, provider: provider, model: model))
     }
+
+    /// The same turn with instructions of its own: a commit message is asked
+    /// for in a shape the prompt optimization file does not describe.
+    func agentRewritePrompt(
+        text: String,
+        provider: AgentProvider?,
+        model: String?,
+        instructions: String,
+    ) async throws -> AgentRewritePromptResponse {
+        try await send(AgentRewritePromptRequest(
+            text: text,
+            provider: provider,
+            model: model,
+            instructions: instructions,
+        ))
+    }
 }

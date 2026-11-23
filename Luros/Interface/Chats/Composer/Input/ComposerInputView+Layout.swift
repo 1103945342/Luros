@@ -44,6 +44,27 @@ extension ComposerInputView {
         setNeedsLayout()
     }
 
+    /// The width the text wraps in, as the next layout pass will compute it:
+    /// the wand's room comes out of the text's side while it is shown. The
+    /// height the band keeps is measured for this same width, so the two never
+    /// disagree about which line the text ends on.
+    var textLayoutWidth: CGFloat {
+        guard bounds.width > 0 else { return textView.frame.width }
+        let toolsShown = hasContent && !isBusy
+        let rewriteRoom = toolsShown ? ComposerMetrics.Send.diameter + iconSpacing : 0
+        return max(0, bounds.width - inset.left - inset.right - rewriteRoom)
+    }
+
+    /// A text view that scrolled to its caret while the band was shorter keeps
+    /// that offset once the room arrives, and the text sits above a blank
+    /// stretch where it now fits whole. It starts at the top instead.
+    func scrollTextToTopIfItFits() {
+        guard textView.contentSize.height <= textView.bounds.height else { return }
+        if textView.contentOffset.y != 0 {
+            textView.contentOffset = .zero
+        }
+    }
+
     /// Where the text starts: the band's own inset, and the text sits against
     /// the top rather than centred, so a growing draft grows downward and the
     /// first line stays where the reader left it.
@@ -77,12 +98,12 @@ extension ComposerInputView {
     /// One shape, whatever the state: the text takes the band's row, and the
     /// wand sits at the trailing corner when there is something to rewrite.
     func layoutTextBand() {
-        // The wand takes the send's diameter when visible; text uses the rest.
-        let toolsShown = hasContent && !isBusy
-        let rewriteRoom = toolsShown ? ComposerMetrics.Send.diameter + iconSpacing : 0
-        let width = bounds.width - inset.left - inset.right - rewriteRoom
-        let frame = textFrame(width: width)
+        // The text takes the band's row, the wand its trailing corner:
+        // `textLayoutWidth` is how much of that row is the text's, the very
+        // figure its height was measured with.
+        let frame = textFrame(width: textLayoutWidth)
         textView.frame = frame
+        scrollTextToTopIfItFits()
         // The tip rolls with a transform on it, and a view carrying one has no
         // frame to set: its bounds and centre are what a layout pass may write.
         placeholderLabel.bounds = CGRect(origin: .zero, size: frame.size)

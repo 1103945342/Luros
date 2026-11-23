@@ -1,3 +1,4 @@
+import LurosProtocol
 import SnapKit
 import Then
 import UIKit
@@ -8,6 +9,8 @@ import UIKit
 final class GitCommitDialogController: UIViewController {
     private let staged: [GitFileItem]
     private let hasIdentity: Bool
+    private let projectID: String
+    private let selection: ComposerModelSelection?
     private let onCommit: (String, Bool) -> Void
 
     private let chips = UIScrollView()
@@ -25,9 +28,17 @@ final class GitCommitDialogController: UIViewController {
     )
     private let types = ["feat", "fix", "refactor", "chore", "docs", "style", "perf", "test"]
 
-    init(staged: [GitFileItem], hasIdentity: Bool, onCommit: @escaping (String, Bool) -> Void) {
+    init(
+        staged: [GitFileItem],
+        hasIdentity: Bool,
+        projectID: String,
+        selection: ComposerModelSelection?,
+        onCommit: @escaping (String, Bool) -> Void,
+    ) {
         self.staged = staged
         self.hasIdentity = hasIdentity
+        self.projectID = projectID
+        self.selection = selection
         self.onCommit = onCommit
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .pageSheet
@@ -149,7 +160,7 @@ final class GitCommitDialogController: UIViewController {
             make.trailing.lessThanOrEqualTo(amendSwitch.snp.leading).offset(-8)
         }
         amendSwitch.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-GitTheme.Space.md)
+            make.trailing.equalToSuperview()
             make.centerY.equalToSuperview()
         }
 
@@ -204,32 +215,67 @@ final class GitCommitDialogController: UIViewController {
 
     private func generate() {
         guard !generating, hasIdentity else { return }
+        guard let selection else {
+            presentNotice(
+                title: "Choose a Model",
+                message: "Set up a model in Settings ▸ Models before generating a commit message.",
+            )
+            return
+        }
         generating = true
-        // A local suggestion from what is staged. The reference app asks its
-        // model with the staged diff; Luros's app has no model of its own,
-        // so the button composes the message the diff already names.
-        let names = staged.map { ($0.entry.path as NSString).lastPathComponent }
-        let type: String
-        if staged.contains(where: { $0.code == "A" || $0.code == "?" }) {
-            type = "feat"
-        } else if staged.contains(where: { $0.code == "D" }) {
-            type = "chore"
-        } else {
-            type = "fix"
-        }
-        let spoken: String
-        if names.count == 1, let first = names.first {
-            spoken = "update \(first)"
-        } else {
-            spoken = "update \(names.count) files"
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { [weak self] in
+        Task { @MainActor [weak self] in
             guard let self else { return }
-            self.field.text = "\(type): \(spoken)"
-            self.generating = false
-            self.textChanged()
+            defer { self.generating = false }
+            do {
+                let diff = await stagedDiff()
+                guard !diff.isEmpty else {
+                    throw LurosError(.badRequest, "There is nothing staged to describe.")
+                }
+                let response = try await LurosService.app.agentRewritePrompt(
+                    text: String(diff.prefix(12000)),
+                    provider: selection.provider,
+                    model: selection.model,
+                    instructions: Self.commitInstructions,
+                )
+                let message = response.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !message.isEmpty else {
+                    throw LurosError(.unavailable, "The model returned an empty message.")
+                }
+                self.field.text = message
+                self.textChanged()
+            } catch {
+                self.presentNotice(title: "Unable to Generate Message", message: error.readableMessage)
+            }
         }
     }
+
+    /// The staged diff, file by file, cut to what one turn is given.
+    private func stagedDiff() async -> String {
+        var parts: [String] = []
+        var length = 0
+        for file in staged.prefix(20) {
+            guard let response = try? await LurosService.app.gitDiff(
+                projectID: projectID,
+                path: file.entry.path,
+                staged: true,
+            ) else { continue }
+            let text = response.diff.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else { continue }
+            parts.append("### \(file.entry.path)\n\(text)")
+            length += text.count
+            if length > 16000 { break }
+        }
+        return parts.joined(separator: "\n\n")
+    }
+
+    /// What the model is asked for: one message, in the shape the dialog's
+    /// chips and the project's history already use.
+    private static let commitInstructions = """
+    You write a git commit message for the staged changes below.
+    Reply with only the commit message: no quotes, no code fences, no explanation.
+    Begin with a conventional-commit type and a colon (feat, fix, refactor, chore, docs, style, perf or test), then a subject line in the imperative mood, at most 72 characters.
+    If the change needs more, add one blank line and up to three short body lines saying what changed and why.
+    """
 
     private func updateGenerateButton() {
         var configuration = generateButton.configuration
@@ -282,7 +328,17 @@ final class GitStashSheetContent: UIView {
     private let onClear: () -> Void
 
     private let saveButton = GitButtons.tonal(title: String(localized: "Stash Changes"), symbol: GitIcon.Name.archive, height: 40)
-    private let messageField = GitTextField(label: String(localized: "Stash message (optional)"))
+    private let messageField = UITextField().then {
+        $0.placeholder = String(localized: "Stash message")
+        $0.font = GitTheme.bodyMedium
+        $0.adjustsFontForContentSizeCategory = true
+        $0.textColor = GitTheme.onSurface
+        $0.tintColor = GitTheme.primary
+        $0.borderStyle = .roundedRect
+        $0.backgroundColor = GitTheme.mutedSurface
+        $0.autocorrectionType = .no
+        $0.clearButtonMode = .whileEditing
+    }
     private let includeUntracked = GitSwitchRow(title: String(localized: "Include untracked files (-u)"))
 
     init(
@@ -337,7 +393,7 @@ final class GitStashSheetContent: UIView {
         header.snp.makeConstraints { make in make.height.equalTo(36) }
 
         let saveCard = UIView().then {
-            $0.backgroundColor = GitTheme.mutedSurface
+            $0.backgroundColor = GitTheme.cardSurface
             $0.layer.cornerRadius = GitTheme.Radius.mdLarge
             $0.layer.cornerCurve = .continuous
         }
@@ -346,6 +402,7 @@ final class GitStashSheetContent: UIView {
         saveCard.addSubview(saveButton)
         messageField.snp.makeConstraints { make in
             make.leading.trailing.top.equalToSuperview().inset(GitTheme.Space.md)
+            make.height.equalTo(40)
         }
         includeUntracked.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview().inset(GitTheme.Space.md)
@@ -359,7 +416,7 @@ final class GitStashSheetContent: UIView {
         saveButton.isEnabled = !busy && hasChanges
         saveButton.addAction(UIAction { [weak self] _ in
             guard let self else { return }
-            let message = self.messageField.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            let message = (self.messageField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             self.onSave(message.isEmpty ? nil : message, self.includeUntracked.toggle.isOn)
         }, for: .touchUpInside)
 

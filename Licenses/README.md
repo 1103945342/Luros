@@ -2,7 +2,8 @@
 
 Settings → About → Licenses lists every notice the app ships under, with the
 full text a push away. Luros's own code is MIT; third-party code keeps its
-own license.
+own license, and Apelin, the upstream this is a fork of, keeps its own
+notice in `Licenses/Apelin/`.
 
 `Scripts/collect-licenses.py` runs offline as the app target's last build
 phase, Collect Licenses, and writes `Luros.app/Licenses.json` from:

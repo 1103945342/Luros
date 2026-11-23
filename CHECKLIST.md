@@ -90,8 +90,8 @@ platformize-app-ios's; the quoted name is its section.
 - [x] `com.apple.security.iokit-user-client-class` is present if the app draws with Metal itself, absent if not.
       `Packaging/<App>.entitlements`.
       **Done:** Present: every ad-hoc app needs it (IconServices, Bold Text), and the terminal will draw with Metal.
-- [x] `control` depends on `firmware (>= <floor>)`, `uikittools` and `launchctl`; no hook calls `uicache`; `postinst` boots out system, user/501 and gui/501.
-      **Done:** `firmware (>= 16.0), uikittools, launchctl`; no `uicache` in hooks; three bootouts. All enforced by `make check`.
+- [x] `control` depends on `firmware (>= <floor>)` and `launchctl`; app registration goes through the bundled icli, not `uicache`; `postinst` boots out system, user/501 and gui/501.
+      **Done:** `firmware (>= 16.0), launchctl`; no `uicache` in hooks; three bootouts. All enforced by `make check`.
 - [x] `postinst` makes `/var/mobile/Documents/<bundle id>` level by level for mobile (no `mkdir -p` as root, no symlink followed), and the app keeps its files in that folder, never loose in `Documents`.
       `Packaging/DEBIAN/`; SKILL.md "The contract".
       **Done:** Template postinst unchanged; verified on the vphone (mobile owns `Documents` and `com.fluoxetine.luros`).

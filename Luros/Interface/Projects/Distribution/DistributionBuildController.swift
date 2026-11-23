@@ -408,7 +408,7 @@ final class DistributionBuildController: TableController {
     }
 
     /// The host unpacks the `.ipa`, signs it with the bootstrap's `ldid`
-    /// and registers it with `uicache`, so the app appears on the Home
+    /// and registers it through the bundled icli registrar, so the app appears on the Home
     /// Screen; its task's own outcome is what the row below says.
     @objc private dynamic func install() {
         guard installWork == nil, let artifact else { return }

@@ -25,7 +25,7 @@ extension DataFolder {
     /// keep it: in mobile's home as the session host reckons it, off the
     /// bundle's own path (`RoothideRoot.mobileHome`). Never in
     /// `NSHomeDirectory()`: on roothide that is the system's `/var/mobile`,
-    /// and on rootless uicache gives the app a data container and makes
+    /// and on rootless LaunchServices registration gives the app a data container and makes
     /// that its home, where the app kept a folder nothing else read (#37).
     static let app = DataFolder(home: RoothideRoot.mobileHome(for: Bundle.main.bundlePath))
 

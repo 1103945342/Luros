@@ -213,6 +213,32 @@ public struct WriteTarget: Sendable {
 
     /// Writes `data`. With `exclusive`, fails if the file appeared meanwhile.
     public func commit(_ data: Data, exclusive: Bool) throws {
+        try publish(exclusive: exclusive) { try $0.write(contentsOf: data) }
+    }
+
+    /// Copy exactly the regular file described at entry; never consume a pipe or
+    /// chase a growing file. pread leaves the caller's offset unchanged on retry.
+    func commit(copying source: Int32, exclusive: Bool) throws {
+        var info = stat()
+        guard fstat(source, &info) == 0, info.st_mode & S_IFMT == S_IFREG, info.st_size >= 0 else {
+            throw PathPolicyError.io("Expected a regular attachment file.")
+        }
+        try publish(exclusive: exclusive) { destination in
+            var offset: off_t = 0
+            var buffer = Data(count: 256 * 1024)
+            while offset < info.st_size {
+                let count = buffer.withUnsafeMutableBytes { bytes in
+                    pread(source, bytes.baseAddress, min(bytes.count, Int(info.st_size - offset)), offset)
+                }
+                if count < 0, errno == EINTR { continue }
+                guard count > 0 else { throw PathPolicyError.io("Could not read the attachment.") }
+                try destination.write(contentsOf: buffer.prefix(count))
+                offset += off_t(count)
+            }
+        }
+    }
+
+    private func publish(exclusive: Bool, writeContents: (FileHandle) throws -> Void) throws {
         guard let realParent = CanonicalPath.resolve(parent), realParent == parent, root.contains(realParent) else {
             throw PathPolicyError.outsideRoot(parent)
         }
@@ -258,24 +284,14 @@ public struct WriteTarget: Sendable {
         guard fd >= 0 else {
             throw PathPolicyError.io("could not write \(root.relative(target)): \(String(cString: strerror(errno)))")
         }
-        var ok = true
-        data.withUnsafeBytes { buffer in
-            var offset = 0
-            while offset < buffer.count {
-                let written = write(fd, buffer.baseAddress!.advanced(by: offset), buffer.count - offset)
-                if written <= 0 {
-                    ok = false; return
-                }
-                offset += written
-            }
-        }
-        if ok {
+        let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
+        do {
+            try writeContents(handle)
             fchmod(fd, mode)
-        }
-        close(fd)
-        guard ok else {
+            try handle.close()
+        } catch {
             unlink(temporary)
-            throw PathPolicyError.io("could not write \(root.relative(target))")
+            throw error
         }
         if exclusive {
             // link(2) fails if the name exists, so creation stays exclusive.

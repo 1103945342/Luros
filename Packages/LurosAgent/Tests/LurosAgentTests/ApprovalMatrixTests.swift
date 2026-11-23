@@ -60,9 +60,11 @@ struct ApprovalMatrixTests {
         for mode in [ApprovalMode.relaxed, .full, .confirm] {
             #expect(isAsk(verdict(mode, InvocationFacts(tool: .local(.gitResetToRemote)))), "\(mode)")
             #expect(isAsk(verdict(mode, InvocationFacts(tool: .local(.gitBranchDelete)))), "\(mode)")
-            let paths = ["Sources/Tweak.m"]
-            #expect(isAsk(verdict(mode, InvocationFacts(tool: .local(.gitRestore), discardedPaths: paths))), "\(mode)")
-            #expect(isAsk(verdict(mode, InvocationFacts(tool: .local(.gitClean), discardedPaths: paths))), "\(mode)")
+            for tool in [AgentToolName.gitRestore, .gitClean] {
+                var facts = InvocationFacts(tool: .local(tool))
+                facts.discardedPaths = ["Sources/Tweak.m"]
+                #expect(isAsk(verdict(mode, facts)), "\(mode)")
+            }
         }
     }
 

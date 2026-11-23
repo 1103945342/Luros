@@ -90,7 +90,7 @@ extension ComposerInputView: UITextViewDelegate {
 
     @objc dynamic func textViewDidChange(_ textView: UITextView) {
         updatePlaceholderAlpha()
-        updateTextHeight()
+        scheduleTextHeightUpdate()
         updateOverflowState()
         delegate?.onComposerInputTextChanged(text: textView.text)
         switchToRequiredStatus()
@@ -137,15 +137,47 @@ extension ComposerInputView: UITextViewDelegate {
         setPlaceholderVisible(textView.text.isEmpty)
     }
 
+    /// The band's height follows the text: measured here, in the column the
+    /// next layout will give it, so the two never disagree about which line
+    /// the text ends on. A paste can add a dozen lines at once, and measured
+    /// against a column wider than the text ends up in, the band stops short
+    /// and the last lines are hidden past its bottom.
     @objc dynamic func updateTextHeight() {
+        let width = textLayoutWidth
         let attrText = textView.attributedText ?? .init()
-        let textHeight = TextMeasurement.shared.measureSize(
-            of: attrText,
-            usingWidth: textView.frame.width,
-        ).height
-        let decision = ceil(max(textHeight, font.lineHeight))
-        doWithAnimation { self.textHeight.send(decision) }
+        // An empty draft is one line whatever the column is; any other text
+        // waits for the first layout pass to say how wide that column is.
+        guard width > 0 || attrText.length == 0 else { return }
+        textMeasuredWidth = width
+        let measured = width > 0
+            ? TextMeasurement.shared.measureSize(of: attrText, usingWidth: width).height
+            : 0
+        let decision = ceil(max(measured, font.lineHeight))
+        doWithAnimation { self.textHeight.send(decision) } completion: { [weak self] in
+            // The spring gave the text view room after the pass that resized
+            // it: one more layout at its final size paints what was blank.
+            guard let self else { return }
+            textView.layoutIfNeeded()
+            scrollTextToTopIfItFits()
+        }
         updateOverflowState()
+    }
+
+    /// What a text change asks for. Not measured from inside
+    /// `textViewDidChange`: a layout pass put in the middle of the text view's
+    /// own insertion leaves its glyphs laid out for the frame it had when the
+    /// insertion began, and the room the band gains under the text stays blank
+    /// until something scrolls it. The height is measured on the next turn of
+    /// the run loop instead, and however many changes came meanwhile share one
+    /// pass.
+    @objc dynamic func scheduleTextHeightUpdate() {
+        guard !isTextHeightUpdateScheduled else { return }
+        isTextHeightUpdateScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.isTextHeightUpdateScheduled = false
+            self.updateTextHeight()
+        }
     }
 
     @objc dynamic func clearAttributedText() {

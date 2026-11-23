@@ -76,9 +76,9 @@ extension BuiltInSkills {
           on another volume, so only renames change what the device holds; the
           bundle that was there is renamed aside first and put back if anything
           after it fails. It then registers
-          with `uicache -p`, reads `uicache -l` back as the receipt, and appears
+          through Luros's bundled icli registrar, reads `icli app list` back as the receipt, and appears
           in `luros_package_list` with an `installationID`.
-        - `luros_package_remove` takes it off: `uicache -u`, then the bundle goes.
+        - `luros_package_remove` takes it off through the same registrar, then the bundle goes.
         - Never install, uninstall or register it another way: not `icli app
           install`, not `icli pkg install`, not `dpkg`, not `apt`, and no
           `uicache` of your own.

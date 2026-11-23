@@ -237,7 +237,7 @@ struct ChannelHostBackendTests {
         let fixture = try Fixture()
         fixture.host.on(.installPackage, reply: TaskHandle(taskID: TaskID("install-task"), kind: .install))
         try fixture.host.on(.buildAttach, reply: batch("install-task", [
-            ("result", LurosCore.JSONValue(encoding: InstallResult(installationID: "inst-1", transactionID: "tx-1", packageID: "wiki.qaq.hello", version: "0.0.1"))),
+            ("result", LurosCore.JSONValue(encoding: InstallResult(installationID: "inst-1", transactionID: "tx-1", packageID: "wiki.qaq.hello", version: "0.0.1", projectID: "p-1"))),
             stateEvent(.succeeded),
         ]))
         let response = try await fixture.backend.install(InstallRequest(context: fixture.context(), artifactID: "art-1", artifactDigest: "sha256:ab", packagingDescriptionDigest: "p"))
@@ -247,6 +247,7 @@ struct ChannelHostBackendTests {
         #expect(response.succeeded)
         #expect(response.installationID == "inst-1")
         #expect(response.transactionID == "tx-1")
+        #expect(response.projectID == "p-1")
         #expect(response.conflicts == nil)
     }
 

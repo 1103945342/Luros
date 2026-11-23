@@ -128,7 +128,7 @@ func toolchainPruneChecks() async throws {
     func bridge(_ packages: InstalledPackageSource) -> InstallBridge {
         InstallBridge(
             paths: .init(installRoot: sweep, dataFolder: base, staging: state.appendingPathComponent("staging")),
-            service: FakeIrisin(root: sweep),
+            service: FakeInstallService(root: sweep),
             registry: registry,
             artifacts: ArtifactRegistry(file: state.appendingPathComponent("artifacts.json")),
             installations: installations,

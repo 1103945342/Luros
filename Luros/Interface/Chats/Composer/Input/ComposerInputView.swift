@@ -18,6 +18,11 @@ class ComposerInputView: ComposerSectionView {
 
     let textView = TextEditorView()
     let placeholderLabel = UILabel()
+    /// The width the text's height was last measured with: a layout pass whose
+    /// column is a different one measures again.
+    var textMeasuredWidth: CGFloat?
+    /// A height is waiting for the next turn of the run loop to be measured.
+    var isTextHeightUpdateScheduled = false
     /// The tips the empty box shows in place of a placeholder, rolled under
     /// the label every few seconds. Made in `initializeViews`.
     private var tipRoller: ComposerTipRoller?
@@ -238,6 +243,14 @@ class ComposerInputView: ComposerSectionView {
         elementClipper.mirrorForLayoutDirection(
             [textView, placeholderLabel, rewriteButton],
         )
+
+        // The column changed without the text changing — a rotation, or the
+        // wand taking its corner: the height the band keeps was measured for
+        // the old one, which shows as a blank strip under the text or a line
+        // hidden past its bottom until something measures again.
+        if textLayoutWidth != textMeasuredWidth {
+            scheduleTextHeightUpdate()
+        }
 
         updatePlaceholderAlpha()
     }

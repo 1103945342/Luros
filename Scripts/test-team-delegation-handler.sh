@@ -49,6 +49,7 @@ for path in (root / "Packages/LurosKit/Sources/LurosProtocol").rglob("*.swift"):
     copy(str(path.relative_to(root)), str(pathlib.Path("Protocol") / path.relative_to(root / "Packages/LurosKit/Sources/LurosProtocol")))
 copy("Lurosd/Session/Agent/AgentDelegationStore.swift", "Host/AgentDelegationStore.swift")
 copy("Lurosd/Session/Agent/AgentDelegationAdmission.swift", "Host/AgentDelegationAdmission.swift")
+copy("Lurosd/Session/Agent/AgentDelegationTargets.swift", "Host/AgentDelegationTargets.swift")
 copy("Lurosd/Session/Agent/AgentDelegatedMarker.swift", "Host/AgentDelegatedMarker.swift")
 copy("Lurosd/Dispatch/AgentDelegationHandler.swift", "Host/AgentDelegationHandler.swift")
 copy("Lurosd/Session/Agent/AgentAssignmentStore.swift", "Host/AgentAssignmentStore.swift")

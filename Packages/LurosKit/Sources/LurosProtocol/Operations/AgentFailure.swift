@@ -25,4 +25,7 @@ public extension LurosError.Reason {
     static let server = Self(rawValue: "server")
     /// The conversation no longer fits the model's context.
     static let contextOverflow = Self(rawValue: "contextOverflow")
+    /// No provider has a saved sign-in, so no model can answer: the app
+    /// asks the reader to configure one instead of showing the provider's words.
+    static let noModelConfigured = Self(rawValue: "noModelConfigured")
 }

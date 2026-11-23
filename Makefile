@@ -107,7 +107,9 @@ TOOLHOST            := $(ROOT_DIR)/Packages/LurosToolHost
 # The editor's text view and grammars, vendored (Packages/Runestone/README.md).
 RUNESTONE           := $(ROOT_DIR)/Packages/Runestone
 TOOLHOST_SCRATCH    ?= $(call package_scratch,LurosToolHost)
-IRISIN_SHIM_DIR     := $(ROOT_DIR)/Lurosd/Vendor/IrisinExternalClient/CIrisinExternalXPC
+# Irisin's installer, compiled into lurosd from source (Packages/IrisinKit).
+IRISIN_PACKAGE      := $(ROOT_DIR)/Packages/IrisinKit
+IRISIN_SCRATCH      ?= $(call package_scratch,IrisinKit)
 # Every other standalone package under Packages/ (LurosFormats,
 # LurosDiagnostics, LurosAgent, LurosToolHost, and any added later) has
 # its tests run by `make harness` too, each in a scratch path of its own:
@@ -301,19 +303,19 @@ check:
 		|| { echo "error: a redirect is glued to the word before it above — launchctl would be handed '<label>2' and its errors would show" >&2; exit 65; }
 	@python3 "$(ROOT_DIR)/Scripts/test-daemon-registration.py"
 	@! grep -nw 'uicache' "$(ROOT_DIR)"/Packaging/DEBIAN/* \
-		|| { echo "error: a maintainer hook calls uicache — uikittools' triggers register the app" >&2; exit 65; }
-	@grep -qE '^Depends:.*firmware \(>= $(IOS_DEPLOYMENT_FLOOR)\).*uikittools.*launchctl' "$(CONTROL_TEMPLATE)" \
-		|| { echo "error: control must depend on firmware (>= $(IOS_DEPLOYMENT_FLOOR)), uikittools and launchctl" >&2; exit 65; }
+		|| { echo "error: a maintainer hook calls uicache — the bundled icli registers the app" >&2; exit 65; }
+	@grep -qE '^Depends:.*firmware \(>= $(IOS_DEPLOYMENT_FLOOR)\).*launchctl' "$(CONTROL_TEMPLATE)" \
+		|| { echo "error: control must depend on firmware (>= $(IOS_DEPLOYMENT_FLOOR)) and launchctl" >&2; exit 65; }
 	@# The four development extensions ride inside the app bundle, so the IDE
 	@# depends on none of them and recommends none of them: a package manager
 	@# installs the IDE alone, and one of the four installed on its own only
 	@# updates the copy the bundle carries.
 	@! grep -nE '^(Pre-Depends|Depends|Recommends|Suggests):.*wiki\.qaq\.luros\.(dev|agent-tools)\.' "$(CONTROL_TEMPLATE)" \
 		|| { echo "error: the IDE depends on, recommends or suggests an extension (above)" >&2; exit 65; }
-	@# The tools the IDE cannot work without ride inside its bundle too: icli
-	@# and irisind are committed under Vendor/ with their digests, the package
-	@# depends on neither of their packages, and the maintainer scripts register
-	@# and remove the bundled daemon under Luros's own label.
+	@# The tool the IDE cannot work without rides inside its bundle too: icli
+	@# is committed under Vendor/ with its digest, and the package depends on
+	@# none of those packages. The installer is source (Packages/IrisinKit),
+	@# compiled into lurosd, so there is no daemon to register or remove.
 	@python3 "$(ROOT_DIR)/Scripts/check-vendored-tools.py" "$(ROOT_DIR)"
 	@# The terminal and the file browser are the app's own pages: no source
 	@# opens a Fila or iGhostVT URL or queries one, and the package depends on
@@ -440,7 +442,7 @@ check:
 # agent workers' logic among them), the rule that what the root processes
 # link is system code, the session host's tests (the toolchain setup end to
 # end among them: luros-environment-harness, the real environment worker
-# with a fake backend, against the install bridge and a fake irisind), and
+# with a fake backend, against the install bridge and a fake install service), and
 # lurosd and every worker typechecked for macOS —
 # against the package scratch it imports — so a change that only compiles on
 # iOS shows.
@@ -542,9 +544,9 @@ harness:
 	done; \
 	[[ -n "$$toolhost_modules" ]] || { echo "error: no LurosToolHost.swiftmodule under $(TOOLHOST_SCRATCH)" >&2; exit 1; }; \
 	module_flags() { \
-		local scratch="$$1" candidate; \
+		local scratch="$$1" module="$${2:-LurosProtocol}" candidate; \
 		for candidate in "$$scratch/out/Products/Debug" "$$scratch/debug/Modules" "$$scratch/debug"; do \
-			if [[ -e "$$candidate/LurosProtocol.swiftmodule" ]]; then echo "-I $$candidate"; break; fi; \
+			if [[ -e "$$candidate/$$module.swiftmodule" ]]; then echo "-I $$candidate"; break; fi; \
 		done; \
 		{ find "$$scratch/out" -name '*.modulemap' -path '*GeneratedModuleMaps*' 2>/dev/null; \
 		  find "$$scratch" -path '*/debug/*.build/module.modulemap' -not -path '*/out/*' -not -path '*/index-build/*' 2>/dev/null; \
@@ -559,9 +561,11 @@ harness:
 	done; \
 	[[ -n "$$modules" ]] || { echo "error: no LurosProtocol.swiftmodule under $(SWIFTPM_SCRATCH)" >&2; exit 1; }; \
 	kit_flags="$$(module_flags "$(SWIFTPM_SCRATCH)")"; \
+	iris_flags="$$(module_flags "$(IRISIN_SCRATCH)" IrisinInstaller)"; \
+	[[ -n "$$iris_flags" ]] || { echo "error: no IrisinInstaller.swiftmodule under $(IRISIN_SCRATCH)" >&2; exit 1; }; \
 	"$(ROOT_DIR)/Scripts/test-chat-transcript.sh" "$$modules" && \
 	"$(ROOT_DIR)/Scripts/test-onboarding.sh" "$$modules" && \
-	xcrun --sdk macosx swiftc -swift-version 5 -typecheck -target arm64-apple-macos13.0 -I "$(XPC_SHIM_DIR)" -I "$(IRISIN_SHIM_DIR)" $$kit_flags -I "$$toolhost_modules" \
+	xcrun --sdk macosx swiftc -swift-version 5 -typecheck -target arm64-apple-macos13.0 -I "$(XPC_SHIM_DIR)" $$kit_flags $$iris_flags -I "$$toolhost_modules" \
 		$$(find "$(ROOT_DIR)/Shared/Protocol" "$(ROOT_DIR)/Lurosd" -name '*.swift' | sort) "$(ROOT_DIR)/Shared/RoothideRoot.swift" && \
 	echo "ok: lurosd typechecks for macOS" && \
 	swift build --package-path "$(LUROSKIT)" --scratch-path "$(SWIFTPM_SCRATCH)" --product luros-environment-harness && \

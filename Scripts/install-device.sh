@@ -224,8 +224,8 @@ if [[ $mode == app ]]; then
 else
     # Irisin's installer (`irisin-cli install`, Irisin's helper underneath),
     # never apt or dpkg: both are on their way out. The package's postinst
-    # boots the daemon (`launchctl bootstrap system`); uikittools triggers
-    # register the app with SpringBoard. Neither step is duplicated here.
+    # boots the daemon (`launchctl bootstrap system`) and registers the app
+    # through its bundled icli. Neither step is duplicated here.
     #
     # The password reaches `sudo -S` down the ssh session's own stdin and is never
     # written into the remote command line. Spelling it into a quoted string there
@@ -241,11 +241,10 @@ remote_directory=
 staging=
 
 # A package manager's own UI re-registers an upgrade with LaunchServices; an
-# install from a file over an installed copy may not, and SpringBoard keeps reading the
-# previous build's Info.plist from the record. Register this bundle by its
-# path, which is what uikittools' trigger would not do for an installed app.
+# install from a file over an installed copy may not. Register this bundle by
+# its path through the icli the package carries.
 echo "==> registering the app"
-run_sudo 'app="$(dpkg -L com.fluoxetine.luros | grep "/Applications/Luros.app$")" && uicache -p "$app"'
+run_sudo 'app="$(dpkg -L com.fluoxetine.luros | grep "/Applications/Luros.app$")" && icli="$app/Vendor/bin/icli" && case "$app" in /var/jb/*) target="$app" ;; *) jbroot="$("$icli" env 2>/dev/null | sed -n '\''s/.*"jbroot" : "\([^"]*\)".*/\1/p'\'' | tr -d '\''\\'\'')"; case "$jbroot" in /var/*) target="/private$jbroot$app" ;; *) target="${jbroot:-}$app" ;; esac ;; esac && "$icli" app register "$target"'
 
 if $launch; then
     echo "==> opening Luros"

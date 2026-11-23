@@ -4,6 +4,15 @@ import Foundation
 /// Checked before approval handling. The socket's worker identity, not a
 /// session ID in a model argument, identifies the constrained caller.
 enum AgentDelegationAdmission {
+    /// A refusal for a capability the open step does not hold. The host
+    /// records it in the assignment's ledger and wakes the opener, so the
+    /// grant is one amendment away; the child is told the same in words.
+    struct CapabilityRefusal: Error {
+        var capability: AgentDelegationBrief.Capability
+        var tool: String
+        var violation: AgentDelegationViolation
+    }
+
     static func refusal(_ request: HostRequest, host: SessionHost) async -> HostReply? {
         guard case let .worker(.agent, instance?) = request.caller else { return nil }
         do {
@@ -16,15 +25,63 @@ enum AgentDelegationAdmission {
                 }
                 return nil
             }
-            try check(request.operation, promptTarget: request.operation == .agentPrompt
-                      ? request.decode(AgentPromptRequest.self).sessionID : nil,
-                      planTarget: request.operation == .agentDelegation
-                      ? request.decode(AgentDelegationRequest.self).sessionID : nil,
-                      saved: saved)
+            do {
+                try check(request.operation, promptTarget: request.operation == .agentPrompt
+                          ? request.decode(AgentPromptRequest.self).sessionID : nil,
+                          planTarget: request.operation == .agentDelegation
+                          ? request.decode(AgentDelegationRequest.self).sessionID : nil,
+                          saved: saved)
+                if request.operation == .agentDelegation {
+                    let action = try request.decode(AgentDelegationRequest.self)
+                    if action.action == .admit, let tool = action.tool {
+                        try capabilityAdmission(tool: tool, plan: saved.plan)
+                    }
+                }
+                try await AgentDelegationTargets.confine(request, saved: saved, host: host)
+            } catch let refusal as CapabilityRefusal {
+                await record(refusal, saved: saved, host: host)
+                throw refusal.violation
+            }
             return nil
         } catch {
             return request.fail(LurosError(.denied, error.localizedDescription))
         }
+    }
+
+    /// The capability a tool needs, checked where the worker asked to admit
+    /// it — the one place a child cannot record for itself what it lacked.
+    private static func capabilityAdmission(tool: String, plan: AgentDelegationPlan) throws {
+        guard let capability = AgentDelegationToolPolicy.capability(ofTool: tool) else { return }
+        do {
+            try plan.authorize(capability, expectedRevision: plan.revision)
+        } catch let violation as AgentDelegationViolation {
+            throw CapabilityRefusal(
+                capability: capability,
+                tool: tool,
+                violation: AgentDelegationViolation(
+                    stepID: violation.stepID,
+                    title: violation.title,
+                    rule: "\(tool) needs the \(capability.rawValue) capability. \(violation.rule)",
+                ),
+            )
+        }
+    }
+
+    /// A request for a capability is not a grant: it is what the opener's
+    /// next read of the account names, and the amendment that follows is the
+    /// only thing that admits the operation.
+    private static func record(_ refusal: CapabilityRefusal,
+                               saved: AgentDelegationStore.Record,
+                               host: SessionHost) async {
+        _ = try? await host.assignments.requestCapability(
+            child: saved.child,
+            opener: saved.opener,
+            capability: refusal.capability.rawValue,
+            tool: refusal.tool,
+            stepID: refusal.violation.stepID,
+            planRevision: saved.plan.revision,
+        )
+        await AgentReportRelay.shared.accountChanged(saved.opener)
     }
 
     /// Host effects are narrower than tool labels. `confirmLoaded` can respring,
@@ -48,7 +105,25 @@ enum AgentDelegationAdmission {
              .captureScreen, .readUITree, .feedbackRead, .approvalDigestState:
             break
         default:
-            throw refusal(plan, "\(operation.rawValue) has no confined execution adapter. Approval does not widen this step.")
+            // An operation with a confined adapter is admitted only while the
+            // open step holds its capability; `AgentDelegationTargets` then
+            // confines what it may act on. Everything else stays closed.
+            guard let capability = AgentDelegationToolPolicy.capability(of: operation) else {
+                throw refusal(plan, "\(operation.rawValue) has no confined execution adapter. Approval does not widen this step; an amendment of the step can.")
+            }
+            do {
+                try plan.authorize(capability, expectedRevision: plan.revision)
+            } catch let violation as AgentDelegationViolation {
+                throw CapabilityRefusal(
+                    capability: capability,
+                    tool: operation.rawValue,
+                    violation: AgentDelegationViolation(
+                        stepID: violation.stepID,
+                        title: violation.title,
+                        rule: "\(operation.rawValue) needs the \(capability.rawValue) capability. \(violation.rule)",
+                    ),
+                )
+            }
         }
     }
 

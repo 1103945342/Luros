@@ -83,7 +83,7 @@ final class SessionHost: @unchecked Sendable {
                 dataFolder: dataFolder.root.path,
                 staging: stateDirectory.appendingPathComponent("staging", isDirectory: true)
             ),
-            service: IrisinInstallService(),
+            service: LocalInstallService(installRoot: installRoot, hostPath: ownPath),
             registry: registry,
             artifacts: artifacts,
             installations: installations,

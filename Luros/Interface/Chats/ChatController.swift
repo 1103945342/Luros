@@ -27,11 +27,22 @@ final class ChatController: UIViewController {
     /// A conversation to show instead, picked as the sidebar picks one: a
     /// fork Fork from Here made.
     var onOpenChat: ((ChatSummary) -> Void)?
+    /// The `…` menu's Open Git and New Conversation, which the root's bar
+    /// used to carry.
+    var onOpenGit: (() -> Void)?
+    var onNewChat: (() -> Void)?
     private let titleView = ChatTitleView()
     private var messageList = ListView<ChatMessage>()
     @objc dynamic private var openingQueueEditor = false
     private let composer = ComposerView()
     private let topBlur = ChatTopBlurView()
+    private let chatBackground = ChatBackgroundView()
+    /// The line a conversation without messages opens with, in the middle of
+    /// the blank area above the composer.
+    private let welcome = ChatWelcomeView()
+    /// Behind everything: the paper or picture the reader chose, drawn under
+    /// the message list and the composer, which both stay transparent where
+    /// they can.
     /// A tap on the page, anywhere the composer is not, puts the keyboard
     /// away; the tap still reaches what it landed on.
     private let keyboardDismissTap = UITapGestureRecognizer()
@@ -115,6 +126,7 @@ final class ChatController: UIViewController {
     private static let modelLogger = Logger(subsystem: "com.fluoxetine.luros", category: "ModelPicker")
     private var selectionCheck: Task<Void, Never>?
     private var attachmentImport: ComposerAttachmentImport?
+    private var importingShareIDs = Set<UUID>()
     private var skillsLoaded = false
     private var skillsLoading = false
     /// The rewrite in flight, so a second tap stops it rather than racing it.
@@ -141,6 +153,8 @@ final class ChatController: UIViewController {
                 runtime: runtime,
                 from: self,
                 anchor: more,
+                onOpenGit: { [weak self] in self?.onOpenGit?() },
+                onNewChat: { [weak self] in self?.onNewChat?() },
                 onPrepareDistribution: { [weak self] prompt in self?.sendPrompt(prompt) },
                 onDelete: { [weak self] id in self?.onDelete?(id) },
                 // The conversation's team is read here and nowhere else, so
@@ -171,6 +185,29 @@ final class ChatController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .pageBackground
+        // The conversation is written on a paper or the reader's picture, and
+        // it runs the whole way up: before iOS 26 the bar's own ground is an
+        // opaque band in black or white, and a message that scrolled under it
+        // vanished into that band instead of blurring into it. The page's own
+        // blur (`topBlur`) is the ground there, so the bar gives up its own.
+        if #unavailable(iOS 26) {
+            let clear = UINavigationBarAppearance()
+            clear.configureWithTransparentBackground()
+            clear.shadowColor = .clear
+            navigationItem.standardAppearance = clear
+            navigationItem.scrollEdgeAppearance = clear
+            navigationItem.compactAppearance = clear
+        }
+        chatBackground.frame = view.bounds
+        chatBackground.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.addSubview(chatBackground)
+        reloadBackground()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(reloadBackground),
+            name: ChatBackground.changed,
+            object: nil,
+        )
 
         // The keyboard goes when the page is tapped anywhere but on the
         // composer. `cancelsTouchesInView` stays false, so the tap still
@@ -279,6 +316,7 @@ final class ChatController: UIViewController {
             make.trailing.lessThanOrEqualTo(view.safeAreaLayoutGuide).offset(-16)
             make.width.equalTo(view.safeAreaLayoutGuide).offset(-32).priority(.low)
         }
+        addWelcome()
 
         var latestConfiguration: UIButton.Configuration
         if #available(iOS 26, *) {
@@ -471,7 +509,9 @@ final class ChatController: UIViewController {
                     }
                 }
         }
-        view.insertSubview(messageList, at: 0)
+        // Above the page's own background and nothing else: the background
+        // view stays at the bottom, the list sits on it.
+        view.insertSubview(messageList, aboveSubview: chatBackground)
         // The composer is another overlay; explicitly identify the list
         // whose scroll position drives the navigation bar's edge treatment.
         setContentScrollView(messageList, for: .top)
@@ -573,8 +613,62 @@ final class ChatController: UIViewController {
         messageList.contentOffset = CGPoint(x: messageList.contentOffset.x, y: target)
     }
 
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    /// Puts the opening line between the bar and the composer, on the middle
+    /// of what will be the transcript when there is one.
+    private func addWelcome() {
+        view.insertSubview(welcome, aboveSubview: messageList)
+        welcome.isHidden = true
+        let centre = UILayoutGuide()
+        view.addLayoutGuide(centre)
+        centre.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+            make.bottom.equalTo(composer.snp.top)
+        }
+        welcome.snp.makeConstraints { make in
+            make.centerX.equalTo(view)
+            make.centerY.equalTo(centre.snp.centerY)
+            make.top.greaterThanOrEqualTo(centre.snp.top)
+            make.leading.greaterThanOrEqualTo(view.safeAreaLayoutGuide.snp.leading).offset(24)
+            make.trailing.lessThanOrEqualTo(view.safeAreaLayoutGuide.snp.trailing).offset(-24)
+        }
+    }
+
+    /// The page opens with a line while it has no messages; the first one
+    /// written on it is what the page has to say instead.
+    private func updateWelcome() {
+        let empty = messages.isEmpty && (chat?.isUntitled ?? true)
+        if empty {
+            guard welcome.isHidden else { return }
+            welcome.isHidden = false
+            welcome.play()
+        } else {
+            guard !welcome.isHidden else { return }
+            welcome.isHidden = true
+            welcome.stop()
+        }
+    }
+
+    /// Keeps the paper still while the drawer slides the page: the page moves
+    /// `shift` points, the paper moves back the same, so it stays where the
+    /// screen is and the bar and composer keep reading it.
+    @objc dynamic func keepBackgroundStill(shift: CGFloat) {
+        chatBackground.transform = CGAffineTransform(translationX: -shift, y: 0)
+    }
+
+    /// The paper or the reader's picture, as Settings last left it.
+    @objc private func reloadBackground() {
+        chatBackground.opacity = ChatBackground.opacity
+        chatBackground.background = ChatBackground.current
+        topBlur.background = ChatBackground.current
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        updateWelcome()
         updateMessageListInsets()
         // Not while `use(_:)` is still swapping the conversation in:
         // restoring its draft lays the window out before its rows are in the
@@ -955,6 +1049,7 @@ final class ChatController: UIViewController {
             followedTurn = message
         }
         showTranscript(items)
+        updateWelcome()
         followTurn(heldLatest: heldLatest)
         if revealsCompaction {
             revealLatestMessage()
@@ -1172,7 +1267,7 @@ final class ChatController: UIViewController {
             return modelGroups(EnabledModels.accounts(from: cached.filter { $0.models != nil }), for: id)
         }
         let selection = ComposerModelSelection.selection(for: id)
-        return AgentProvider.allCases.compactMap { provider in
+        return EnabledModels.providers.compactMap { provider in
             guard let ids = models[provider.rawValue], !ids.isEmpty else { return nil }
             return ComposerChoiceSheet.Group(
                 title: provider.displayName,
@@ -1572,6 +1667,10 @@ extension ChatController: ComposerView.Delegate {
     /// reach) is a passing line, spoken too, since nothing else marks it;
     /// any other keeps its own words in an alert.
     private func saySendFailed(_ error: any Error) {
+        if (error as? LurosError)?.reason == .noModelConfigured {
+            askToConfigureModels()
+            return
+        }
         guard let reason = (error as? LurosError)?.reason, let cause = ChatFailure.title(for: reason) else {
             presentNotice(title: "Unable to Send Message", message: error.readableMessage)
             return
@@ -1579,6 +1678,20 @@ extension ChatController: ComposerView.Delegate {
         let title = String(localized: "Message Not Sent")
         SPIndicator.present(title: title, message: cause, preset: .error, haptic: .error)
         UIAccessibility.post(notification: .announcement, argument: [title, cause].joined(separator: ", "))
+    }
+
+    /// Nothing is signed in, so no model can answer: offer to open Model
+    /// Providers, in the reader's language, instead of the provider's words.
+    @objc private dynamic func askToConfigureModels() {
+        presentConfirmation(
+            title: "No Model Configured",
+            message: "Go to Model Providers now?",
+            cancelTitle: "Later",
+            confirmTitle: "OK",
+        ) { [weak self] in
+            guard let self else { return }
+            self.presentPageAsFormSheet(ModelProvidersController())
+        }
     }
 
     @objc dynamic func onComposerBeginEditing() {
@@ -1713,8 +1826,31 @@ extension ChatController: ComposerView.Delegate {
         }
     }
 
-    private func importer() -> ComposerAttachmentImport? {
-        guard let chat, presentedViewController == nil else { return nil }
+    func attachFiles(_ urls: [URL]) {
+        importer(external: true)?.importFiles(urls)
+    }
+
+    func attachInbox(_ items: [ShareInbox.Item]) {
+        guard let importer = importer(external: true) else { return }
+        let known = Set(runtime.records.values.flatMap { ([$0.draft] + ($0.sending ?? [])).flatMap(\.attachments).compactMap(\.storedFile) })
+        let items = items.filter { !known.contains($0.id) && importingShareIDs.insert($0.id).inserted }
+        Task {
+            for item in items {
+                defer { importingShareIDs.remove(item.id) }
+                guard FileManager.default.fileExists(atPath: item.url.path) else { continue }
+                do {
+                    var attachment = try await Task.detached(priority: .userInitiated) {
+                        try ComposerAttachmentImport.readAttachment(at: item.url, name: item.url.lastPathComponent, origin: .shareInbox(item.id))
+                    }.value
+                    attachment.shareBatch = item.batch
+                    importer.accept(attachment)
+                } catch { presentNotice(title: "Unable to Import File", message: error.readableMessage) }
+            }
+        }
+    }
+
+    private func importer(external: Bool = false) -> ComposerAttachmentImport? {
+        guard let chat, external || presentedViewController == nil else { return nil }
         let draftID = composer.draft.id
         let importer = ComposerAttachmentImport(presenter: self) { [weak self] item in
             guard let self else { return }
@@ -1725,7 +1861,7 @@ extension ChatController: ComposerView.Delegate {
                 runtime.saveDraft(draft, for: chat.id)
             }
         }
-        attachmentImport = importer
+        if !external { attachmentImport = importer }
         return importer
     }
 }

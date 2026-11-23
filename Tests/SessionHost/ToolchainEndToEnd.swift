@@ -8,7 +8,7 @@ import Foundation
 // (luros-environment-harness, a fake toolchain backend and nothing else
 // fake), wired to this host's install bridge the way SessionHost wires a
 // worker — CallerPolicy, the worker's own role, events only into tasks it
-// owns — with the fake irisind laying the package's files down under a
+// owns — with the fake install service laying the package's files down under a
 // temporary roothide install root. Setup → the bridge → irisind → the
 // self-test on the installed bytes → the registry, then toolchainRemove
 // through removePackage; and a failed self-test rolled back on the way.
@@ -174,11 +174,11 @@ func toolchainEndToEnd(harness: String) async throws {
     try manager.createDirectory(at: data.root, withIntermediateDirectories: true)
     try manager.createDirectory(at: state, withIntermediateDirectories: true)
 
-    // The fake irisind installs by unpacking the submitted package with the
+    // The fake install service installs by unpacking the submitted package with the
     // harness's reader, and removes as roothide's dpkg does: every file and
     // link the package lists goes, and each of its folders stays behind with
     // the `.jbroot` link roothide adds to it, which no package lists.
-    let irisin = FakeIrisin(root: installRoot)
+    let irisin = FakeInstallService(root: installRoot)
     irisin.onInstall = { descriptor in
         let copy = base + "/submitted-\(UUID().uuidString).deb"
         defer { unlink(copy) }

@@ -50,7 +50,6 @@
     "icon": "https://1103945342.github.io/Luros/icons/com.fluoxetine.luros.dev.app.png",
     "author": "{{author}}",
     "section": "Applications",
-    "depends": ["uikittools"],
     "layout": [
       { "path": "/Applications/{{productName}}.app", "product": "app" }
     ]

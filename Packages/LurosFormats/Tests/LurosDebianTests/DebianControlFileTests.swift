@@ -48,7 +48,7 @@ struct DebianControlFileTests {
          Luros is an on-device IDE.
          .
          Second paragraph.
-        Depends: firmware (>= 16.0), uikittools, launchctl
+        Depends: firmware (>= 16.0), launchctl
 
         """
         let control = try DebianControlFile(parsing: template)
@@ -56,7 +56,7 @@ struct DebianControlFileTests {
         #expect(control["description"] == "An on-device IDE\nLuros is an on-device IDE.\n\nSecond paragraph.")
         #expect(try control.rendered() == template)
         let reparsed = try DebianControl.parse(control.rendered())
-        #expect(reparsed["depends"] == "firmware (>= 16.0), uikittools, launchctl")
+        #expect(reparsed["depends"] == "firmware (>= 16.0), launchctl")
     }
 
     @Test(arguments: [

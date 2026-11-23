@@ -11,5 +11,5 @@ Maintainer: Fluoxetine <1103945342@users.noreply.github.com>
 Author: Fluoxetine <1103945342@users.noreply.github.com>
 Section: Utilities
 Priority: optional
-Depends: firmware (>= 16.0), uikittools, launchctl
+Depends: firmware (>= 16.0), launchctl
 Installed-Size: @INSTALLED_SIZE@

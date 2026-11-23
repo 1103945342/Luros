@@ -62,7 +62,13 @@ enum PromptRewriter {
         guard !draft.isEmpty else {
             throw LurosError(.badRequest, "There is nothing to rewrite.")
         }
-        let systemPrompt = try instructions(home: home, installRoot: installRoot)
+        let systemPrompt: String
+        if let given = request.instructions?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !given.isEmpty {
+            systemPrompt = given
+        } else {
+            systemPrompt = try instructions(home: home, installRoot: installRoot)
+        }
         // The app names the provider and model it is about to message with, as
         // a prompt does; nothing here reads a setting of its own. A rewrite
         // without a model is refused rather than answered by another provider:

@@ -113,7 +113,7 @@ public struct AgentDelegationViolation: Error, LocalizedError, Sendable, Equatab
         self.rule = rule
     }
     public var errorDescription: String? {
-        "Step \(stepID) \"\(title)\": \(rule) Report the blocker to the opener; approval cannot widen this step."
+        "Step \(stepID) \"\(title)\": \(rule) Report the blocker to the opener; only an amendment of this step can widen it."
     }
 }
 

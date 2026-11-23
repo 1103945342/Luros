@@ -9,7 +9,7 @@
 # With the second argument (built by `swift build --product
 # luros-environment-harness` in the same scratch path), the toolchain setup
 # runs end to end: the real environment worker in its own process against
-# this host's install bridge and a fake irisind.
+# this host's install bridge and a fake install service.
 #
 # `--device` runs the half that needs no xcrun and no macOS: the report outbox
 # (Lurosd/Session/Agent/AgentReportOutbox.swift) against the two protocol

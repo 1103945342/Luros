@@ -308,7 +308,7 @@ packages whose file still exists.
   `<id>_<version>.ipa` into the build's folder and records it with
   `format: "ipa"`; `luros_package_install` installs one as an app — unpacked
   under `<install root>/Applications`, each Mach-O inside it signed with
-  `ldid`, registered with `uicache -p`, and taken off again by
+  `ldid`, registered through Luros's bundled icli registrar, and taken off again by
   `luros_package_remove` — no package
   repository takes one, and Distribute… offers Share `.ipa` alone. The
   archive is read back after writing: every member under `Payload/<name>.app/`,

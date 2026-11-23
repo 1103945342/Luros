@@ -1,18 +1,12 @@
 #!/usr/bin/env python3
-"""Fail when the tools Luros carries beside it drift from what says so.
+"""Fail when what Luros carries drifts from what says so.
 
-`Vendor/` holds the `icli` and the two Irisin binaries the package no longer
-depends on: the daemon and the helper it runs to install anything. Three things
-have to agree with it, and a change to one that leaves the others behind is the
-bug this checks for:
-
-- `Vendor/README.md` names each file's version and SHA-256, and the file on
-  disk matches its digest and carries an execute bit.
-- `Scripts/package-deb.sh` stages each into `Luros.app/Vendor/` and proves
-  the packaged deb holds them.
-- `Packaging/DEBIAN/control` depends on neither package, and the maintainer
-  scripts register the bundled daemon under Luros's own label, put its helper
-  at the path it looks for, and remove both, never Irisin's.
+`Vendor/` holds the one device tool the package no longer depends on: icli.
+The installer is no longer a binary there — it is `Packages/IrisinKit`,
+compiled into lurosd's installer mode — and the things that keep that honest
+are checked here too: its README pins the upstream tag, its LICENSE travels
+with it, and neither the package's maintainer scripts nor its staging bring
+Irisin's daemon back.
 
 Usage: check-vendored-tools.py <root>
 
@@ -27,10 +21,10 @@ import sys
 # path in the bundle -> the package the binary came from
 TOOLS = {
     "bin/icli": "com.icli.icli",
-    "libexec/irisind": "wiki.qaq.irisin",
-    "libexec/irisin-install": "wiki.qaq.irisin",
 }
-LABEL = "com.fluoxetine.luros.irisind"
+# The vendored installer, compiled from source into lurosd.
+INSTALLER = "Packages/IrisinKit"
+PIN = "v5.1.8"
 
 
 def read(path):
@@ -69,9 +63,15 @@ def main():
                 "update the table when the binary changes",
             )
 
+    # Irisin's daemon is not carried any more, in any form: a file under
+    # Vendor/, a copy in the bundle, or a job the maintainer scripts write.
+    for stale in ("Vendor/libexec/irisind", "Vendor/libexec/irisin-install"):
+        if os.path.exists(os.path.join(root, stale)):
+            problems.append(f"{stale} is back; the installer is source now ({INSTALLER})")
+
     control = read(os.path.join(root, "Packaging", "DEBIAN", "control"))
     depends = [line for line in control.splitlines() if line.startswith(("Depends:", "Pre-Depends:"))]
-    for package in TOOLS.values():
+    for package in list(TOOLS.values()) + ["wiki.qaq.irisin"]:
         if any(package in line for line in depends):
             problems.append(f"control depends on {package}, which the bundle carries")
 
@@ -79,25 +79,21 @@ def main():
     for relative in TOOLS:
         if f"Vendor/{relative}" not in packaging:
             problems.append(f"package-deb.sh never stages Vendor/{relative}")
+    for stale in ("Vendor/libexec/irisind", "Vendor/libexec/irisin-install"):
+        if stale in packaging:
+            problems.append(f"package-deb.sh still stages {stale}")
 
     postinst = read(os.path.join(root, "Packaging", "DEBIAN", "postinst"))
-    if LABEL not in postinst or "wiki.qaq.irisin.service" not in postinst:
-        problems.append("postinst does not register the bundled daemon under " + LABEL)
-    if "Vendor/libexec/irisind" not in postinst:
-        problems.append("postinst does not launch the bundled irisind")
-    if "Vendor/libexec/irisin-install" not in postinst or "@PREFIX@/usr/libexec/irisin-install" not in postinst:
-        problems.append("postinst does not put Irisin's install helper beside the bundled daemon")
-    if "wiki.qaq.irisind.plist" not in postinst:
-        problems.append("postinst registers the bundled daemon without checking for Irisin's own")
+    if "wiki.qaq.irisin.service" in postinst or "com.fluoxetine.luros.irisind" in postinst:
+        problems.append("postinst registers an irisind job again; nothing listens on a Mach service now")
 
-    for script in ("prerm", "postrm"):
-        text = read(os.path.join(root, "Packaging", "DEBIAN", script))
-        if LABEL not in text:
-            problems.append(f"{script} never stops {LABEL}")
-        if "wiki.qaq.irisind.plist" in text or "system/wiki.qaq.irisind" in text:
-            problems.append(f"{script} names Irisin's own job, which Luros does not own")
-    if f'rm -f "${{iris_plist:?}}"' not in read(os.path.join(root, "Packaging", "DEBIAN", "postrm")):
-        problems.append("postrm does not remove the job file Luros wrote")
+    installer_readme = os.path.join(root, INSTALLER, "README.md")
+    if not os.path.isfile(installer_readme):
+        problems.append(f"{INSTALLER}/README.md is missing: the pinned installer has no provenance")
+    elif PIN not in read(installer_readme):
+        problems.append(f"{INSTALLER}/README.md does not pin {PIN}")
+    if not os.path.isfile(os.path.join(root, INSTALLER, "LICENSE")):
+        problems.append(f"{INSTALLER}/LICENSE is missing")
 
     for problem in problems:
         print("error: " + problem, file=sys.stderr)

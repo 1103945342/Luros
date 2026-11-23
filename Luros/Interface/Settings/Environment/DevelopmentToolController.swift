@@ -1,9 +1,9 @@
 import LurosProtocol
 import UIKit
 
-/// Settings ▸ Environment ▸ Third-Party Tools: the four packages Luros's own
-/// work needs — `ldid`, `git`, `dpkg-deb` and `uikittools` (whose `uicache`
-/// registers a built app) — and whether this device has each one.
+/// Settings ▸ Environment ▸ Third-Party Tools: the packages Luros's own work
+/// may need — `ldid`, `git` and `python3` — and whether this device has each
+/// one. App registration uses the icli carried by Luros itself.
 ///
 /// Nothing installs from here: a missing package is the user's package
 /// manager's, so the row offers to open that package's page and leaves the

@@ -127,6 +127,32 @@ public struct AgentAssignment: Codable, Sendable, Equatable {
     public private(set) var blockers: [Blocker]
     /// The reason recorded with a cancellation or failure, for the account.
     public private(set) var outcomeNote: String?
+    /// Capabilities the child met a refusal for, as the host saw it. A
+    /// request grants nothing: only the opener's amendment of the step does.
+    /// Older records decode with none.
+    public private(set) var capabilityRequests: [CapabilityRequest]?
+
+    /// One capability the child needed and its open step did not allow.
+    public struct CapabilityRequest: Codable, Sendable, Equatable {
+        /// The capability the step lacked (`build`, `install`, …).
+        public var capability: String
+        /// The operation or tool that met the refusal.
+        public var tool: String
+        public var stepID: String
+        public var planRevision: UInt64
+        public var at: Date
+
+        public init(capability: String, tool: String, stepID: String,
+                    planRevision: UInt64, at: Date = Date()) {
+            self.capability = capability
+            self.tool = tool
+            self.stepID = stepID
+            self.planRevision = planRevision
+            self.at = at
+        }
+    }
+
+    public static let maximumCapabilityRequests = 8
 
     public init(id: String, origin: Origin, objective: String, acceptance: [String],
                 briefRevision: UInt64) throws {
@@ -141,6 +167,7 @@ public struct AgentAssignment: Codable, Sendable, Equatable {
         checks = []
         blockers = []
         outcomeNote = nil
+        capabilityRequests = nil
         try validate()
     }
 
@@ -269,6 +296,33 @@ public struct AgentAssignment: Codable, Sendable, Equatable {
         return try mutated { next in
             next.state = .failed
             next.outcomeNote = reason
+        }
+    }
+
+    /// Records that the child met a refusal for a capability its open step
+    /// does not hold. Idempotent for the same capability, step and plan
+    /// revision — whichever call met it — so a repeated refusal adds nothing
+    /// and never moves the revision twice; the newest
+    /// `maximumCapabilityRequests` are kept.
+    public func requestingCapability(_ request: CapabilityRequest,
+                                     expectedRevision: UInt64) throws -> Self {
+        try requireRevision(expectedRevision)
+        guard !state.isTerminal else {
+            throw refusal("The assignment is \(state.rawValue); a capability cannot be asked of it.")
+        }
+        guard Self.nonempty(request.capability), Self.nonempty(request.tool),
+              Self.nonempty(request.stepID) else {
+            throw refusal("A capability request names the capability, the tool and the step.")
+        }
+        if capabilityRequests?.contains(where: {
+            $0.capability == request.capability && $0.stepID == request.stepID
+                && $0.planRevision == request.planRevision
+        }) == true {
+            return self
+        }
+        return try mutated { next in
+            next.capabilityRequests = Array(((next.capabilityRequests ?? []) + [request])
+                .suffix(Self.maximumCapabilityRequests))
         }
     }
 
@@ -408,6 +462,9 @@ public struct AgentAssignmentSnapshot: Codable, Sendable, Equatable {
         public var checks: [AgentAssignment.Check]
         public var missingChecks: [String]
         public var blockers: [AgentAssignment.Blocker]
+        /// Capabilities the child asked for that its step did not allow;
+        /// nil in a snapshot taken before one was recorded.
+        public var capabilityRequests: [AgentAssignment.CapabilityRequest]?
         public var outcomeNote: String?
     }
 
@@ -594,6 +651,7 @@ public struct AgentAssignmentGroup: Codable, Sendable, Equatable {
                     checks: assignment.checks,
                     missingChecks: assignment.missingChecks,
                     blockers: assignment.blockers,
+                    capabilityRequests: assignment.capabilityRequests,
                     outcomeNote: assignment.outcomeNote
                 )
             }

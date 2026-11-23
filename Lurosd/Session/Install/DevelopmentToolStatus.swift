@@ -1,27 +1,30 @@
 import LurosProtocol
 import Foundation
 
-/// The four programs Luros's own work needs, and whether this device has
-/// each: the program must be an executable in `usr/bin`, and the package that
-/// carries it installed, for the row to say so.
+/// The programs that building, installing and talking to this device may
+/// need, and whether this device has each: the executable must be where the
+/// package puts it, and that package installed, for the row to say so.
+///
+/// App registration is the bundled icli's work; `python3` is one of the
+/// interpreters a conversation's `run_code` and a project's external build
+/// script may name.
 ///
 /// Reading only. Installing one is the user's package manager's — the app
 /// opens it at the package's page — so nothing here fetches, resolves or
 /// installs anything.
 enum DevelopmentToolStatus {
     /// The row's name, the program that proves it, and where it lives.
-    static let definitions: [(package: String, program: String)] = [
-        ("ldid", "ldid"),
-        ("git", "git"),
-        ("dpkg-deb", "dpkg-deb"),
-        ("uikittools", "uicache"),
+    static let definitions: [(package: String, program: String, directory: String)] = [
+        ("ldid", "ldid", "usr/bin"),
+        ("git", "git", "usr/bin"),
+        ("python3", "python3", "usr/bin"),
     ]
 
     static func rows(installRoot: String) -> [DevelopmentToolRow] {
         let status = installedPackages(installRoot: installRoot)
         let root = installRoot == "/" ? "" : installRoot
         return definitions.map { definition in
-            let path = root + "/usr/bin/" + definition.program
+            let path = root + "/" + definition.directory + "/" + definition.program
             let present = FileManager.default.isExecutableFile(atPath: path)
             return DevelopmentToolRow(
                 packageID: definition.package,

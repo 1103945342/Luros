@@ -14,7 +14,7 @@ The formats are specified in
 
 | Package | Templates | Support | Depends (beyond `com.fluoxetine.luros (>= 0.1.0)`) |
 |---|---|---|---|
-| `com.fluoxetine.luros.dev.app` | `uikit-objc`, `uikit-swift` (Swift component required) | — | `uikittools` |
+| `com.fluoxetine.luros.dev.app` | `uikit-objc`, `uikit-swift` (Swift component required) | — | — |
 | `com.fluoxetine.luros.dev.tweak` | `objc-hook` | `substrate`: `substrate.h`, `libsubstrate.tbd` per bootstrap | `mobilesubstrate` |
 | `com.fluoxetine.luros.dev.cli` | `c`, `objc` | — | — |
 | `com.fluoxetine.luros.dev.preferences` | `objc-bundle` | `preferences`: `Preferences/PSListController.h`, `Preferences.framework/Preferences.tbd` | `preferenceloader` |

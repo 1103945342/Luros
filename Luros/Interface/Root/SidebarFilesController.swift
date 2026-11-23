@@ -580,7 +580,7 @@ private extension ProjectFiles.NameProblem {
 /// One row of the file list: the icon and the name indented by how deep the
 /// row sits, a line for every folder above it, and — for a folder — whether
 /// it is open.
-final class SidebarFileCell: UITableViewCell {
+final class SidebarFileCell: SidebarGlassCell {
     private let guides = FileGuideLinesView()
 
     private let icon = UIImageView().then {
@@ -626,8 +626,6 @@ final class SidebarFileCell: UITableViewCell {
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        backgroundColor = .clear
-        selectionStyle = .default
         // The lines go under everything the row shows.
         contentView.addSubview(guides)
         contentView.addSubview(chevron)

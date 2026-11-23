@@ -27,9 +27,14 @@ enum ProjectActions {
         anchor: UIBarButtonItem,
         distributionBlocker: String? = nil,
         chatActions: [UIKit.UIAction] = [],
+        leadingFolderActions: [UIKit.UIAction] = [],
         onPrepareDistribution: ((String) -> Void)? = nil,
     ) -> UIMenu {
-        let folders = folderActions(from: presenter, failureTitle: "Unable to Open Project") {
+        let folders = folderActions(
+            from: presenter,
+            failureTitle: "Unable to Open Project",
+            leading: leadingFolderActions,
+        ) {
             let path = try directory(named: projectName)
             return FolderTarget(directory: path, projectRoot: path)
         }
@@ -79,6 +84,7 @@ enum ProjectActions {
     static func folderActions(
         from presenter: UIViewController,
         failureTitle: String.LocalizationValue,
+        leading: [UIKit.UIAction] = [],
         folder: @escaping () throws -> FolderTarget,
     ) -> [UIKit.UIAction] {
         let resolve = { [weak presenter] (open: (URL, URL?, UIViewController) -> Void) in
@@ -94,7 +100,7 @@ enum ProjectActions {
                 presenter.presentNotice(title: failureTitle, message: error.readableMessage)
             }
         }
-        return [
+        return leading + [
             UIAction(title: String(localized: "Open Terminal"), image: UIImage(systemName: "terminal")) { _ in
                 resolve { directory, root, from in
                     TerminalPresenter.open(directory: directory, projectRoot: root, from: from)

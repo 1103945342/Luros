@@ -62,8 +62,8 @@ the same executable in session mode; the workers are its children.
   `.ipa` installs as an app, never as a
   package: `installPackage` on an ipa artifact unpacks it inside the host,
   signs its one `Payload/*.app` where staging holds it, reads the signed
-  copy back (`uicache -p` answers zero for a folder holding no app, so the
-  listing from `uicache -l` is the receipt), ends whatever still runs from
+  copy back (the bundled icli registers it; the listing from `icli app list` is
+  the receipt), ends whatever still runs from
   the bundle it replaces, and only then puts it at
   `<install root>/Applications` — a bundle staged on another volume is copied
   beside it first, so every move that changes what the device holds is a
@@ -76,7 +76,7 @@ the same executable in session mode; the workers are its children.
   The record keeps the bundle so a removal unregisters and deletes it, and
   an earlier record of the same bundle is `superseded` rather than left
   claiming the app — it may not be removed in the newer one's place. dpkg
-  and irisind never see an `.ipa`, no package repository takes one, and the
+  and the installer never see an `.ipa`, no package repository takes one, and the
   Distribute… page offers Share `.ipa` alone. The two formats are never one
   renamed into the other, and a deb keeps every check it had.
 - **A project made from a template also carries an Xcode project.**
@@ -102,6 +102,21 @@ the same executable in session mode; the workers are its children.
   network call. A module's dependencies are built before it, a cycle is
   refused, and its declaration is in the build digest while its files are
   sources like any other.
+- **A delegated conversation reaches work through a typed capability, never
+  a tool name.** `build`, `install`, `gitCommit` and `publish` each admit one
+  closed set of host operations, confined to the child's own project: its
+  build and the task it started, the package its build made (installed,
+  confirmed loaded, removed), its repository's stage/commit, and the packages
+  its builds publish as built. Everything else — shell commands, toolchains,
+  SDKs, pushes, branch and history resets, MCP and extensions,
+  sub-delegation, `file_show` — is refused whatever a step declares. An
+  approval never widens a step: the opener's `amend` does, and a refusal for
+  a capability the step lacks is recorded in the opener's ledger
+  (`capabilityRequests`) so it can see what to grant.
+  `AgentDelegationToolPolicy.capability(ofTool:)` and `capability(of:)` are
+  the one table (`AgentDelegationOperations.swift`), the target checks live in
+  `AgentDelegationTargets.swift`, and a new adapter needs an entry in all
+  three plus a check in `Tests/TeamCollaboration/DelegationHandlerChecks.swift`.
 - **roothide is recognised by the process's own path** (`RoothideRoot`,
   libroothide's own name rule), never by loading libroothide through the
   `.jbroot` link, which is not promised, and never by falling back to
@@ -226,7 +241,9 @@ the same executable in session mode; the workers are its children.
   starts `ci.yml` on that commit, which compiles, packages and verifies both
   layouts and keeps `build/Packages/` as the artifact `luros-<sha>` for thirty
   days; a branch push starts nothing, and `Debug build` packages `main` only
-  as a try-out artifact that publishes nothing. `release.yml` runs on the
+  as a try-out artifact that publishes nothing, and keeps the one `.deb` the
+  IDE installs itself from — the agent tool packages built beside it stay on
+  the runner. `release.yml` runs on the
   tag, compiles nothing, waits for that commit's CI run, refuses to publish
   unless it passed, and ships the bytes CI verified. Never build a second
   time to publish: a second build is a different build number, a different
@@ -286,7 +303,13 @@ the same executable in session mode; the workers are its children.
   the floor and warns nowhere. `make check` checks it against CoreGlyphs.
 - **No new dependency without a reason that survives the ladder**: what it
   replaces, and why the hand-written version would be worse rather than merely
-  longer. Nothing third-party links into the daemon.
+  longer. Nothing third-party links into the daemon — except the installer
+  (`Packages/IrisinKit`: Irisin's own installer, MIT, pinned in its README),
+  which reads a `.deb` through libarchive and must run from the same
+  executable the session host already is; a second shipped root binary is
+  exactly what the vendored-daemon work removed. `Scripts/check-system-only.py`
+  allows those three products and no other, and fails on UIKit or XPC anywhere
+  in that package.
 - **The Licenses screen is generated, not written.** The app target's
   **Collect Licenses** build phase runs `Scripts/collect-licenses.py`, which
   writes `Licenses.json` into the app bundle from the repository `LICENSE`,
@@ -420,8 +443,8 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   `toolchainSelfTest`, `toolchainSetDefault`; `sdkList`,
   `sdkImport`, `sdkRemove`; `environmentAttach`, `environmentCancel`;
   `developmentTools` (Settings ▸ Environment ▸ Third-Party Tools: `ldid`,
-  `git`, `dpkg-deb` and `uikittools`, read only — a missing one is the user's
-  package manager's, which the row opens at that package's page);
+  `git` and `python3`, read only — a missing one is
+  the user's package manager's, which the row opens at that package's page);
   `extensionList`, `projectCreate`, `projectCheck`, `projectRename`,
   `projectDelete`; `buildStart`,
   `buildAttach`, `buildCancel`; `installPackage`, `removePackage`,
@@ -640,10 +663,11 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   adds to LurosCore and LurosProtocol only LurosLogReaderWorker, whose
   closure is LurosLogReader, its Objective-C shim and the shared request
   types; lurosd links those two, LurosToolHost and LurosToolCore
-  (Packages/LurosToolHost) and compiles the vendored IrisinExternalClient
-  (`Lurosd/Vendor/`, MIT, Irisin 4.7.0, its LICENSE beside it) — every one
-  of them system code that depends on nothing else. `make harness` checks
-  all of it (`Scripts/check-system-only.py`). The agent, diagnostics and
+  (Packages/LurosToolHost) and the vendored installer (`Packages/IrisinKit`,
+  MIT, Irisin v5.1.8, pinned in its README) — the one third-party link a root
+  process here carries, because an install has to run from the same executable
+  the session host is. `make harness` checks all of it
+  (`Scripts/check-system-only.py`). The agent, diagnostics and
   log-reader workers' `main.swift` is one call into a package library
   (`LurosAgentWorker`, `LurosDiagnosticsWorker`, `LurosLogReaderWorker`),
   so the logic is tested by `make harness`.
@@ -665,7 +689,7 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
     resume plan or a cancel, never for an ordinary event (a reopened
     conversation relays tens of thousands), so `load` takes `lastSeq` and
     `updatedAt` from the last event that reads, the time only forward. Installs resume: a staged one is
-    submitted again under its own transaction ID (irisind answers `dup`), a
+    submitted again under its own transaction ID (the installer answers `dup`), a
     submitted one is followed again from the last event relayed. Builds and
     environment tasks resume (`Session/TaskResume.swift`): `startTask(…,
     resumable: true)` writes the operation, its payload and the calling
@@ -698,11 +722,14 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
     report counts tasks by kind (build, environment, terminal, agent,
     install, load check, sign-in) — resumed ones included —, live workers and tool
     extensions; the proxy counts the app.
-  - *Install bridge* (`Session/Install/`). The host is irisind's client:
-    lurosd carries `wiki.qaq.irisin.client` (with `platform-application` and
-    `no-sandbox`; the app and the workers never do), and the package carries
-    its own `irisind` inside the app bundle, so it depends on no Irisin
-    package — from 4.7.3 irisind takes an external client only at euid 0, which the session host is; nothing running as mobile may call it. `installPackage{artifactID,
+  - *Install bridge* (`Session/Install/`). The host installs itself: `lurosd`
+    starts its own installer (`--installer`: the same executable, in a session
+    of its own, with the job on standard input and the package on descriptor
+    3) over `Packages/IrisinKit`, Irisin's installer compiled from source.
+    There is no Mach service, no daemon to register and no client entitlement;
+    nothing outside the session host can start an install, and the transaction
+    directory `/var/lib/luros/install-transactions/<id>` is what says how it
+    went. `installPackage{artifactID,
     digest}` takes a build's artifact — recorded by the host from the build
     worker's own `artifact` event (`path` inside the data folder, `digest`,
     `packageID`, `version`, `projectID`, `packagingDigest`, `packageFiles`) —, a toolchain
@@ -714,22 +741,22 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
     `file:<path inside ~/Documents/com.fluoxetine.luros>`. A writer for the
     bridge sets `DebPackageWriter.controlCompression = .gzip`: a zstd
     control member is judged by the ID its source promised and failed
-    loudly if irisind reports another. The host
+    loudly if the installer reports another. The host
     copies it into `staging/` while hashing, refuses a digest that is not
     the request's and the build's, reads the control file itself (gzip, xz
     or plain control members), applies the managed-package rules, writes
     the installation record (`installations/<id>.json`: project and build,
     artifact digest, package, version, the lowercase-UUID transaction ID it
-    chose, then irisind's receipt) and submits the staged copy by
-    descriptor. When irisind refuses it, and only then, the host names who
+    chose, then the installer's receipt) and submits the staged copy by
+    descriptor. When the installer refuses it, and only then, the host names who
     is in the way (`InstallConflicts`): each installed package whose
     `var/lib/dpkg/info/<package>.list` lists a file the build recorded
     (unless the deb Replaces it), or that the deb's unversioned Conflicts
     or Breaks names (the host compares no versions), as a `conflict` event
     (`InstallConflict`, with the installation `removePackage` takes when
     Luros made it); the failure says who and how to clear it before
-    irisind's own words, which stand alone when nothing is found. irisind
-    decided already, and nothing is removed. `removePackage{installationID}`
+    the installer's own words, which stand alone when nothing is found. The
+    installer decided already, and nothing is removed. `removePackage{installationID}`
     acts only on a record whose install succeeded and whose package is
     still installed at that version, with no newer record of the package
     (whose ID the refusal names);
@@ -751,7 +778,8 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
     away the folders roothide's `.jbroot` links kept (`ToolchainTreePruner`):
     only when every entry is a folder or a `.jbroot` link, the links
     unlinked without being followed and the folders removed bottom up; a
-    file or any other link keeps the whole tree. `respring` is irisind's.
+    file or any other link keeps the whole tree. `respring` is the installer's: `sbreload` for the graceful restart, `backboardd`'s
+    signal when that fails.
   - *Approvals* (`Session/Approval/`). The host keeps the Confirm-mode ledger:
     per project the template's build and packaging digests (recorded from
     `projectCreate`'s `descriptionDigests`) and every digest the user
@@ -956,7 +984,7 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   (`Tests/SessionHost/`): record persistence and resume (a build restarted
   over a real channel, the refusals, the cancel, the retry bound), CallerPolicy, the
   edit rules on a temporary root, the managed-package rules, the bridge
-  against a fake irisind, the folders a removed toolchain leaves, the
+  against a fake install service, the folders a removed toolchain leaves, the
   ledger, the control reader, the attachment
   copies, ordinary events leaving the record alone and its number and time
   read back from the log, one `agentOpen` of a session at a time, Ask
@@ -1243,7 +1271,8 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   CS_ADHOC and the first-page hash in memory, then requires the original
   whole-file SHA-256. Code, dependencies and entitlements remain covered;
   neither the installed tool nor its manifest is rewritten. The install is
-  never abandoned: a cancel waits for irisind's answer.
+  never abandoned: a cancel ends the installer's process group, so the run
+  stops with the task rather than outliving it.
   job.json holds the host's install task from `installPackage`'s answer to
   its end, so a setup resumed past it — re-run, or re-sent by the host under
   the same task ID — follows that task (`buildAttach`) instead of handing
@@ -1279,7 +1308,7 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   runs only a Mach-O carrying the CoreTrust-bypass signature its dpkg
   hook writes (Bootstrap-basebin `autosign.m`: its own `ldid`, then
   `fastPathSign`), and what Luros signs is ad hoc and goes through
-  irisind, never dpkg — on the reporter's iPhone clang was "Bad
+  the installer, never dpkg — on the reporter's iPhone clang was "Bad
   executable" at the self-test.
   It is known by the mark Bootstrap writes in its root, `.thebootstrapped`
   (`.bootstrapped` in its betas), which Dopamine-roothide refuses to
@@ -1374,7 +1403,7 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   `ToolchainTests` and the session host's end-to-end test
   (`Tests/SessionHost/ToolchainEndToEnd.swift`: `luros-environment-harness`,
   the real worker with a fake backend, against the install bridge and a fake
-  irisind); on a device by `Documents/Console/scripts/t1-toolchain-setup.json`,
+  install service); on a device by `Documents/Console/scripts/t1-toolchain-setup.json`,
   `t2-toolchain-remove.json` and `t3-toolchain-side-by-side.json`.
 - **Transfer files** (2026-10-21; `Operations/Transfer.swift`,
   `LurosEnvironment/Transfer/`, `Lurosd/Dispatch/TransferHandler.swift`,
@@ -1398,7 +1427,7 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   (`ToolchainTransfer.exportCopy` in Packages/LurosToolchain: every file
   checked against the toolchain manifest's digest, RootHide's runtime brand
   undone, folders and links as they are), and the importing device packages
-  it for its own bootstrap with `ToolchainPackager`, so what irisind gets is
+  it for its own bootstrap with `ToolchainPackager`, so what the installer gets is
   always built on that device from checked bytes, never a deb's data member
   from elsewhere, and a toolchain moves between rootless and roothide (the
   file records the bootstrap and architecture it came from; the inspection
@@ -2677,15 +2706,13 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   then the rest under Sign In with an Account and API Keys, searchable)
   signs in to every login kwwk offers, plus DeepSeek. API-key fields use native inset
   grouped sections, with Fetch Models in the navigation bar. Setup stores
-  the key and gets the endpoint's model list before model selection; no
+  the key and opens model selection while the endpoint's list loads; no
   arbitrary default model is probed. The selection page allows custom IDs
   only for API-key accounts. A trailing swipe removes an API model locally;
   saved hidden IDs keep it out of later discovery, and adding the ID again
   restores it. Custom IDs, hidden IDs and enabled IDs commit together on
-  Save. Save probes every selected ID in the account
-  worker before changing the device's enabled list; a long press offers
-  Save Without Verification. A failure preserves the selection. These
-  validation tasks use the existing sign-in task lifetime and cancellation.
+  Save. Saving API-key models is local: neither a catalog response nor a
+  successful model probe is required.
   `ProviderProgress` uses AlertController's progress view for discovery and
   the existing AlertController-backed ProgressCard for cancellable work;
   Cancel stops both the UI task and backend task. Both dismiss before success.
@@ -4036,12 +4063,12 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   prompt has the agent say what it will open, read or do and wait for the
   user's reply first. Off, those calls go as the mode says. Screenshots
   stay the conversation's rule (2026-10-29).
-- **Install** always packages a deb and hands it to Irisin's daemon. irisind
-  is changed to accept a peer by its entitlement and an executable under the
-  jailbreak root or the system, not by Irisin's own path, and ships in a new
-  Irisin release; Luros depends on that version and installs through it
-  from there on. No CLI, no symlinks into the load directory. Nothing in
-  Luros couples to the `apt` or `dpkg` binaries: both are on their way out.
+- **Install** always packages a deb and hands it to Luros's own installer:
+  `lurosd --installer`, Irisin's installer compiled from source
+  (`Packages/IrisinKit`), started by the session host that approved it. No
+  CLI, no symlinks into the load directory, and no other program's service.
+  Nothing in Luros couples to the `apt` or `dpkg` binaries: both are on their
+  way out.
 - **Reuse before writing**: everything the five sibling apps already do comes
   across — iGhostVT's terminal, log viewing, Fila's binary parsing and its
   file-descriptor editing through the privileged process, Irisin's signing —
@@ -4082,19 +4109,19 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   framework. Templates from OwnGoal's open-source template repositories reach
   the extensions by a file convention, and the app discovers extensions and
   templates at launch.
-- **The two device tools ride inside the app too**: `icli` and `irisind` are
-  committed under `Vendor/` with their digests (`Vendor/README.md`), staged
-  into `Applications/Luros.app/Vendor/`, and the package depends on neither
-  `com.icli.icli` nor `wiki.qaq.irisin`. The bundle's `bin` goes last on every
-  run's `PATH`, behind the bootstrap's own directories, so an `icli` the
-  device installed still wins. `postinst` registers the bundled `irisind`
-  under the label `com.fluoxetine.luros.irisind` with the Mach service irisind
-  serves, and only when no Irisin job is on disk: a device with the real
-  package keeps its daemon, and `prerm`/`postrm` stop and remove only
-  Luros's. `Scripts/check-vendored-tools.py` fails when a binary, the table,
-  the packaging script, the control file or the maintainer scripts stop
-  agreeing. Neither copy reads a resource from the rest of its original
-  package, and both link only system libraries.
+- **The device tool rides inside the app, and the installer is source**:
+  `icli` is committed under `Vendor/` with its digest (`Vendor/README.md`),
+  staged into `Applications/Luros.app/Vendor/`, and the package depends on
+  neither `com.icli.icli` nor `wiki.qaq.irisin`. The bundle's `bin` goes last
+  on every run's `PATH`, behind the bootstrap's own directories, so an `icli`
+  the device installed still wins. The installer Irisin used to be is gone
+  from `Vendor/`: `Packages/IrisinKit` (Irisin's own installer, MIT, pinned in
+  its README) is compiled into `lurosd`, which runs it as `lurosd
+  --installer` — no daemon, no launchd job, no Mach service name. `postinst`
+  and `prerm`/`postrm` only know Luros's own job. `Scripts/check-vendored-tools.py`
+  fails when the binary, its table, the packaging script, the control file or
+  the maintainer scripts stop agreeing, and when an irisind job or binary
+  comes back.
 - **The two agent tool extensions ride inside the app as well**: `assembler`
   and `disassembler` are built by `deb-agent-tools`, and the package carries
   each one's executable and manifest under
@@ -4125,7 +4152,7 @@ Lurosd/                 the daemon, product `lurosd`: main.swift (mode switch), 
                          (listener, WorkLedger, SessionLink), Session/ (SessionHost,
                          TaskRegistry, WorkerSupervisor, CallerPolicy, Approval/, Install/,
                          Files/, Terminal/, ToolHost/, Notice/), Dispatch/ (Dispatcher,
-                         <Domain>Handler.swift), Vendor/ (IrisinExternalClient),
+                         <Domain>Handler.swift),
                          PeerAuthenticator, Spawn, syscalls
 Workers/<Name>/          one tool target each: Environment, Build, Agent, Diagnostics,
                          LogReader (products luros-environment … luros-log-reader)
@@ -4216,8 +4243,8 @@ manifest.json            the owngoal-packages entry
   --yes <deb>`, as root), never apt or dpkg; `install-device.sh` and
   `device.py install` do so.
 - `make install` — build for `FLAVOR` and update the installation on
-  `DEVICE_HOST:DEVICE_PORT` over ssh, register the bundle with `uicache -p`,
-  and open the app.
+  `DEVICE_HOST:DEVICE_PORT` over ssh, register the bundle through the
+  bundled icli, and open the app.
 - `make vphone` — the same, roothide, onto the vphone VM: `VPHONE=<name>`
   as vphone-launchpad names it (its address is read from the guest),
   `VPHONE_HOST=<address>`, or with neither the one that is running.
@@ -4284,18 +4311,19 @@ second changelog implementation or edit generated release notes by hand.
 The copied publishing workflow must be named `Release` so Pages refreshes after
 it succeeds. Deploy from `main`, including when an older release is edited.
 
-Keep the `uikittools` dependency: its triggers register and unregister the app.
-Maintainer hooks manage the daemon only; never add explicit `uicache` calls.
+App registration belongs to the icli carried in Luros's own bundle; the IDE no
+longer depends on `uikittools`. Maintainer hooks manage the daemon only; never
+add explicit `uicache` calls.
 
-That trigger is `uicache -a`, which registers only what is not registered yet.
 A package manager's UI re-registers an upgrade itself; an install from a
-`.deb` file over an installed copy may not, and LaunchServices keeps the previous build's
-Info.plist — version, document types, URL schemes, every key SpringBoard reads
-from the record rather than from disk. After installing by hand, run
-`uicache -p <prefix>/Applications/<App>.app` in the terminal, and respring if
-SpringBoard has to read it again. When a plist or entitlement change "does not
-take", check the record's `CFBundleVersion` against the bundle's before
-anything else.
+`.deb` file over an installed copy may not, and LaunchServices keeps the
+previous build's Info.plist — version, document types, URL schemes, every key
+SpringBoard reads from the record rather than from disk. After installing by
+hand, run
+`<prefix>/Applications/Luros.app/Vendor/bin/icli app register <prefix>/Applications/<App>.app`
+in the terminal, and respring if SpringBoard has to read it again. When a plist
+or entitlement change "does not take", check the record's `CFBundleVersion`
+against the bundle's before anything else.
 
 ## Where things get tested
 
@@ -4365,12 +4393,13 @@ adding a dated record beside it.
   keyboard-interactive, and an agent's keys used up the attempts first.
   `install-device.sh` clears `SSH_AUTH_SOCK`, turns public keys off and asks
   for keyboard-interactive, which sshpass answers.
-- **"Unable to register" from uicache is not always a failure.** On the
-  iOS 27 iPad vphone, uikittools' trigger and `uicache -p` both print it for
-  `Luros.app`, and `uicache -i com.fluoxetine.luros` still shows the app
-  registered at the bundle's path, and it opens. Check the record before
-  chasing the message. `install-device.sh` runs `uicache -p` after every
-  install anyway, for the install-from-a-file case above.
+- **App registration uses the bundled icli, never uicache.** A new app bundle
+  cannot be registered by `uicache -p` on iOS 27: it prints "Unable to
+  register" and `uicache -l` still omits the bundle. `ApplicationInstall`
+  therefore asks `Luros.app/Vendor/bin/icli app register`, which registers the
+  bundle and its containers; unregistration uses `icli app unregister
+  --force`. `uikittools` is not a package dependency of Luros, and the app
+  templates do not pull it in either.
 - **An iPad keeps the other app.** On the iOS 27 iPad vphone, opening
   Settings and then Luros, to make Luros come to the foreground, left
   Settings beside it with the focus: the UI tree read Settings, a tap meant
@@ -4468,7 +4497,7 @@ adding a dated record beside it.
 ## Live chat and project UI (2026-10-21)
 
 - `ChatRuntime` keeps one reader per live session while the user switches pages. It persists ordered host events and reattaches after the saved cursor. A save that fails (a full disk, a folder it cannot write) leaves the conversation running in memory: `StorageWarning` says so once — "Storage Almost Full" when less than 512 MB is free, else the error — and not again until a save gets through; the unsaved conversations are written with the next save that works and on every return to the foreground, and the same notice comes at launch or on return when free space is already under 512 MB. Sending text never needs the disk; only attachments are staged. A stopped host can reopen the persisted session ID; the host and worker refuse a different workspace identity. A reopened session comes back as a new task that replays the whole history, renumbered and newly timed, before anything new; the conversation keeps the events it has and reads past that replay (`ChatRecord.reopen(as:)`, `SessionReplay`, saved with the record) to the first user message or compaction it has not seen (Compact… reopens a stopped session with no message after it), or to the task's own end, so the rows on screen stay as they are. Of the replay it keeps only the resolution the reopened worker writes (deny, "the session restarted") for each approval an earlier task left waiting (`SessionReplay.resolvesWaitingApproval`): that task has ended, so the approval can never be answered, and read past, its card stood in for the composer on every later turn while Approve and Deny answered that it was no longer waiting (issue #38). A terminal `state` is never read as the replay (the worker replays only the states an approval sets), so a task that stops before catching up (its worker died, the host stopped, a second open failed) ends the turn as a first task does. A conversation an earlier version saved with its cursor past that end takes it again when an attach answers `finished` while its transcript still runs a turn (`ChatRecord.missedEnd`, `takeMissedEnd`): that one event, read again from just before the task's last seq; the row stops working even when it cannot be read. Never empty the events for a new task: the list would collapse to the message being sent and land at the top of the history when the replay came back. Rows are numbered by their event's position, not its seq, since a reopened task's numbering starts again. Stop calls `agentAbort`; approval buttons call `agentApprove` and wait for the authoritative resolved event.
-- `agentPrompt` accepts an optional message UUID and descriptor-indexed attachments (at most eight, at most 32 MiB each). The worker saves them under random workspace-relative `Attachments/` paths; filenames remain display metadata. The session log records the message UUID and relative attachments, deduplicates a retried send, and supplies image content to the provider. Tool-returned images are saved the same way and replay into the image album UI. So are the files `file_show` puts in front of the reader (2026-10-29, `Tools/FileShow.swift`), the agent's one way to show a project file, since a path or a `file:` link in a reply opens nothing: one to eight regular files inside the project, each at most 32 MiB, every one checked before any is copied into `Attachments/` as it is then, listed in the result's `details` (which no provider reads) and handed by the session to the call's `toolResult` attachments, where the album, the document cards and Quick Look show them. A read preset with no host request; the model hears what was shown, never the contents.
+- `agentPrompt` accepts an optional message UUID and descriptor-indexed attachments (at most eight regular files, copied in chunks without a per-file size cap). The worker saves them under random workspace-relative `Attachments/` paths; filenames remain display metadata. The session log records the message UUID and relative attachments, deduplicates a retried send, and supplies image content to the provider up to 32 MiB; larger originals remain available by their workspace paths. Tool-returned images are saved the same way and replay into the image album UI. So are the files `file_show` puts in front of the reader (2026-10-29, `Tools/FileShow.swift`), the agent's one way to show a project file, since a path or a `file:` link in a reply opens nothing: one to eight regular files inside the project, each at most 32 MiB, every one checked before any is copied into `Attachments/` as it is then, listed in the result's `details` (which no provider reads) and handed by the session to the call's `toolResult` attachments, where the album, the document cards and Quick Look show them. A read preset with no host request; the model hears what was shown, never the contents.
 - Every app prompt also carries the current approval mode and Ask Before Using the Screen, which the message's `<system-state>` names beside the mode (owner, 2026-10-30). The host updates its ledger and session table before forwarding; the session updates its tool policy and metadata, records the message (its `prompt` or `queued` event, the text alone), then builds the message's `<system-state>`: the mode reaches the model there, with whatever the session's system prompt shows that changed since (Prompt caching). A prompt naming the provider and model the session already resolved, with the same stored sign-in, keeps that resolution: no token exchange before the message is recorded, and a signed-out provider is still refused. An existing pending approval is not silently accepted. A bounded, tool-free completion on the current model summarizes the first user message into a `title` event; title failure leaves the local fallback and does not fail the turn; a later message asks again, until three completions have named nothing (`maximumTitleMisses`) or, while the project keeps its generated name, on every message. A JSON answer in one Markdown fence is read as the JSON.
 - `ChatRuntime.transcript` brings a conversation's rows up to date only when they would differ (`ChatTranscriptCache`, kept for the followed conversations and the page's). `ChatTranscript` is a fold: new events (`ChatRecord.events` are only appended to) are read onto the rows the earlier ones made (`append`), and the rows shown are made afresh from those, as a build from every event at once at the same `now` makes them (`Tests/ChatTranscript/TranscriptFold.swift` compares the two over random logs). A change to the messages it is sending, or a `quietDeadline` passed since it was shown, shows the rows again, so the refresh `ChatQuietWatch` asks for at the deadline adds the stand-in; only a sender's new title builds it again from every event. A row equal to one shown before is that very value, so the page's comparison stops at its storage. The composer is told of its approval request and its Stop only when either changes, a long-poll that ran out with nothing writes nothing, and a conversation is written once at a time, then once more with what changed meanwhile.
 - Working state comes from the reader's Send and from session events, never a late send acknowledgement: `ChatRuntime.submit` makes the conversation work while its message is on its way (`summary.isWorking`), a turn or compaction of the followed session keeps it working, and a send that fails or is stopped leaves it working only if one of those still does (`works`). `stop` withdraws every message whose send has not answered (`PendingSend`): its row goes and its draft returns as a failed send's does, and whoever waits for the send hears it cancelled at once, so the composer takes the next Send without waiting for the host; the send itself runs to its own end, where the host is not handed a message it has not got, and the run of one it had taken is stopped once the send answers, since a stop before the run starts finds nothing to stop; a session that ended with the host answers `notFound`, which is no failure to stop. An approval card needs a turn of the session actually running (`runsTurn`), so a message on its way never brings back a request a stopped session left. Completed zero-second, zero-tool thought rows are omitted. A positive duration without tools shows only the duration; tools without a positive duration show only their count; “and” joins the clauses only when both values are positive. Thought headers use Litext numeric transitions, with reduced motion respected. User messages and reply text are selectable.

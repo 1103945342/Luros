@@ -550,11 +550,12 @@ enum AgentHandler: DomainHandler {
     /// The app's prompt goes as it is, minus any `fromSessionID`, and sets
     /// the session's mode and Ask Before Using the Screen first; an agent's
     /// is rewritten as a message from its session
-    /// (`AgentConversationRules.childPrompt`) and changes neither.
-    /// Either one its worker took has reached the session in this host's
-    /// run (`AgentHostRun`).
+    /// (`AgentConversationRules.childPrompt`), and gives the target its
+    /// opener's mode as that opener holds it now — the message carries none
+    /// of its own. Either one its worker took has reached the session in
+    /// this host's run (`AgentHostRun`).
     private static func prompt(_ request: HostRequest, host: SessionHost) async -> HostReply {
-        let prompt: AgentPromptRequest
+        var prompt: AgentPromptRequest
         var wire: WireRequest
         var fromAgent = false
         do {
@@ -567,6 +568,15 @@ enum AgentHandler: DomainHandler {
                     sender: sender,
                     target: target,
                     descriptorCount: request.descriptors.count
+                )
+                // A conversation this one opened follows its opener's mode as
+                // that opener holds it now, and the host adds it, never the
+                // agent's message: a child cannot ask for a wider mode. A
+                // conversation it did not open keeps the mode the app gave it.
+                prompt.applyOpenerMode(
+                    sender.mode,
+                    targetParentSessionID: target?.parentSessionID,
+                    openerSessionID: sender.sessionID,
                 )
                 // Another project's conversation: under Confirm, the user's
                 // approval of exactly this message, spent here.
@@ -600,6 +610,9 @@ enum AgentHandler: DomainHandler {
             if let injection = prompt.promptInjection {
                 await AgentSessionTable.shared.setPromptInjection(injection, session: prompt.sessionID)
             }
+            // A conversation an agent opened carries its opener's mode when
+            // the host forwarded the message, so this applies it to the child
+            // and to the child's worker, which asks as that mode says.
             guard let mode = prompt.approvalMode else { return }
             await host.approvals.setMode(mode, session: prompt.sessionID)
             await AgentSessionTable.shared.setMode(mode, session: prompt.sessionID)

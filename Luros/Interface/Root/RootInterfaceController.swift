@@ -22,6 +22,34 @@ final class RootInterfaceController: UIViewController {
     private let sidebar = SidebarController()
     private let chatRuntime = ChatRuntime()
     @objc private dynamic var restoredChat = false
+    private var pendingFiles: [URL] = []
+    private var pendingInbox: [ShareInbox.Item] = []
+
+    func checkShareInbox() {
+        pendingInbox = ShareInbox.items()
+        if !pendingInbox.isEmpty { restoreChatIfReady() }
+    }
+
+    func attachFiles(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        pendingFiles += urls
+        restoreChatIfReady()
+    }
+
+    private func deliverPendingFiles() {
+        guard restoredChat, !pendingFiles.isEmpty || !pendingInbox.isEmpty else { return }
+        let urls = pendingFiles
+        let items = pendingInbox
+        pendingInbox.removeAll()
+        pendingFiles.removeAll()
+        if let current = chatController.chat, chatRuntime.summary(current.id) != nil {
+            open(current, picked: true)
+        } else {
+            sidebar.startNewChat()
+        }
+        if !urls.isEmpty { chatController.attachFiles(urls) }
+        if !items.isEmpty { chatController.attachInbox(items) }
+    }
     @objc private dynamic var opensChatAfterWelcome = false
     /// An `lurosdev://` link that came before the conversations were read,
     /// or an import that came during the welcome.
@@ -42,6 +70,8 @@ final class RootInterfaceController: UIViewController {
             // `open` moves the sidebar's highlight with the page
             self?.open(summary, picked: true)
         }
+        page.onOpenGit = { [weak self] in self?.openGit() }
+        page.onNewChat = { [weak self] in self?.sidebar.startNewChat() }
         return page
     }()
 
@@ -103,6 +133,7 @@ final class RootInterfaceController: UIViewController {
         sidebar.onProjectsLoaded = { [weak self] in self?.restoreChatIfReady() }
         // startNewChat has just put that conversation on the page
         sidebar.onSendPrompt = { [weak self] text in self?.chatController.sendPrompt(text) }
+        sidebar.onOpenSettings = { [weak self] in self?.openSettings() }
         chatRuntime.onChange = { [weak self] in
             guard let self else { return }
             sidebar.refresh()
@@ -137,6 +168,7 @@ final class RootInterfaceController: UIViewController {
     /// wait for the sidebar's saved project, rather than racing it into General.
     @objc private dynamic func restoreChatIfReady() {
         guard !WelcomeFlow.shouldPresent, chatRuntime.isLoaded, !isResolvingLink else { return }
+        defer { deliverPendingFiles() }
         if let link = pendingLink {
             pendingLink = nil
             open(link)
@@ -146,7 +178,7 @@ final class RootInterfaceController: UIViewController {
         guard !restoredChat else { return }
         // What the reader chose in Settings ▸ Chat decides between the
         // conversation they were last in and a new one.
-        if Preferences.launch == .newChat {
+        if Preferences.launch == .newChat, pendingFiles.isEmpty, pendingInbox.isEmpty {
             guard sidebar.hasLoadedProjects else { return }
             restoredChat = true
             sidebar.startNewChat(picked: false)
@@ -352,6 +384,7 @@ final class RootInterfaceController: UIViewController {
                 shift: view.directionalOffset(-width * 0.25 * (1 - drawerProgress)),
             )
             place(navigator.view, in: bounds, shift: shift)
+            chatController.keepBackgroundStill(shift: shift)
             place(shade, in: bounds, shift: shift)
             shade.alpha = drawerProgress
             navigator.view.layer.shadowOpacity = 0.15
@@ -369,6 +402,7 @@ final class RootInterfaceController: UIViewController {
                 in: view.directionalFrame(CGRect(x: width, y: 0, width: bounds.width - width, height: bounds.height)),
                 shift: 0,
             )
+            chatController.keepBackgroundStill(shift: 0)
             place(shade, in: bounds, shift: 0)
             shade.alpha = 0
             navigator.view.layer.shadowOpacity = 0
@@ -643,54 +677,18 @@ final class RootInterfaceController: UIViewController {
                 at: 0,
             )
         }
-        if isRoot, !isSidebarShown {
-            // Read from the trailing edge in: the page's own menu keeps the
-            // edge, and the two shortcuts sit inside it — Git first, then
-            // New Chat — so the bar reads, left to right, New Chat, Git,
-            // and the menu.
-            let git = UIAction { [weak self] _ in self?.openGit() }
-            let newChat = UIAction { [weak self] _ in self?.sidebar.startNewChat() }
-            if #available(iOS 26.0, *) {
-                // Liquid Glass puts the bar's own controls in one capsule,
-                // as close as they should be.
-                trailing.append(
-                    RootBarItem(
-                        image: UIImage(systemName: "arrow.triangle.branch"),
-                        primaryAction: git,
-                    ).then {
-                        $0.accessibilityLabel = String(localized: "Git")
-                    },
-                )
-                trailing.append(
-                    RootBarItem(
-                        image: UIImage(systemName: "square.and.pencil"),
-                        primaryAction: newChat,
-                    ).then {
-                        $0.accessibilityLabel = String(localized: "New Chat")
-                    },
-                )
-            } else {
-                // Before it, the bar sets a gap of its own between items, and
-                // three of them took the room the conversation's name needs:
-                // the two shortcuts share one item and sit a couple of
-                // points apart in it.
-                trailing.append(RootBarItem(customView: rootToolGroup(git: git, newChat: newChat)))
-            }
-        }
         item.leftBarButtonItems = leading.isEmpty ? nil : leading
         item.rightBarButtonItems = trailing.isEmpty ? nil : trailing
     }
 
-    // MARK: - Root tools
-
-    /// The root's two shortcuts as one bar item, their glyphs a couple of
-    /// points apart: the gap the bar sets between items of its own is wider
-    /// than the room the conversation's name beside them can spare.
-    private func rootToolGroup(git: UIAction, newChat: UIAction) -> UIView {
-        RootToolGroup(tools: [
-            (symbol: "arrow.triangle.branch", label: String(localized: "Git"), action: git),
-            (symbol: "square.and.pencil", label: String(localized: "New Chat"), action: newChat),
-        ])
+    /// Settings in the detail column, a page above the conversation as any
+    /// other page is, closed back to it by the bar's back button.
+    private func openSettings() {
+        if isDrawer, drawerProgress > 0 {
+            setDrawerOpen(false)
+        }
+        guard !(navigator.topViewController is SettingsViewController) else { return }
+        navigator.pushViewController(SettingsViewController(), animated: true)
     }
 
     /// The visual Git page for the conversation's project, full screen —
@@ -704,7 +702,8 @@ final class RootInterfaceController: UIViewController {
             )
             return
         }
-        presentPageFullScreen(GitController(projectName: project))
+        let selection = chatController.chat.flatMap { ComposerModelSelection.selection(for: $0.id) }
+        presentPageFullScreen(GitController(projectName: project, modelSelection: selection))
     }
 
     override var childForStatusBarStyle: UIViewController? {
@@ -764,53 +763,6 @@ extension RootInterfaceController: UIGestureRecognizerDelegate {
 
 /// The bar items `RootInterfaceController` puts on a page and takes back.
 private final class RootBarItem: UIBarButtonItem {}
-
-/// The root's own shortcuts on the chat page, in one bar item: the bar lays
-/// separate items out with a gap of its own, and three of them took the room
-/// the conversation's name needs. Two glyphs share a frame this close
-/// instead, each still a button of its own to a reader and to VoiceOver.
-private final class RootToolGroup: UIView {
-    /// One button's square, and the points between two of them.
-    private static let buttonSize: CGFloat = 34
-    private static let gap: CGFloat = 2
-
-    init(tools: [(symbol: String, label: String, action: UIAction)]) {
-        super.init(frame: CGRect(origin: .zero, size: Self.size(for: tools.count)))
-        for (index, tool) in tools.enumerated() {
-            var configuration = UIButton.Configuration.plain()
-            configuration.image = UIImage(systemName: tool.symbol)
-            configuration.contentInsets = .zero
-            let button = UIButton(configuration: configuration)
-            button.frame = CGRect(
-                x: CGFloat(index) * (Self.buttonSize + Self.gap),
-                y: 0,
-                width: Self.buttonSize,
-                height: Self.buttonSize,
-            )
-            button.autoresizingMask = [.flexibleTopMargin, .flexibleBottomMargin]
-            button.accessibilityLabel = tool.label
-            button.addAction(tool.action, for: .touchUpInside)
-            addSubview(button)
-        }
-    }
-
-    @available(*, unavailable)
-    required init?(coder _: NSCoder) {
-        fatalError("Use init(tools:)")
-    }
-
-    override var intrinsicContentSize: CGSize {
-        Self.size(for: subviews.count)
-    }
-
-    private static func size(for count: Int) -> CGSize {
-        guard count > 0 else { return .zero }
-        return CGSize(
-            width: CGFloat(count) * buttonSize + CGFloat(count - 1) * gap,
-            height: buttonSize,
-        )
-    }
-}
 
 private extension UIScrollView {
     /// Whether a pan to the right (or left) would scroll this sideways: to

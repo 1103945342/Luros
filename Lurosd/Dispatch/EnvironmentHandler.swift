@@ -27,8 +27,8 @@ enum EnvironmentHandler: DomainHandler {
         }
     }
 
-    /// The four device tools Luros's own work needs, as this device has them.
-    /// Reading only: installing one is the user's package manager's.
+    /// The device tools work on this device may need, as this device has
+    /// them. Reading only: installing one is the user's package manager's.
     static func developmentTools(_ request: HostRequest, host: SessionHost) async -> HostReply {
         guard (try? request.decode(DevelopmentToolsRequest.self)) != nil else {
             return request.fail(LurosError(.badRequest, "the development tools request does not read"))

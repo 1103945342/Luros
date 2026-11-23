@@ -229,7 +229,7 @@ extension BuiltInSkills {
           `tweakFilter` or `maintainerScripts`, and installs nothing as a
           package: `luros_package_install` on the ipa artifact puts the app
           on the device instead — unpacked, signed with ldid and registered
-          with uicache, its extensions beside it — and `luros_package_remove`
+          through Luros's bundled icli, its extensions beside it — and `luros_package_remove`
           takes it off again. Share `.ipa` in Distribute… hands the file out.
           Never publish one to a package repository.
         - `icon`: the image a package manager shows beside the package, its

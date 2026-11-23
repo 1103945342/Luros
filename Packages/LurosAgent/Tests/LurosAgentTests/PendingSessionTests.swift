@@ -7,6 +7,42 @@ import Testing
 
 @Suite("Pending input starts complete runs")
 struct PendingSessionTests {
+    @Test func largeAttachmentDescriptor() async throws {
+        let home = try TemporaryHome()
+        defer { home.remove() }
+        let faux = await registerFauxProvider()
+        defer { faux.unregister() }
+        faux.setResponses([.message(fauxAssistantMessage("Received."))])
+        let session = try await AgentSession(configuration: .init(project: home.project, provider: .registered(faux.getModel()), approval: ApprovalPolicy(mode: .confirm), dataRoot: home.dataRoot), backend: MockBackend(), digests: MockDigestLedger(), credentials: DeliveredCredentialSource())
+        let url = home.home.appendingPathComponent("upload")
+        var bytes = Data(repeating: 0xA5, count: 33 * 1024 * 1024)
+        bytes.append(0xFB)
+        try bytes.write(to: url)
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        let descriptor = try #require(OwnedDescriptor.duplicating(handle.fileDescriptor))
+        let id = UUID()
+        let file = (name: "large.png", mimeType: "image/png", descriptor: descriptor)
+        let pipe = Pipe()
+        let invalid = try #require(OwnedDescriptor.duplicating(pipe.fileHandleForReading.fileDescriptor))
+        do {
+            try await session.prompt("partial", messageID: id, fileDescriptors: [file, ("pipe", "text/plain", invalid)])
+            Issue.record("accepted a pipe")
+        } catch {}
+        let folder = home.projectURL.appendingPathComponent("Attachments")
+        #expect(try FileManager.default.contentsOfDirectory(atPath: folder.path).isEmpty)
+        try await session.prompt("send", messageID: id, fileDescriptors: [file])
+        await session.waitForIdle()
+        try await session.prompt("retry", messageID: id, fileDescriptors: [file])
+        let names = try FileManager.default.contentsOfDirectory(atPath: folder.path)
+        #expect(names.count == 1)
+        let saved = try #require(names.first)
+        #expect(FileManager.default.contentsEqual(atPath: url.path, andPath: folder.appendingPathComponent(saved).path))
+        let events = try await session.log.records(afterSeq: 0).map(\.event)
+        #expect(events.contains(.finished(reason: .completed)))
+        await session.close()
+    }
+
     @Test(.timeLimit(.minutes(1)), arguments: [false, true])
     func `fresh or stopped empty input starts directly without a queue snapshot`(stopped: Bool) async throws {
         let home = try TemporaryHome()

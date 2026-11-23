@@ -58,6 +58,19 @@ struct AppRelaunchTests {
     }
 
     @Test
+    func `an install of another project's build carries no hint`() async throws {
+        let harness = try DigestApprovalTests.Harness()
+        defer { harness.home.remove() }
+        try harness.home.write("luros-project.json", Self.manifest(kind: "app"))
+        try harness.home.write("Resources/Info.plist", Self.infoPlist)
+        await harness.backend.setInstallProjectID("another-project")
+
+        let result = try await install(harness)
+        #expect(result["succeeded"] as? Bool == true)
+        #expect(result["relaunchHint"] == nil)
+    }
+
+    @Test
     func `an app whose Info.plist does not read inside the project names the app's bundle id`() async throws {
         let harness = try DigestApprovalTests.Harness()
         defer { harness.home.remove() }
