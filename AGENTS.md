@@ -443,7 +443,7 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   `toolchainSelfTest`, `toolchainSetDefault`; `sdkList`,
   `sdkImport`, `sdkRemove`; `environmentAttach`, `environmentCancel`;
   `developmentTools` (Settings ▸ Environment ▸ Third-Party Tools: `ldid`,
-  `git`, `python3` and Frida, read only — a missing one is
+  `git` and `python3`, read only — a missing one is
   the user's package manager's, which the row opens at that package's page);
   `extensionList`, `projectCreate`, `projectCheck`, `projectRename`,
   `projectDelete`; `buildStart`,

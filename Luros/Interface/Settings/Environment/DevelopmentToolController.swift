@@ -2,8 +2,8 @@ import LurosProtocol
 import UIKit
 
 /// Settings ▸ Environment ▸ Third-Party Tools: the packages Luros's own work
-/// may need — `ldid`, `git`, `python3` and Frida — and whether this device has
-/// each one. App registration uses the icli carried by Luros itself.
+/// may need — `ldid`, `git` and `python3` — and whether this device has each
+/// one. App registration uses the icli carried by Luros itself.
 ///
 /// Nothing installs from here: a missing package is the user's package
 /// manager's, so the row offers to open that package's page and leaves the
@@ -70,7 +70,7 @@ final class DevelopmentToolController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "tool", for: indexPath)
         let row = rows[indexPath.row]
         var content = cell.defaultContentConfiguration()
-        content.text = row.displayName ?? row.packageID
+        content.text = row.packageID
         if let version = row.version {
             content.secondaryText = String(localized: "Installed") + " · " + version
         } else {
@@ -92,7 +92,7 @@ final class DevelopmentToolController: UITableViewController {
     // MARK: - Opening the package's page
 
     private func ask(_ row: DevelopmentToolRow) {
-        let title = row.displayName ?? row.packageID
+        let title = row.packageID
         let message = String(format: String(localized: "Install %@ from your package manager."), row.packageID)
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: String(localized: "Cancel"), style: .cancel))

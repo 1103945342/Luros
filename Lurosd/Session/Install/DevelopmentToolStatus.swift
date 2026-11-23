@@ -7,18 +7,17 @@ import Foundation
 ///
 /// App registration is the bundled icli's work; `python3` is one of the
 /// interpreters a conversation's `run_code` and a project's external build
-/// script may name; Frida is the device instrumentation server.
+/// script may name.
 ///
 /// Reading only. Installing one is the user's package manager's — the app
 /// opens it at the package's page — so nothing here fetches, resolves or
 /// installs anything.
 enum DevelopmentToolStatus {
     /// The row's name, the program that proves it, and where it lives.
-    static let definitions: [(package: String, program: String, directory: String, title: String?)] = [
-        ("ldid", "ldid", "usr/bin", nil),
-        ("git", "git", "usr/bin", nil),
-        ("python3", "python3", "usr/bin", nil),
-        ("re.frida.server", "frida-server", "usr/sbin", "Frida"),
+    static let definitions: [(package: String, program: String, directory: String)] = [
+        ("ldid", "ldid", "usr/bin"),
+        ("git", "git", "usr/bin"),
+        ("python3", "python3", "usr/bin"),
     ]
 
     static func rows(installRoot: String) -> [DevelopmentToolRow] {
@@ -30,7 +29,6 @@ enum DevelopmentToolStatus {
             return DevelopmentToolRow(
                 packageID: definition.package,
                 program: definition.program,
-                displayName: definition.title,
                 path: present ? path : nil,
                 version: present ? status[definition.package] : nil,
             )

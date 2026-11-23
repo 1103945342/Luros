@@ -2,8 +2,8 @@ import Foundation
 
 // The device tools work on this device may need and its package does not
 // carry: `ldid` signs, `git` fetches a repository, `python3` runs what a
-// project's build script or a conversation's `run_code` hands it, and Frida
-// instruments processes. App registration uses the icli carried by Luros.
+// project's build script or a conversation's `run_code` hands it. App
+// registration uses the icli carried by Luros.
 // Settings ▸ Environment reads their state; a missing one is installed
 // from the user's package manager, which the app opens at the package's page.
 
@@ -11,8 +11,6 @@ import Foundation
 public struct DevelopmentToolRow: Codable, Sendable, Equatable, Hashable {
     /// The package the tool comes from, which is also what the row is called.
     public var packageID: String
-    /// A short name for the row when the package id is not the name.
-    public var displayName: String?
     /// The executable's name whose presence means the package is here.
     public var program: String
     /// Where that program is, when the device has it.
@@ -25,13 +23,11 @@ public struct DevelopmentToolRow: Codable, Sendable, Equatable, Hashable {
     public init(
         packageID: String,
         program: String,
-        displayName: String? = nil,
         path: String? = nil,
         version: String? = nil,
     ) {
         self.packageID = packageID
         self.program = program
-        self.displayName = displayName
         self.path = path
         self.version = version
     }
