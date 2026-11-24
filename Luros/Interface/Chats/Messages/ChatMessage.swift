@@ -245,6 +245,82 @@ struct ChatMessageShape: Hashable {
     }
 }
 
+/// The height measured for each step a row draws, by step.
+///
+/// A row asks for its height on every layout pass, and a step is expensive to
+/// measure: one opened call, or a thought still being written, lays text out.
+/// `Stamp` is everything the height depends on — the shape, whether the step
+/// is open, the width, the text size — and a step whose stamp is unchanged
+/// answers from here without being laid out again. Fitting a whole stack of
+/// steps to answer for one of them is what made opening a call cost its run.
+struct ChatStepHeights<Stamp: Equatable> {
+    private struct Entry {
+        var stamp: Stamp
+        var height: CGFloat
+    }
+
+    /// Past this many the cache starts again: it holds the steps of the runs
+    /// being read, and their text with them.
+    private let capacity: Int
+    private var entries: [UUID: Entry] = [:]
+
+    init(capacity: Int = 1024) {
+        self.capacity = capacity
+    }
+
+    var count: Int { entries.count }
+
+    /// The height `id` was measured at in `stamp`, measuring it now when the
+    /// stamp a step is in is not the one it was measured in.
+    mutating func height(for id: UUID, stamp: Stamp, measure: () -> CGFloat) -> CGFloat {
+        if let entry = entries[id], entry.stamp == stamp { return entry.height }
+        let height = measure()
+        if entries.count >= capacity, entries[id] == nil {
+            entries.removeAll(keepingCapacity: true)
+        }
+        entries[id] = Entry(stamp: stamp, height: height)
+        return height
+    }
+
+    /// Steps are identified by ids that are never reused, so a step that is
+    /// gone costs its entry only until the cap clears them.
+    mutating func forget() {
+        entries.removeAll(keepingCapacity: true)
+    }
+}
+
+/// Which rows a list already showing some rows has to be given again to show
+/// the next ones.
+enum ChatRowDelta {
+    /// The rows that differ, when each of them can be handed to the list on
+    /// its own (`ListView.update(_:)`), or nil when the list has to diff: a
+    /// row came, went or moved, or more rows changed than updating them one
+    /// at a time is worth.
+    ///
+    /// A run's last row changes on every event of it, and the list's general
+    /// path diffs and lays the whole list out again for that. Only the two
+    /// ends are walked: a stream changes the end of a run, and a change
+    /// anywhere else is rare enough to take the general path.
+    static func changed(_ shown: [ChatMessage], _ next: [ChatMessage], limit: Int = 4) -> [Int]? {
+        guard shown.count == next.count else { return nil }
+        guard !next.isEmpty else { return [] }
+        for index in next.indices where shown[index].id != next[index].id {
+            return nil
+        }
+        var head = 0
+        while head < next.count, shown[head] == next[head] {
+            head += 1
+        }
+        guard head < next.count else { return [] }
+        var tail = next.count - 1
+        while tail > head, shown[tail] == next[tail] {
+            tail -= 1
+        }
+        guard tail - head + 1 <= limit else { return nil }
+        return Array(head ... tail)
+    }
+}
+
 /// What one turn of the conversation cost, as the provider counted it
 /// (the `usage` of each reply in it, summed), and how long it ran.
 struct ChatTurnStats: Hashable {

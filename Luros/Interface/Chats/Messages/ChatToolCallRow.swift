@@ -157,7 +157,9 @@ final class ChatToolCallRow: UIView {
     /// Answers whether anything changed.
     @discardableResult
     func applyExpansion() -> Bool {
-        guard ChatTraceExpansion.isExpanded(call: stepID) != showsBody else { return false }
+        // The step, not the id this row was made with: the list measures a
+        // step in a row it reuses for the next one.
+        guard ChatTraceExpansion.isExpanded(call: step.id) != showsBody else { return false }
         configure(step)
         updateChevron(animated: false)
         return true

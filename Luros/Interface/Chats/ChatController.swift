@@ -67,6 +67,9 @@ final class ChatController: UIViewController {
 
     /// The shown conversation's rows as last applied.
     private var messages: [ChatMessage] = []
+    /// The rows the list is showing, as the projection last gave them to it:
+    /// what an event is compared with to find the one row it changed.
+    private var shownRows: [ChatMessage] = []
     /// The message the shown conversation's latest turn started with; a
     /// different one starts a new turn.
     private var turnMessage: UUID?
@@ -388,6 +391,8 @@ final class ChatController: UIViewController {
     }
 
     private func replaceMessageList() {
+        // A fresh list holds nothing: the next projection is new to it whole.
+        shownRows = []
         let contentInset = messageList.contentInset
         let indicatorInset = messageList.verticalScrollIndicatorInsets
         messageList.delegate = nil
@@ -1177,9 +1182,47 @@ final class ChatController: UIViewController {
         let visible = ChatProcessPresentation.rows(items) {
             ChatTraceExpansion.isExpanded(turn: $0)
         }
-        messageList.apply(visible, animated: animated && !isSwitchingChat && !UIAccessibility.isReduceMotionEnabled)
+        applyRows(visible, animated: animated && !isSwitchingChat && !UIAccessibility.isReduceMotionEnabled)
         updateMessageRuler(visible)
         showApproval(waitingApproval(in: items))
+    }
+
+    /// Hands the list what is new. A running turn changes its last row on
+    /// every event, and the list's general path diffs the whole projection and
+    /// lays the whole list out again for that; `update(_:)` is its own path
+    /// for one row whose content changed, which is what a stream is. Anything
+    /// that moves a row, adds one or takes one away still takes the general
+    /// path, through `ChatRowDelta`.
+    private func applyRows(_ visible: [ChatMessage], animated: Bool) {
+        let started = CACurrentMediaTime()
+        if let changed = ChatRowDelta.changed(shownRows, visible, limit: Self.updatedRowsLimit) {
+            for index in changed {
+                messageList.update(visible[index])
+            }
+            shownRows = visible
+            logSlowRefresh(started, rows: visible.count, mode: "updated \(changed.count)")
+            return
+        }
+        messageList.apply(visible, animated: animated)
+        shownRows = visible
+        logSlowRefresh(started, rows: visible.count, mode: "diffed")
+    }
+
+    /// More rows than this changing at once is a projection the list should
+    /// diff and animate as a whole rather than be handed row by row.
+    private static let updatedRowsLimit = 4
+
+    /// A refresh that held the main thread: worth a line in the log the first
+    /// time a device reports that a conversation stutters.
+    private static let slowRefresh: CFTimeInterval = 0.008
+    private static let transcriptLog = Logger(subsystem: "com.fluoxetine.luros", category: "ChatTranscript")
+
+    @objc dynamic private func logSlowRefresh(_ started: CFTimeInterval, rows: Int, mode: String) {
+        let elapsed = CACurrentMediaTime() - started
+        guard elapsed > Self.slowRefresh else { return }
+        Self.transcriptLog.notice(
+            "\(rows, privacy: .public) rows \(mode, privacy: .public) in \(elapsed * 1000, privacy: .public) ms",
+        )
     }
 
     /// The request among `items` the composer asks about: one the session's

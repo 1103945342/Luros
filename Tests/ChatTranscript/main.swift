@@ -8,6 +8,8 @@ func event(_ seq: UInt64, _ kind: String, _ values: [String: JSONValue] = [:]) -
 
 checkStreamPresentation()
 checkPendingQueuePresentation()
+checkStepHeights()
+checkRowDelta()
 
 let userID = UUID()
 let events = [

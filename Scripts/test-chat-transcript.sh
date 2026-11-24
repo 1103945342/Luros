@@ -85,6 +85,7 @@ sources=(
     "$root/Tests/ChatTranscript/ConversationSourceCheck.swift"
     "$root/Tests/ChatTranscript/CooperationTurnCheck.swift"
     "$root/Tests/ChatTranscript/StreamPacingCheck.swift"
+    "$root/Tests/ChatTranscript/StepHeightsCheck.swift"
     "$root/Tests/ChatTranscript/ForcePushCardCheck.swift"
     "$root/Tests/ChatTranscript/SquashCardCheck.swift"
     "$root/Tests/ChatTranscript/QuestionCardCheck.swift"
