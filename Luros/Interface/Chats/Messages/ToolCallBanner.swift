@@ -10,6 +10,9 @@ struct ToolCallBanner: Hashable {
     var reason: String
     var file: String?
     var change: LineChange?
+    /// The tool the call was made with, as the model named it: what the line
+    /// is drawn with a symbol for (`ToolSymbol`).
+    var tool: String?
 
     struct LineChange: Hashable {
         let added: Int
@@ -32,6 +35,7 @@ extension ToolCallBanner {
         self.init(
             reason: reason.isEmpty ? title : reason,
             file: Self.writesFile(tool) && !path.isEmpty ? (path as NSString).lastPathComponent : nil,
+            tool: tool,
         )
     }
 
