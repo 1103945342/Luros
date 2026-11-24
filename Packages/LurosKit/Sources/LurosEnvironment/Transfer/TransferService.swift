@@ -203,6 +203,8 @@ public struct TransferService: Sendable {
         var kind: TransferKind
         var id: String
         var createdBy: String
+        /// A project's format; ignored for the other two kinds.
+        var variant: ProjectExportVariant = .luros
         var toolchain: ToolchainRecord?
         var sdk: SDKRecord?
         var project: ProjectLocator.Project?
@@ -212,7 +214,12 @@ public struct TransferService: Sendable {
         let createdBy = request.createdBy
             .flatMap { $0.isEmpty || CanonicalPath.containsNUL($0) ? nil : String($0.prefix(120)) }
             ?? "Luros (protocol \(Wire.protocolVersion))"
-        var prepared = PreparedExport(kind: request.kind, id: request.id, createdBy: createdBy)
+        var prepared = PreparedExport(
+            kind: request.kind,
+            id: request.id,
+            createdBy: createdBy,
+            variant: request.kind == .project ? request.variant ?? .luros : .luros,
+        )
         switch request.kind {
         case .toolchain:
             guard let record = ToolchainRegistry.load(layout).toolchains.first(where: { $0.id == request.id }) else {
@@ -258,6 +265,9 @@ public struct TransferService: Sendable {
         reporter: TaskReporter,
     ) async throws -> TransferExport {
         let prepared = handle.prepared
+        if prepared.kind == .project, prepared.variant == .sources {
+            return try await exportSources(prepared, staging: staging, reporter: reporter)
+        }
         reporter.stage("collecting")
         var collected: Collected = switch prepared.kind {
         case .toolchain: try toolchainContents(prepared.toolchain!, staging: staging, reporter: reporter)

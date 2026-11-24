@@ -208,6 +208,19 @@ def reference_build(project_root: Path, extensions: dict[str, tuple[Path, dict]]
                 info = bundle / "Info.plist"
                 shutil.copyfile(project_root / product["infoPlist"], info)
                 run(["plutil", "-lint", str(info)])
+                # Xcode builds the bundle from this file as it stands, and an
+                # app installed without an executable name is refused
+                # ("missing or invalid CFBundleExecutable"); Luros fills the
+                # key in itself, so only this reference build noticed nothing.
+                executable = subprocess.run(
+                    ["plutil", "-extract", "CFBundleExecutable", "raw", "-o", "-", str(info)],
+                    capture_output=True, text=True,
+                )
+                if executable.returncode != 0 or not executable.stdout.strip():
+                    raise SystemExit(
+                        f"error: {product['infoPlist']} has no CFBundleExecutable; "
+                        "a project built in Xcode from it produces an app iOS refuses to install"
+                    )
                 for key, value in (("CFBundleExecutable", product["name"]),
                                    ("CFBundleShortVersionString", project["package"]["version"]),
                                    ("CFBundleVersion", project["package"]["version"]),

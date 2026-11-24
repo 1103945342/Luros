@@ -319,6 +319,14 @@ public enum TransferSource: Codable, Sendable, Equatable {
 /// Writes a transfer file of a registered toolchain, a registered SDK or a
 /// project into `~/Documents/com.fluoxetine.luros/Exports/<kind>-<id>/`, replacing
 /// an earlier export of the same item.
+/// What a project exports as: the Luros project file another Luros imports,
+/// or a zip of its sources for any other tool — a Mac, an editor, a person
+/// with no Luros at all.
+public enum ProjectExportVariant: String, Codable, Sendable, CaseIterable {
+    case luros
+    case sources
+}
+
 public struct TransferExportRequest: OperationRequest {
     public typealias Response = TaskHandle
     public static let operation = AppOperation.transferExport
@@ -327,11 +335,19 @@ public struct TransferExportRequest: OperationRequest {
     public var id: String
     /// `Luros <version> (<build>)`, written into the manifest.
     public var createdBy: String?
+    /// A project's format. Absent is `.luros`, the file this app imports.
+    public var variant: ProjectExportVariant?
 
-    public init(kind: TransferKind, id: String, createdBy: String? = nil) {
+    public init(
+        kind: TransferKind,
+        id: String,
+        createdBy: String? = nil,
+        variant: ProjectExportVariant? = nil,
+    ) {
         self.kind = kind
         self.id = id
         self.createdBy = createdBy
+        self.variant = variant
     }
 }
 
@@ -474,8 +490,15 @@ public struct TransferProjectResult: Codable, Sendable, Equatable {
 public extension LurosService {
     /// Starts an export; follow it with `events(of:)`. Its `result` carries
     /// `TransferExport`.
-    func transferExport(kind: TransferKind, id: String, createdBy: String? = nil) async throws -> TaskHandle {
-        try await send(TransferExportRequest(kind: kind, id: id, createdBy: createdBy))
+    func transferExport(
+        kind: TransferKind,
+        id: String,
+        createdBy: String? = nil,
+        variant: ProjectExportVariant? = nil,
+    ) async throws -> TaskHandle {
+        try await send(
+            TransferExportRequest(kind: kind, id: id, createdBy: createdBy, variant: variant),
+        )
     }
 
     func transferInspect(

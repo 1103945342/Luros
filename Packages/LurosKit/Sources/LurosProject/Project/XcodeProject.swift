@@ -504,7 +504,11 @@ private final class Builder {
 
     private func configurationBody(_ settings: [(String, Setting)], name: String) -> [String] {
         var body = ["isa = XCBuildConfiguration;", "buildSettings = {"]
-        body += settings.sorted { $0.0 < $1.0 }.map { "\t\($0.0) = \($0.1.render());" }
+        // A setting's name is quoted like its value: a conditional name such
+        // as `CODE_SIGN_IDENTITY[sdk=iphonesimulator*]` carries characters an
+        // unquoted pbxproj token cannot.
+        body += settings.sorted { $0.0 < $1.0 }
+            .map { "\t\(Setting.quote($0.0)) = \($0.1.render());" }
         body += ["};", "name = \(name);"]
         return body
     }
@@ -532,8 +536,14 @@ private final class Builder {
             ("CLANG_ENABLE_MODULES", .text("YES")),
             ("CLANG_ENABLE_OBJC_ARC", .text("YES")),
             ("CODE_SIGNING_ALLOWED", .text("NO")),
+            // A device build is signed on the device, never here; the
+            // simulator cannot spawn an unsigned binary, so that one platform
+            // signs itself ad-hoc and Run works without a certificate.
+            ("CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]", .text("YES")),
             ("CODE_SIGNING_REQUIRED", .text("NO")),
+            ("CODE_SIGNING_REQUIRED[sdk=iphonesimulator*]", .text("YES")),
             ("CODE_SIGN_IDENTITY", .text("")),
+            ("CODE_SIGN_IDENTITY[sdk=iphonesimulator*]", .text("-")),
             ("COPY_PHASE_STRIP", .text("NO")),
             ("ENABLE_STRICT_OBJC_MSGSEND", .text("YES")),
             ("ENABLE_USER_SCRIPT_SANDBOXING", .text("NO")),
@@ -543,7 +553,10 @@ private final class Builder {
             ("GCC_PREPROCESSOR_DEFINITIONS", .list(defines(kind))),
             ("IPHONEOS_DEPLOYMENT_TARGET", .text(project.deploymentTarget)),
             ("SDKROOT", .text("iphoneos")),
-            ("SUPPORTED_PLATFORMS", .text("iphoneos")),
+            // A pinned device platform leaves the simulator no build of its
+            // own: Xcode then hands the device binary to the simulator, which
+            // cannot spawn it ("Launchd job spawn failed").
+            ("SUPPORTED_PLATFORMS", .text("iphoneos iphonesimulator")),
             ("SWIFT_OPTIMIZATION_LEVEL", .text(swiftOptimization(configuration.optimization))),
             ("SWIFT_VERSION", .text("5.0")),
             ("TARGETED_DEVICE_FAMILY", .text("1,2")),

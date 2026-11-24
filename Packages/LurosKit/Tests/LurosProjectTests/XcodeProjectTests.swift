@@ -215,6 +215,13 @@ final class XcodeProjectTests: XCTestCase {
             body(objects, isa: "XCBuildConfiguration").first { $0["buildSettings"] is [String: Any] },
         )
         XCTAssertEqual((project["buildSettings"] as? [String: Any])?["CODE_SIGNING_ALLOWED"] as? String, "NO")
+
+        // The simulator builds a binary of its own and signs it ad-hoc, or
+        // Xcode hands it the device's and launchd cannot spawn it.
+        let projectValues = try XCTUnwrap(project["buildSettings"] as? [String: Any])
+        XCTAssertEqual(projectValues["SUPPORTED_PLATFORMS"] as? String, "iphoneos iphonesimulator")
+        XCTAssertEqual(projectValues["CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]"] as? String, "YES")
+        XCTAssertEqual(projectValues["CODE_SIGN_IDENTITY[sdk=iphonesimulator*]"] as? String, "-")
     }
 
     /// Regenerating in another folder is byte for byte the same project: the

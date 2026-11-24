@@ -42,14 +42,29 @@ never runs again, because a second run would throw away what Xcode wrote.
 - **The package.** The deb's control file, its layout, its maintainer
   scripts, or an `.ipa`'s `Payload/` — all of it comes from an Luros build.
   Xcode builds the binaries.
-- **Signing.** Nothing is signed there: `CODE_SIGNING_ALLOWED` is `NO`, so
-  Xcode's Run needs an Apple developer certificate and a normal device, which
-  a jailbroken installation is not. Install the package Luros built, or sign
-  the binary yourself (`ldid -S<entitlements> <binary>`) and copy it into the
-  bootstrap.
+- **Signing.** A device build is not signed: `CODE_SIGNING_ALLOWED` is `NO`,
+  so running one on a phone needs an Apple developer certificate and a normal
+  device, which a jailbroken installation is not. Install the package Luros
+  built, or sign the binary yourself (`ldid -S<entitlements> <binary>`) and
+  copy it into the bootstrap. The simulator is the exception the project
+  already allows: it builds its own binary and signs it ad-hoc
+  (`CODE_SIGN_IDENTITY[sdk=iphonesimulator*] = "-"`), so Run there works
+  without a certificate.
 - **`swiftModules`.** A project that vendors Swift modules — a dependency's
   sources compiled into `.swiftmodule`s — has no target for them here. A
   project built that way needs those modules added by hand.
+
+Xcode copies `Resources/Info.plist` into the bundle as it stands, and iOS
+refuses an app whose plist names no executable — the install says
+`missing or invalid CFBundleExecutable`. Luros fills the key in itself while
+packaging, so a device build never showed it; the templates carry it now. A
+project made before that needs the two lines added by hand, with the
+product's own name:
+
+```xml
+<key>CFBundleExecutable</key>
+<string>My Product</string>
+```
 
 ## When the description changes
 

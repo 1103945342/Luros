@@ -1445,7 +1445,14 @@ What `CHECKLIST.md` asked to be written down, and where the answer lives.
   `worktrees/`, `commondir` or locks; no `.DS_Store`, no repository nested
   inside, nothing from `Builds/`; with its identity (project ID, template,
   description digests for information only, the toolchain and SDK it binds,
-  an HTTPS origin). *Export* (`transferExport{kind, id, createdBy}`, a task:
+  an HTTPS origin). A project leaves as one of two things, and the app asks
+  which: `variant: luros` is the `.apeproj` above, which only Luros imports;
+  `variant: sources` is a plain zip any other tool opens — the same tree
+  without `.git` and without `luros-project.json`, so the sources, the
+  resources, the entitlements and the Xcode project travel and nothing
+  Luros owns does — written to `Exports/sources-<id>/<name>.zip`, a stamp of
+  zero on every member so the same tree is the same bytes. *Export*
+  (`transferExport{kind, id, createdBy, variant}`, a task:
   `collecting` (items scanned), `hashing`, `packing`, `verifying` (each with
   its own measured byte total)) writes `Exports/<kind>-<id>/<name>.<ext>` in the
   data folder, replacing the item's earlier export, through a `.partial`
