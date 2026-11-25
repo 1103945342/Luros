@@ -18,8 +18,10 @@ enum ChatStreamPacing {
     /// How much of a thought still being written its text draws: the newest
     /// of it, which is what a reader watching a run wants, and never a label
     /// whose layout grows with the run. The whole of it is drawn once it has
-    /// stopped.
-    static let streamingLength = 6000
+    /// stopped. A label of this length lays out in a couple of milliseconds on
+    /// the device; the six thousand it used to be cost five times that on
+    /// every tick, which is what a reader felt as a stutter while scrolling.
+    static let streamingLength = 1600
 
     /// What a shortened text starts with.
     static let mark = "…"

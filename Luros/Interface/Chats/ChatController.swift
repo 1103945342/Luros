@@ -495,6 +495,12 @@ final class ChatController: UIViewController {
                         messageList.reconfigureRow(with: message.id)
                         messageList.invalidateLayout(forRowWith: message.id)
                     }
+                    // A streaming reply laid out at a new height: only this
+                    // row's measurement is stale, never the whole list's.
+                    row.onDocumentHeightChange = { [weak self] in
+                        guard let self, chat?.id == chatID else { return }
+                        messageList.invalidateLayout(forRowWith: message.id)
+                    }
                     row.onPreview = { [weak self] item in self?.onComposerPreviewAttachment(item) }
                     row.onCopy = { [weak self, weak row] in
                         self?.copyText(of: message)
@@ -542,6 +548,7 @@ final class ChatController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        ChatPerformance.start()
         if typesOnAppear {
             typesOnAppear = false
             composer.beginEditing()
@@ -552,6 +559,7 @@ final class ChatController: UIViewController {
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+        ChatPerformance.stop()
         runReconcile?.cancel()
         runReconcile = nil
     }
@@ -771,8 +779,9 @@ final class ChatController: UIViewController {
         holdsHistoryTop = false
         isLoadingEarlierHistory = false
         // What a thought the other conversation was writing had drawn is
-        // nothing to this one.
+        // nothing to this one, and neither is a row height measured for it.
         ChatStreamPacing.forget()
+        ChatRowHeights.forget()
         defer { isSwitchingChat = false }
         replaceMessageList()
 
@@ -1182,7 +1191,16 @@ final class ChatController: UIViewController {
         let visible = ChatProcessPresentation.rows(items) {
             ChatTraceExpansion.isExpanded(turn: $0)
         }
-        applyRows(visible, animated: animated && !isSwitchingChat && !UIAccessibility.isReduceMotionEnabled)
+// A run still writing re-frames the list on every batch; its own path
+        // hands over only the row that changed, and a batch that does take the
+        // list's general path must not animate its movements mid-run, which
+        // laid the whole viewport out again between them. A settled transcript
+        // still animates.
+        let moves = animated && !isSwitchingChat && !UIAccessibility.isReduceMotionEnabled
+            && chat?.isWorking != true
+        ChatPerformance.measure("apply") {
+            applyRows(visible, animated: moves)
+        }
         updateMessageRuler(visible)
         showApproval(waitingApproval(in: items))
     }

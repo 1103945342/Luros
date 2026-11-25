@@ -50,6 +50,12 @@ final class ChatMessageRow: ListRowView {
     var spokenElement: UIView { label }
     private let markdownView = ChatMarkdownView()
     private var markdownText: String?
+    /// The document height this row last published, for a reply still being
+    /// written (`publishStreamingHeight`).
+    private var publishedDocumentHeight: CGFloat = 0
+    /// A streaming reply was laid out at a new height: the list measures this
+    /// row again instead of laying the whole document out itself.
+    var onDocumentHeightChange: (() -> Void)?
     /// The reply has finished, but its last text is still fading in.
     private var finishesStreamWhenStill = false
     private var revealObservation: NSKeyValueObservation?
@@ -177,6 +183,8 @@ final class ChatMessageRow: ListRowView {
         markdownView.isStreaming = false
         markdownView.streamIdentity = nil
         markdownText = nil
+        publishedDocumentHeight = 0
+        onDocumentHeightChange = nil
         attachments = []
         attachmentsView.show([], trailing: false, animated: false)
         onAttachmentLayoutChanged = nil
@@ -189,6 +197,9 @@ final class ChatMessageRow: ListRowView {
 
     func show(_ message: ChatMessage, isStreaming: Bool = false) {
         let isSameMessage = shownID == message.id
+        if !isSameMessage {
+            publishedDocumentHeight = 0
+        }
         isUser = message.role == .user
         let textSize = Self.font.pointSize
         if shownText != message.text || shownTextSize != textSize {
@@ -238,10 +249,12 @@ final class ChatMessageRow: ListRowView {
                 markdownView.isStreaming = isStreaming && animates
             }
             if firstFill || markdownText != message.text {
-                if firstFill || !markdownView.isStreaming {
-                    markdownView.setMarkdown(message.text)
-                } else {
-                    markdownView.setContent(MarkdownContent(markdown: message.text, theme: markdownView.theme))
+                ChatPerformance.measure("markdown") {
+                    if firstFill || !markdownView.isStreaming {
+                        markdownView.setMarkdown(message.text)
+                    } else {
+                        markdownView.setContent(MarkdownContent(markdown: message.text, theme: markdownView.theme))
+                    }
                 }
                 markdownText = message.text
             }
@@ -325,6 +338,7 @@ final class ChatMessageRow: ListRowView {
             let textHeight = hasText ? max(0, content.height - attachmentHeight - gap - footerHeight) : 0
             markdownView.frame = CGRect(x: content.minX, y: content.minY, width: content.width, height: textHeight)
             markdownView.trackedScrollView = superview as? UIScrollView
+            publishStreamingHeight()
             attachmentsView.frame = CGRect(
                 x: content.minX,
                 y: content.minY + textHeight + gap,
@@ -344,6 +358,24 @@ final class ChatMessageRow: ListRowView {
         }
     }
 
+    /// A reply still being written: the height its document takes is the one
+    /// the view just laid out, kept where the list reads a row's height from
+    /// (`ChatRowHeights`) so the whole text is not parsed a second time on the
+    /// frame's path. Only a height that moved by half a point or more asks the
+    /// list to measure again, so a steady stream does not invalidate itself.
+    private func publishStreamingHeight() {
+        guard markdownView.isStreaming, markdownView.bounds.width > 1,
+              let text = markdownText, let id = shownID
+        else { return }
+        let document = ChatPerformance.measure("document") {
+            markdownView.boundingSize(for: markdownView.bounds.width).height
+        }
+        ChatRowHeights.store(document, id: id, text: text, width: markdownView.bounds.width)
+        guard abs(document - publishedDocumentHeight) > 0.5 else { return }
+        publishedDocumentHeight = document
+        onDocumentHeightChange?()
+    }
+
     static func height(
         for message: ChatMessage,
         width: CGFloat,
@@ -358,9 +390,16 @@ final class ChatMessageRow: ListRowView {
             textHeight = 0
         } else if let userTextSize {
             textHeight = ceil(userTextSize.height) + textPadding * 2
+        } else if let document = ChatRowHeights.height(id: message.id, text: message.text, width: available) {
+            // Laid out by the view that draws it, at the pace that view keeps.
+            textHeight = ceil(document)
         } else {
-            sizingMarkdown.setMarkdown(message.text)
-            textHeight = ceil(sizingMarkdown.boundingSize(for: available).height)
+            let document = ChatPerformance.measure("height") { () -> CGFloat in
+                sizingMarkdown.setMarkdown(message.text)
+                return sizingMarkdown.boundingSize(for: available).height
+            }
+            ChatRowHeights.store(document, id: message.id, text: message.text, width: available)
+            textHeight = ceil(document)
         }
         let insets = Self.insets(for: width)
         let contentWidth = max(1, width - insets.left - insets.right)
