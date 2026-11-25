@@ -286,9 +286,11 @@ final class SettingsViewController: TableController {
 /// (owner, 2026-11-08): a sheet that closed on every tap hid both what was
 /// chosen and what was left to choose.
 final class ChatPreferencesController: TableController {
-    private enum Section: Hashable { case chat }
+    private enum Section: Hashable { case app, chat }
 
     private enum Row: Hashable {
+        /// The language the next launch draws the interface in.
+        case language
         case launch
         case returnKey
         case compression
@@ -329,17 +331,28 @@ final class ChatPreferencesController: TableController {
     }
 
     private func updateRows() {
-        dataSource.update([(.chat, [
-            RowContent(row: .launch, detail: Preferences.launch.title),
-            RowContent(
-                row: .returnKey,
-                detail: ComposerBehavior.useConfirmationOnSend
-                    ? String(localized: "New Line")
-                    : String(localized: "Send"),
-            ),
-            RowContent(row: .compression, detail: Preferences.percentText(Preferences.compressionThreshold)),
-            RowContent(row: .background, detail: Self.backgroundSummary),
-        ])], reconfigure: true)
+        dataSource.headerTitle = { section in
+            section == .chat ? String(localized: "Chat") : nil
+        }
+        dataSource.footerTitle = { section in
+            section == .app ? String(localized: "The interface changes the next time Luros starts.") : nil
+        }
+        dataSource.update([
+            (.app, [
+                RowContent(row: .language, detail: Preferences.Language.summary),
+            ]),
+            (.chat, [
+                RowContent(row: .launch, detail: Preferences.launch.title),
+                RowContent(
+                    row: .returnKey,
+                    detail: ComposerBehavior.useConfirmationOnSend
+                        ? String(localized: "New Line")
+                        : String(localized: "Send"),
+                ),
+                RowContent(row: .compression, detail: Preferences.percentText(Preferences.compressionThreshold)),
+                RowContent(row: .background, detail: Self.backgroundSummary),
+            ]),
+        ], reconfigure: true)
     }
 
     private func cell(in tableView: UITableView, content value: RowContent) -> UITableViewCell {
@@ -348,6 +361,7 @@ final class ChatPreferencesController: TableController {
         var content = UIListContentConfiguration.valueCell()
         content.secondaryText = value.detail
         switch value.row {
+        case .language: content.text = String(localized: "Language")
         case .launch: content.text = String(localized: "On Launch")
         case .returnKey: content.text = String(localized: "Return Key")
         case .compression: content.text = String(localized: "Compression Threshold")
@@ -363,6 +377,25 @@ final class ChatPreferencesController: TableController {
         tableView.deselectRow(at: indexPath, animated: true)
         guard let row = dataSource.value(at: indexPath)?.row else { return }
         switch row {
+        case .language:
+            let choices = Preferences.Language.choices
+            let selected = Preferences.Language.chosen
+                .flatMap { code in choices.firstIndex { $0.code == code } }
+                .map { $0 + 1 } ?? 0
+            push(
+                SettingChoiceController(
+                    title: String(localized: "Language"),
+                    options: [String(localized: "Follow System")] + choices.map { $0.title },
+                    selected: selected,
+                ) { [weak self] index in
+                    let code = index == 0 ? nil : choices[index - 1].code
+                    // read before the choice lands: following the system
+                    // changes nothing while the app already follows it
+                    let changes = Preferences.Language.changes(code)
+                    Preferences.Language.choose(code)
+                    if changes { self?.offerRestart() }
+                },
+            )
         case .launch:
             let launches = Preferences.Launch.allCases
             push(
@@ -408,6 +441,23 @@ final class ChatPreferencesController: TableController {
 
     private func push(_ page: UIViewController) {
         navigationController?.pushViewController(page, animated: true)
+    }
+
+    /// A bundle settles its language when it starts, so the choice is kept for
+    /// the next launch: say so, and offer to leave now to see it.
+    private func offerRestart() {
+        let alert = UIAlertController(
+            title: String(localized: "Language"),
+            message: String(localized: "The interface changes the next time Luros starts."),
+            preferredStyle: .alert,
+        )
+        alert.addAction(UIAlertAction(title: String(localized: "Later"), style: .cancel))
+        alert.addAction(UIAlertAction(title: String(localized: "Quit"), style: .destructive) { _ in
+            QuietExit.run()
+        })
+        // the page that took the tap is on top of the same stack; presenting
+        // from it would be presenting from a view that is not on screen
+        (navigationController ?? self).present(alert, animated: true)
     }
 }
 
