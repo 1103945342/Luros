@@ -27,8 +27,44 @@ enum ChatActivityContent {
         }
     }
 
+    /// A summary's newest words while a thought is still being written, drawn
+    /// under its title: the icon it belongs to, then a line that rolls as more
+    /// arrives (`ChatRollingLine`). A reader watching a run wants to see what
+    /// it is thinking without opening anything.
+    static func preview(_ message: ChatMessage) -> String? {
+        guard message.role.isThinking else { return nil }
+        let text = message.text
+        return text.contains(where: { !$0.isWhitespace }) ? text : nil
+    }
+
+    /// The line under a summary now: the newest step of its trace — a thought
+    /// still being written, or the call it is on, whichever came last. Both
+    /// are drawn by `ToolCallBannerView`, each with its own symbol.
+    static func line(_ message: ChatMessage) -> ToolCallBannerView.Content? {
+        let steps = message.trace
+        if let newest = steps.last {
+            if let text = preview(newest) {
+                return .thought(text)
+            }
+            if newest.role == .tool, let call = newest.banner {
+                return .call(call, token: callToken(of: steps))
+            }
+        }
+        // No step to go by (an older transcript): the summary's own.
+        if let text = preview(message) {
+            return .thought(text)
+        }
+        return banner(message).map { .call($0, token: callToken(of: steps)) }
+    }
+
+    /// How many calls the turn has made: a model repeating the same words for
+    /// the next call still gets its line redrawn.
+    private static func callToken(of steps: [ChatMessage]) -> Int {
+        steps.count(where: { $0.role == .tool })
+    }
+
     static func hasContent(_ message: ChatMessage) -> Bool {
-        !title(message).isEmpty || source(message) != nil || banner(message) != nil
+        !title(message).isEmpty || source(message) != nil || line(message) != nil
             || (!message.foldsProcessSteps && message.receivedTokens != nil)
             || !steps(message).isEmpty
     }
