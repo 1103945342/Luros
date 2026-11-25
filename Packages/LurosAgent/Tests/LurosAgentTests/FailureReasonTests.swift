@@ -47,6 +47,22 @@ struct FailureReasonTests {
         #expect(FailureReason.of(Self.status(400, "prompt is too long: 250000 tokens > 200000 maximum"), hasRoute: true) == .contextOverflow)
     }
 
+    /// kwwk's preflight, when compacting cannot bring the conversation under
+    /// the window, as a device saw it with a 65,000-token window and one
+    /// 100 KB tool result: the chat is too long, said as such.
+    @Test
+    func `a conversation compaction cannot fit in the window is too long`() {
+        for message in [
+            "context is too large and compaction failed: compaction left 51590 tokens, above the recovery target of 39000",
+            "context is too large and could not be compacted",
+            "context requires approximately 70000 input tokens, exceeding the usable 60000-token input budget even after compaction",
+        ] {
+            #expect(FailureReason.of(ProviderFailure(message: message), hasRoute: true) == .contextOverflow, "\(message)")
+        }
+        // a provider's own refusal in those words keeps its status's reading
+        #expect(FailureReason.of(Self.status(503, "context is too large and compaction failed"), hasRoute: true) == .server)
+    }
+
     @Test
     func `a request the provider would not take keeps its own words`() {
         #expect(FailureReason.of(Self.status(404, "model not found"), hasRoute: true) == nil)
@@ -88,19 +104,50 @@ struct FailureReasonTests {
     }
 
     /// One that does not answer its cancellation either, as a request to a
-    /// connection that answers nothing may not.
+    /// connection that answers nothing may not. The operation ends only when
+    /// the test lets it, after the limit has answered, so the answer cannot
+    /// have waited for it however slow the machine: no wall clock is read
+    /// (one was, and a loaded runner failed it).
     @Test(.timeLimit(.minutes(1)))
     func `an operation past its limit is no longer waited for`() async throws {
-        let started = Date()
+        let gate = Gate()
         await #expect(throws: Deadline.Exceeded.self) {
             _ = try await Deadline.within(.milliseconds(100)) {
-                await withCheckedContinuation { continuation in
-                    DispatchQueue.global().asyncAfter(deadline: .now() + 5) { continuation.resume() }
-                }
+                await gate.wait()
+                await gate.markEnded()
                 return 1
             }
         }
-        #expect(Date().timeIntervalSince(started) < 3)
+        #expect(await !gate.ended, "the limit answered while the operation still ran")
+        await gate.open()
+    }
+
+    /// An operation's end, held until the test opens it; waiting on it
+    /// ignores cancellation, as a request that answers nothing does.
+    private actor Gate {
+        private var isOpen = false
+        private var waiter: CheckedContinuation<Void, Never>?
+        private(set) var ended = false
+
+        func wait() async {
+            await withCheckedContinuation { continuation in
+                if isOpen {
+                    continuation.resume()
+                } else {
+                    waiter = continuation
+                }
+            }
+        }
+
+        func open() {
+            isOpen = true
+            waiter?.resume()
+            waiter = nil
+        }
+
+        func markEnded() {
+            ended = true
+        }
     }
 
     @Test(.timeLimit(.minutes(1)))

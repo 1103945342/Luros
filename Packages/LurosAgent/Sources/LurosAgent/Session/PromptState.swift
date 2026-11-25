@@ -5,8 +5,9 @@ import Foundation
 import KWWKAI
 
 /// What the system prompt shows that can change while a session runs: the
-/// reader's injected instructions, the project's instructions, the skills
-/// list, the memory this chat sees, the environment and the build system.
+/// reader's injected instructions, the project's instructions, the user's own
+/// (`UserInstructions`), the skills list, the memory this chat sees, the
+/// environment and the build system.
 ///
 /// A session takes it once, when it opens (and again after a compaction,
 /// which rewrites the conversation's prefix anyway), and its system prompt
@@ -15,6 +16,9 @@ import KWWKAI
 /// delta in the next message's `<system-state>` (`changes(since:)`).
 struct PromptState: Equatable {
     var instructions: ProjectInstructions?
+    /// The user's own instructions for every chat or for one project
+    /// (`UserInstructions`); `.none` when none is written.
+    var userInstructions: UserInstructions = .none
     var skills: [SkillDocument]
     /// The records this chat sees; nil when the store cannot be read.
     var memory: [MemoryRecord]?
@@ -56,6 +60,7 @@ struct PromptState: Equatable {
         let inputs = EnvironmentPrompt.inputs(configuration, root: root, device: device, toolExtensions: extensions)
         return PromptState(
             instructions: SystemPrompt.projectInstructions(in: root),
+            userInstructions: UserInstructions.read(configuration),
             skills: skills,
             memory: memory?.records,
             environment: EnvironmentPrompt.section(inputs),
@@ -96,6 +101,9 @@ struct PromptState: Equatable {
     /// reader's injected instructions open the list and are quoted in full
     /// however long they are: they are the one thing here no tool reads back,
     /// and the reader turning them on or off must reach a chat already open.
+    /// The user's own instructions come next and whole whatever else changed:
+    /// they are bounded, and what the user wants followed from this message on
+    /// (`UserInstructions.changes(since:)`).
     func changes(since old: PromptState) -> [String] {
         var changes: [(source: Source, text: String)] = []
         if buildSystem != old.buildSystem {
@@ -108,11 +116,12 @@ struct PromptState: Equatable {
         changes += memoryChanges(since: old.memory).map { (.memory, $0) }
         changes += environmentChanges(since: old.environment).map { (.environment, $0) }
         let injection = injectionChanges(since: old.injected)
+        let user = userInstructions.changes(since: old.userInstructions)
         guard changes.reduce(0, { $0 + $1.text.count }) > Self.maximumDelta else {
-            return injection + changes.map(\.text)
+            return injection + user + changes.map(\.text)
         }
         // Too much to quote: say which sources changed and where they are.
-        return injection + Source.allCases.filter { source in changes.contains { $0.source == source } }
+        return injection + user + Source.allCases.filter { source in changes.contains { $0.source == source } }
             .map { "\($0.rawValue): changed; \($0.whereToRead)." }
     }
 

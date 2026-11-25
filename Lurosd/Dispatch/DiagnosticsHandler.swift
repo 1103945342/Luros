@@ -2,7 +2,10 @@ import LurosProtocol
 
 /// Load confirmation and UI verification, served by luros-diagnostics.
 /// A load check is a task the host owns, so the respring it may trigger —
-/// which takes the app down, not the host — cannot lose its answer.
+/// which takes the app down, not the host — cannot lose its answer. The
+/// device passcode's three operations are the app's alone (CallerPolicy
+/// lets no worker call them), and go to luros-diagnostics, which alone
+/// keeps the passcode; the host reads none of it.
 enum DiagnosticsHandler: DomainHandler {
     static func handle(_ request: HostRequest, host: SessionHost) async -> HostReply {
         switch request.operation {
@@ -10,18 +13,37 @@ enum DiagnosticsHandler: DomainHandler {
             await host.startTask(request, kind: .confirmLoaded, role: .diagnostics)
         case .confirmLoadedAttach:
             await host.attach(request, ConfirmLoadedAttachRequest.self)
+        case .confirmLoadedCancel:
+            await cancelLoadCheck(request, host: host)
         case .captureScreen:
             await host.forward(request, to: .diagnostics)
         case .readUITree:
             await forwardTreeRead(request, host: host)
         case .uiAction:
             await forwardAction(request, host: host)
+        case .devicePasscodeState, .devicePasscodeSave, .devicePasscodeRemove:
+            await host.forward(request, to: .diagnostics)
         default:
             request.fail(LurosError(
                 .badRequest,
                 "\(request.operation.rawValue) is not a diagnostics operation",
             ))
         }
+    }
+
+    /// Stops a load check, and nothing else, as LoadCheckCancelRules lets
+    /// the caller: an agent only a check its own session started.
+    private static func cancelLoadCheck(_ request: HostRequest, host: SessionHost) async -> HostReply {
+        let cancel: ConfirmLoadedCancelRequest
+        do {
+            cancel = try request.decode(ConfirmLoadedCancelRequest.self)
+        } catch {
+            return request.fail((error as? LurosError) ?? LurosError(.badRequest, "\(error)"))
+        }
+        if let refusal = await LoadCheckCancelRules.refusal(cancel, caller: request.caller, registry: host.registry) {
+            return request.fail(refusal)
+        }
+        return await host.cancel(request, ConfirmLoadedCancelRequest.self)
     }
 
     /// An agent reads the UI tree only as its session's Ask Before Using the

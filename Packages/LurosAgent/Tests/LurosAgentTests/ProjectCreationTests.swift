@@ -146,7 +146,7 @@ struct ProjectCreationTests {
     func `Every chat imports a repository through an Empty workspace's conversation`() throws {
         let home = try TemporaryHome()
         defer { home.remove() }
-        let steps = ["com.fluoxetine.luros.workspace/empty", "luros_conversation_create", "git_clone"]
+        let steps = ["com.fluoxetine.luros.workspace/empty", "luros_conversation_create", "set to the new workspace", "git_clone"]
         func namesEveryStep(_ text: String) -> Bool {
             steps.allSatisfy { text.contains($0) }
         }

@@ -28,4 +28,7 @@ public extension LurosError.Reason {
     /// No provider has a saved sign-in, so no model can answer: the app
     /// asks the reader to configure one instead of showing the provider's words.
     static let noModelConfigured = Self(rawValue: "noModelConfigured")
+    /// Not a request's failure: a stopped run that had not ended in time,
+    /// which the worker ended itself (#67).
+    static let unstopped = Self(rawValue: "unstopped")
 }

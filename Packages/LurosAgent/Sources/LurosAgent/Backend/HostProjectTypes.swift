@@ -111,11 +111,16 @@ public struct ProjectCreateToolResponse: Sendable, Hashable, Codable {
     /// The identifiers Luros made up for it, to ask the user about
     /// (`PlaceholderIdentifiers`); the agent adds it, the host never does.
     public var identifierHint: String?
+    /// How its first conversation is opened: with `project` set to it,
+    /// since luros_conversation_create without one opens in the caller's
+    /// project (issue #79).
+    public var next: String
     public init(projectID: String, name: String, identifierHint: String? = nil) {
         self.projectID = projectID
         self.name = name
         link = LurosLink.project(projectID)
         self.identifierHint = identifierHint
+        next = "Open its first conversation with luros_conversation_create and project \"\(projectID)\"; without project, a conversation never opens in the new project."
     }
 }
 

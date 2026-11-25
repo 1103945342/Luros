@@ -504,11 +504,11 @@ actor ToolRunner {
     /// command as root, nor for an issue filed or edited in public as
     /// feedback, nor for a repository made on GitHub or an issue opened on
     /// one, nor for a project's deletion, which cannot be undone, nor for
-    /// packages published to the user's package repository, nor for a use
-    /// of the screen while Ask Before Using the Screen is on, nor for a
-    /// forced push, which takes commits off the remote's branch, nor for a
-    /// squash, which replaces the project's own, nor for a reset to a
-    /// remote, which discards work.
+    /// packages published to the user's package repository or as a GitHub
+    /// Release, nor for a use of the screen while Ask Before Using the
+    /// Screen is on, nor for a forced push, which takes commits off the
+    /// remote's branch, nor for a squash, which replaces the project's own,
+    /// nor for a reset to a remote, which discards work.
     /// What a git_issue or git_pull_request call that changes GitHub names,
     /// as the card shows it and the host matches it; nil for a read.
     static func githubWrite(name: AgentToolName, arguments: JSONValue) -> GitHubWriteApproval? {
@@ -549,7 +549,8 @@ actor ToolRunner {
         switch tool {
         case .local(.packageRemove), .local(.gitPush), .local(.toolchainSetup), .local(.sdkImport),
              .local(.skillSave), .local(.skillRemove), .local(.feedbackSend), .local(.gitCreateRepository),
-             .local(.projectDelete), .local(.packagePublish), .local(.feedbackEdit), .local(.gitCreateIssue),
+             .local(.projectDelete), .local(.packagePublish), .local(.packageRelease), .local(.feedbackEdit),
+             .local(.gitCreateIssue),
              .local(.gitSquash), .local(.gitResetToRemote), .local(.gitBranchDelete),
              .local(.gitTag), .local(.gitRestore), .local(.gitClean),
              .local(.gitBranchCreate), .local(.gitBranchCheckout), .local(.gitBranchRename),
@@ -561,7 +562,7 @@ actor ToolRunner {
         switch detail {
         case .gitSettings, .descriptionChanged, .toolchainSetup, .sdkImport, .otherProject, .externalBuild, .skillChange,
              .projectRename, .rootCommand, .feedback, .feedbackEdit, .repositoryCreate, .issueCreate, .githubWrite, .projectDelete,
-             .packagePublish, .screenControl, .forcePush, .squash, .resetToRemote, .question, .runMode:
+             .packagePublish, .packageRelease, .screenControl, .forcePush, .squash, .resetToRemote, .question, .runMode:
             return false
         case .none, .command, .packageRemoval, .gitPush:
             return true
@@ -636,6 +637,12 @@ actor ToolRunner {
             let notice = try notices.take(arguments, now: Date())
             try await record(.notice(title: notice.title, body: notice.body))
             return text(notices.sentMessage)
+
+        case .conversationCompact:
+            // No host request: the session compacts its own conversation, at
+            // the run's next step (`AgentSession.compactIfAsked`).
+            guard let compaction else { throw ToolDeniedError(message: "Compaction is unavailable.") }
+            return try await text(compaction())
 
         case .questionAsk:
             return try await askQuestion(arguments, toolCallID: context.toolCallID, cancellation: cancellation)

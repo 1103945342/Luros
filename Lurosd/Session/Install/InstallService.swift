@@ -19,10 +19,16 @@ protocol InstallService: Sendable {
     /// Ends the run a transaction started, when the task it belonged to was
     /// cancelled. A service that cannot do it leaves the run to finish.
     func cancel(_ transaction: UUID)
+
+    /// Gives up the calls still waiting for an answer: each fails, and the
+    /// next call connects afresh.
+    func reset()
 }
 
 extension InstallService {
     func cancel(_ transaction: UUID) {}
+
+    func reset() {}
 }
 
 struct InstallServiceInfo: Equatable, Sendable {

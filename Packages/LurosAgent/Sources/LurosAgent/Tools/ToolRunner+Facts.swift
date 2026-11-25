@@ -231,8 +231,8 @@ extension ToolRunner {
             guard request.repository.lowercased() != FeedbackRules.repository.lowercased() else {
                 throw ToolArgumentError("Nothing was posted: feedback about Luros itself goes to \(FeedbackRules.repository) with luros_feedback_send.")
             }
-            if let problem = FeedbackRules.problem(title: request.title, body: request.body) {
-                throw ToolArgumentError("Nothing was posted: \(problem).")
+            if let refusal = FeedbackRules.refusal(title: request.title, body: request.body) {
+                throw ToolArgumentError("Nothing was posted: \(refusal.explanation).")
             }
             facts.issueCreate = IssueCreateApproval(repository: request.repository, title: request.title, body: request.body)
         case .gitIssue, .gitPullRequest:
@@ -261,8 +261,8 @@ extension ToolRunner {
             // is sent, which luros-environment checks again.
             let title = try arguments.requireString("title").trimmingCharacters(in: .whitespaces)
             let body = try arguments.requireString("body")
-            if let problem = FeedbackRules.problem(title: title, body: body) {
-                throw ToolArgumentError("Not sent: \(problem).")
+            if let refusal = FeedbackRules.refusal(title: title, body: body) {
+                throw ToolArgumentError("Not sent: \(refusal.explanation).")
             }
             facts.feedback = FeedbackApproval(repository: FeedbackRules.repository, title: title, body: body)
         case .feedbackEdit:
@@ -283,6 +283,12 @@ extension ToolRunner {
             let ids = try PackagePublish.buildIDs(arguments)
             let publication = try await backend.packagePublication(PackagePublicationRequest(context: probeContext, buildIDs: ids))
             facts.packagePublish = try PackagePublish.approval(for: ids, publication: publication)
+        case .packageRelease:
+            // Read and checked before anyone is asked; the card names what
+            // is sent, which the host and luros-environment check again.
+            let ids = try PackageRelease.buildIDs(arguments)
+            let read = try await backend.packageReleaseFacts(PackageReleaseFactsRequest(context: probeContext, buildIDs: ids))
+            facts.packageRelease = try PackageRelease.approval(for: ids, arguments: arguments, facts: read, project: project)
         case .projectSetEnvironment:
             facts.pathCheck = check { _ = try root.resolveForWrite(ProjectEnvironmentEdit.fileName, findingGitPointers: false) }
         default:
@@ -412,8 +418,10 @@ extension ToolRunner {
                 ?? "Command Line Tools \(product.version) offers no Swift on this device; set it up without Swift or choose another release")
         }
         let components = swift ? ["c", "swift"] : ["c"]
+        // One an earlier version of Luros set up lacks tools a new setup adds.
         if let installed = listed.installed.first(where: { record in
-            record.version == product.version && components.allSatisfy(record.components.contains) && record.problem == nil
+            record.version == product.version && components.allSatisfy(record.components.contains)
+                && record.problem == nil && record.outdated == nil
         }) {
             throw ToolArgumentError("Command Line Tools \(product.version) is already set up as \(installed.id); bind it with luros_project_set_environment")
         }

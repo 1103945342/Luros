@@ -7,7 +7,9 @@ import LurosCore
 // bound to this verification; never a command.
 
 public struct LoadEvidence: Codable, Sendable, Equatable {
-    /// `log`, `image`, `filter`, and `trigger` when the trigger failed.
+    /// `log`, `image`, `filter`, `process` (whether the target ran while the
+    /// check listened: `ConfirmLoadedResponse.process`), and `trigger` when
+    /// the trigger failed.
     public var kind: String
     public var passed: Bool
     /// Starts with the evidence's status — `confirmed`, `absent`,
@@ -43,25 +45,41 @@ public enum LoadImageCheck: String, Codable, Sendable {
 
 /// `buildID` is the build's `LUROS_BUILD_ID` (the marker is `LurosLoaded
 /// <buildID>`); `targetID` an executable name (`SpringBoard`) or a bundle
-/// id (`com.apple.springboard`). With `projectID`, the marker's subsystem,
-/// the installed dylib and the filter come from the project's
-/// `luros-project.json`; without it only the marker is checked.
+/// id (`com.apple.springboard`) of an app that is running or installed.
+/// With `projectID`, the marker's subsystem, the installed dylib and the
+/// filter come from the project's `luros-project.json`; without it only
+/// the marker is checked.
 ///
 /// A task (`confirmLoaded` kind) the session host owns: the reply is its
 /// handle, the request checked first — a bad one is the reply, not a failed
 /// task. Its events are `stage` {stage: `listening` | `trigger`}
 /// and a final `state` whose `result` is the `ConfirmLoadedResponse`; the
-/// task succeeds when the check ran, whatever it found. Read it with
+/// task succeeds when the check ran, whatever it found, and ends
+/// `cancelled` on `confirmLoadedCancel`. Read it with
 /// `confirmLoadedAttach`; nobody need be attached for the answer to be kept.
 public struct ConfirmLoadedRequest: OperationRequest {
     public typealias Response = TaskHandle
     public static let operation = AppOperation.confirmLoaded
+
+    /// Seconds a check may listen: `logStream`'s own bound, since both keep
+    /// one live stream open for the window, and a load check is work that
+    /// keeps lurosd up until it ends.
+    public static let logWindowRange: ClosedRange<Double> = 1 ... 600
+
+    /// What a check listens for when the request names no window: 30 s
+    /// with a respring, which has to bring SpringBoard back inside it, and
+    /// 15 s without.
+    public static func defaultLogWindowSeconds(trigger: LoadTrigger?) -> Double {
+        trigger == .respring ? 30 : 15
+    }
+
     public var buildID: String
     public var targetID: String
     public var projectID: String?
     public var trigger: LoadTrigger?
-    /// How long to listen for the marker, 1–60 seconds (default 30 with a
-    /// respring, which has to bring SpringBoard back inside it; 15 without).
+    /// How long to listen for the marker at most, within `logWindowRange`
+    /// (default `defaultLogWindowSeconds`). The listen ends as soon as the
+    /// target logs the marker, so a long window costs only a miss its time.
     public var logWindowSeconds: Double?
     /// Must be nil: any value is refused (`badRequest`), see
     /// `LoadImageCheck`. The image evidence is always `notRead`.
@@ -84,17 +102,47 @@ public struct ConfirmLoadedRequest: OperationRequest {
     }
 }
 
+/// What a load check saw of its target process, by name and pid alone:
+/// the process list is looked at when the check begins and about once a
+/// second until it ends, and a pid that logged the marker counts as seen.
+/// A process that started and exited between two looks without logging
+/// the marker is not seen.
+public struct LoadTargetProcess: Codable, Sendable, Equatable {
+    /// The pids of the target running when the check began.
+    public var runningAtStart: [Int32]
+    /// The pids of the target that appeared after that, in the order seen.
+    public var startedDuring: [Int32]
+    /// How long the check looked, in seconds.
+    public var watchedSeconds: Double
+
+    public init(runningAtStart: [Int32], startedDuring: [Int32], watchedSeconds: Double) {
+        self.runningAtStart = runningAtStart
+        self.startedDuring = startedDuring
+        self.watchedSeconds = watchedSeconds
+    }
+
+    /// The target ran at some point while the check looked.
+    public var ran: Bool {
+        !runningAtStart.isEmpty || !startedDuring.isEmpty
+    }
+}
+
 /// The answer, carried as `result` in the task's final `state` event.
 public struct ConfirmLoadedResponse: Codable, Sendable, Equatable {
     /// The member of the final `state` payload that holds this.
     public static let stateMember = "result"
 
+    /// The marker was heard. Nothing else decides it.
     public var loaded: Bool
     public var evidence: [LoadEvidence]
+    /// Whether the target ran while the check listened; nil when the
+    /// process list could not be read, and from an older worker.
+    public var process: LoadTargetProcess?
 
-    public init(loaded: Bool, evidence: [LoadEvidence] = []) {
+    public init(loaded: Bool, evidence: [LoadEvidence] = [], process: LoadTargetProcess? = nil) {
         self.loaded = loaded
         self.evidence = evidence
+        self.process = process
     }
 
     /// The answer a finished load-check task carries, or why it has none.
@@ -126,6 +174,18 @@ public struct ConfirmLoadedAttachRequest: TaskAttachRequest {
         self.taskID = taskID
         self.afterSeq = afterSeq
         self.waitMilliseconds = waitMilliseconds
+    }
+}
+
+/// Stops a load check: its listen ends at once and the task ends
+/// `cancelled`. An agent's luros_package_confirm_loaded sends it when the
+/// user stops the call; an agent cancels only the checks it started.
+public struct ConfirmLoadedCancelRequest: TaskCancelRequest {
+    public static let operation = AppOperation.confirmLoadedCancel
+    public var taskID: TaskID
+
+    public init(taskID: TaskID) {
+        self.taskID = taskID
     }
 }
 
@@ -175,13 +235,19 @@ public enum UIAction: Codable, Sendable, Equatable {
     case tapElement(text: String?, identifier: String?)
     case type(text: String)
     case swipe(fromX: Double, fromY: Double, toX: Double, toY: Double, durationMilliseconds: Int)
-    /// `wake`, `home` or `lock` (the side button). Only a wake runs while
-    /// the device is locked or its screen is off.
+    /// `wake`, `home`, `lock` (the side button) or `unlock`. Only a wake and
+    /// an unlock run while the device is locked or its screen is off. An
+    /// unlock (`DevicePasscode.unlockButton`) wakes the device, unlocks its
+    /// keybag with the passcode saved and tested in Settings when it is
+    /// locked, passes the Lock Screen and goes to the Home Screen; on a
+    /// device already unlocked and lit it does nothing. It takes no target,
+    /// and the app beneath the Lock Screen does not refuse it, since what it
+    /// leaves in front is the Home Screen.
     case press(button: String)
 }
 
-/// What an action left. A wake says whether the device is still locked and
-/// its screen still off. A `type` says what it left in the frontmost app,
+/// What an action left. A wake and an unlock say whether the device is
+/// still locked and its screen still off. A `type` says what it left in the frontmost app,
 /// read back from its UI tree: the values its visible elements took on
 /// while the text went in, and whether one holds the text, so characters
 /// that did not land can be seen. Every other action, and a `type` whose
@@ -191,17 +257,22 @@ public struct UIActionResponse: Codable, Sendable, Equatable {
     public var screenOff: Bool?
     public var typedTextMatches: Bool?
     public var fieldValues: [String]?
+    /// An unlock's way past the lock: absent for every other action, and
+    /// from a worker older than 0.4.8.
+    public var unlockedBy: DeviceUnlockPath?
 
     public init(
         locked: Bool? = nil,
         screenOff: Bool? = nil,
         typedTextMatches: Bool? = nil,
         fieldValues: [String]? = nil,
+        unlockedBy: DeviceUnlockPath? = nil,
     ) {
         self.locked = locked
         self.screenOff = screenOff
         self.typedTextMatches = typedTextMatches
         self.fieldValues = fieldValues
+        self.unlockedBy = unlockedBy
     }
 }
 
@@ -230,6 +301,10 @@ public extension LurosService {
 
     func confirmLoadedAttach(_ request: ConfirmLoadedAttachRequest) async throws -> TaskEventBatch {
         try await send(request)
+    }
+
+    func confirmLoadedCancel(taskID: TaskID) async throws {
+        _ = try await send(ConfirmLoadedCancelRequest(taskID: taskID))
     }
 
     /// Starts a load check and reads it to its end. A caller the trigger's

@@ -528,6 +528,7 @@ public actor AgentSession {
             skills: state.skills,
             mcpServers: configuration.mcpServers,
             projectInstructions: state.instructions,
+            userInstructions: state.userInstructions,
             buildSystem: state.buildSystem,
             memory: MemoryTools.prompt(state.memory),
             environment: state.environment,

@@ -176,6 +176,7 @@ public enum AppOperation: String, Codable, CaseIterable, Sendable {
     case channelVerifyCode
     case channelConfigure
     case channelSignOut
+    case distributionRelease
     case feedbackSend
     case feedbackRead
     case feedbackEdit
@@ -206,7 +207,9 @@ public enum AppOperation: String, Codable, CaseIterable, Sendable {
         case .fileRead, .protectedEditOpen, .protectedEditCommit: .files
         case .ptyOpen, .ptyAttach, .ptyResize, .ptyClose: .terminal
         case .logStream, .crashList, .crashOpen, .crashSymbolicate: .logs
-        case .confirmLoaded, .confirmLoadedAttach, .captureScreen, .readUITree, .uiAction: .diagnostics
+        case .confirmLoaded, .confirmLoadedAttach, .confirmLoadedCancel, .captureScreen, .readUITree, .uiAction,
+             .devicePasscodeState, .devicePasscodeSave, .devicePasscodeRemove:
+            .diagnostics
         case .agentDelegation, .agentOpen, .agentPrompt, .agentGenerateImage, .agentSteer, .agentAbort, .agentCompact, .agentConfigure, .agentSetRunMode, .agentQueue, .agentApprove, .agentAttach, .agentList,
              .agentClose, .agentRunCode, .agentCredentialImport, .agentAccountList, .agentSkillList,
              .agentRewritePrompt, .agentModelTest,
@@ -284,6 +287,9 @@ public enum AppOperation: String, Codable, CaseIterable, Sendable {
         case .readUITree: ReadUITreeRequest.self
         case .uiAction: UIActionRequest.self
         case .agentDelegation: AgentDelegationRequest.self
+        case .devicePasscodeState: DevicePasscodeStateRequest.self
+        case .devicePasscodeSave: DevicePasscodeSaveRequest.self
+        case .devicePasscodeRemove: DevicePasscodeRemoveRequest.self
         case .agentOpen: AgentOpenRequest.self
         case .agentPrompt: AgentPromptRequest.self
         case .agentGenerateImage: AgentGenerateImageRequest.self

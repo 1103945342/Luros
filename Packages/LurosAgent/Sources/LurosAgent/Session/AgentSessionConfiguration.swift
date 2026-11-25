@@ -18,6 +18,9 @@ public struct AgentSessionConfiguration: Sendable {
     public var thinking: ThinkingLevel
     /// The processing tier its requests ask for; nil is the provider's default.
     public var serviceTier: ServiceTier?
+    /// The model's context window and largest reply as the user set them;
+    /// nil, or a field of it, is what the model resolves with.
+    public var modelLimits: AgentModelLimits?
     /// What the app's model settings override on the model's own record: the
     /// window compaction is measured against and the most a reply may be.
     public var modelParameters: AgentModelParameters
@@ -74,6 +77,7 @@ public struct AgentSessionConfiguration: Sendable {
         mcpServers: [MCPServerConfiguration] = [],
         thinking: ThinkingLevel = .off,
         serviceTier: ServiceTier? = nil,
+        modelLimits: AgentModelLimits? = nil,
         modelParameters: AgentModelParameters = .init(),
         modelDefaults: AgentModelDefaults = .init(),
         promptInjection: String = "",
@@ -96,6 +100,7 @@ public struct AgentSessionConfiguration: Sendable {
         self.mcpServers = mcpServers
         self.thinking = thinking
         self.serviceTier = serviceTier
+        self.modelLimits = modelLimits
         self.modelParameters = modelParameters
         self.modelDefaults = modelDefaults
         self.promptInjection = promptInjection

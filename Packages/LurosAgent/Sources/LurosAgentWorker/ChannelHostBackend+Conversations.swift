@@ -33,6 +33,7 @@ public extension ChannelHostBackend {
                 approvalMode: .confirm,
                 reasoningEffort: inherits ? choice.reasoningEffort : nil,
                 serviceTier: inherits ? choice.serviceTier : nil,
+                modelLimits: inherits ? choice.modelLimits : nil,
                 modelParameters: inherits ? choice.modelParameters : nil,
                 prompt: request.prompt,
                 title: request.title,

@@ -82,7 +82,19 @@ struct UnavailableIcli: IcliSurface {
         [:]
     }
 
+    func screenInfo() -> [String: Any] {
+        [:]
+    }
+
     func runningApps() throws -> [String: Any] {
+        throw missing()
+    }
+
+    func processes() throws -> [String: Any] {
+        throw missing()
+    }
+
+    func installedApps() throws -> [String: Any] {
         throw missing()
     }
 

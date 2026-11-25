@@ -35,7 +35,7 @@ extension ChatWidgetSnapshot.Chat {
         case "git_commit": String(localized: "Commit")
         case "git_pull": String(localized: "Pull")
         case "git_push": String(localized: "Push")
-        case "luros_package_publish": String(localized: "Publish")
+        case "luros_package_publish", "luros_package_release": String(localized: "Publish")
         case "luros_git_set_author", "luros_git_save_credential", "luros_git_remove_credential": String(localized: "Git Settings")
         case "luros_project_create": String(localized: "Create Project")
         case "luros_project_rename": String(localized: "Rename Project")

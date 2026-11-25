@@ -61,6 +61,7 @@ enum AgentConversationRules {
             asksBeforeScreen: opener.asksBeforeScreen,
             reasoningEffort: open.reasoningEffort,
             serviceTier: open.serviceTier,
+            modelLimits: open.modelLimits,
             promptInjection: opener.promptInjection,
             prompt: prompt,
             title: title(open.title),

@@ -20,7 +20,8 @@ swift test --scratch-path /private/tmp/luros-spm-w7
 Two more products are the workers themselves, so `make harness` tests what
 runs: `LurosDiagnosticsWorker` (luros-diagnostics: `crashList`,
 `crashSymbolicate`, `confirmLoaded` as a task, `captureScreen`,
-`readUITree`, `uiAction` and, through the shared pump, `logStream`) and
+`readUITree`, `uiAction`, the device passcode and its unlock (`DeviceUnlock`,
+below) and, through the shared pump, `logStream`) and
 `LurosLogReaderWorker` (luros-log-reader: `logStream` over
 `SystemLogReader`; system code only, checked by
 `Scripts/check-system-only.py`). Both depend on `../LurosKit` for the wire.
@@ -53,6 +54,26 @@ Nothing takes a command, a predicate or a free path:
   action nil. Binding the action to a verified
   target is the host's job (`settledForegroundApp(expecting:)`).
 - `foregroundApp()`, `runningApps()`, `respring()`.
+- `lockState()`, `wake()`, `pressLock()`, `pressHome()`, `passLockScreen()`
+  — the screen's half of an unlock, which runs while locked: Home, then one
+  swipe up from the bottom edge, each followed by a short wait for the lock
+  to go. Nothing here types or reads a passcode.
+
+### The device passcode (owner, 2026-11-21)
+
+`DeviceUnlock` in `LurosDiagnosticsWorker` keeps the passcode the user
+saves in Settings (`devicePasscodeSave`) in this worker's keychain group
+(`KeychainDevicePasscodeStore`), and uses it for `uiAction` `press`
+`unlock`. It reaches the keybag only through icli's command line
+(`IcliPasscodeCommand`: `<install root>/usr/bin/icli device passcode
+unlock --passcode-stdin --max-failures 1`, the passcode on standard input,
+the executable root's and writable by root alone), which carries
+`com.apple.keystore.device`; this worker does not. A passcode is kept only
+once the test unlocked the locked device with it; an attempt runs only
+while icli's status reads zero failed attempts, no back-off and no block;
+each use is marked `attempting` first and the passcode dropped unless the
+use is seen to unlock or to try nothing. `DeviceUnlockTests` and
+`IcliPasscodeCommandTests` (a script standing in for icli) hold all of it.
 
 `IcliSurface` is the seam: `IcliKitSurface` calls IcliKit (iOS only); the
 tests pass a fake that answers with dictionaries in icli's own shapes.
@@ -89,11 +110,19 @@ still sends `imageCheck` is refused with `badRequest` before a task exists.
 
 ### ConfirmLoaded
 
-`ConfirmLoaded(logs:).run(request, trigger:, stage:)` starts the marker
-read, runs the trigger (a respring) half a second later, waits for the
-window, then evaluates the filter plist. `marker` and `filter` each come
-back as `confirmed`, `absent` or `unavailable` (no source, no plist —
-never reported as absent); `image` is always `notRead`. `stage` reports
+`ConfirmLoaded(logs:processes:).run(request, trigger:, stage:, stop:)`
+looks at the process list, opens one live stream for the marker
+(`LiveLogSource.listen`, open for its first second before it returns),
+runs the trigger (a respring), then looks at the process list again every
+second until the marker is heard, the window ends or `stop` is told to,
+and evaluates the filter plist. A stop ends the listen at once and skips
+a trigger that has not run. `marker`, `filter` and `process` each come
+back as `confirmed`, `absent` or `unavailable` (no source, no plist, a
+stream the system ended early, a process list that cannot be read — never
+reported as absent); `image` is always `notRead`. `process` is the target
+by pid and executable name (`ProcessWatch`): running when the check
+began, started during it, or never seen, so a target that never ran is
+told from one that ran and logged no marker. `stage` reports
 `listening` and `trigger` as it goes. The filter follows
 MobileLoader's reading: `Bundles`, `Executables`, `Classes`, `Mode = Any`,
 `CoreFoundationVersion` as `[min, max)`; a framework bundle id or a class
@@ -105,7 +134,10 @@ on its own thread, emits each `stage`, asks the host for the respring when
 the request says `trigger: respring`, and ends the task with `state`
 `succeeded` carrying the `ConfirmLoadedResponse` as `result`. The respring
 takes the app down, not the host or this worker, so the answer is kept with
-the task whether or not anyone is attached.
+the task whether or not anyone is attached. The window is 1–600 s, and the
+host's cancel (`confirmLoadedCancel`) stops the check (`LoadCheckRegistry`)
+and ends the task `cancelled`. A bundle-ID target is the running app's
+executable, else the installed app's, so a check can wait for it to open.
 
 The marker is heard only while listening: the live log has no history here
 (see below), and a tweak logs its marker once, from its constructor, when
@@ -121,8 +153,9 @@ and checked again against
 [1.0.0's](https://github.com/owngoal-dev/icli/blob/1.0.0/docs/entitlements.md):
 the keys 0.9.1 through 1.0.0 added (`com.apple.private.xpc.service-attach`,
 `IOHIDResourceDeviceUserClient`, `com.apple.keystore.device`) belong to
-calls Luros does not make — kickstart, the virtual pointer and the keybag
-unlock — so no row changed.
+calls Luros does not make in process — kickstart, the virtual pointer and
+the keybag unlock, which goes through the icli executable — so no row
+changed.
 icli has verified its complete profile together, never one key at a time;
 its acceptance runs are the signed CLI on the rootless vphone.
 **No row has been run from an Luros process on a device.** "Verified"
@@ -140,9 +173,11 @@ as stated.
 | Foreground app | `frontmostApp` | mobile or root | `com.apple.private.security.no-sandbox` | Verified by icli on the iOS 26.4 roothide vphone (mobile and root); without it `source` is `unavailable` |
 | Lock state | `lockState` | any | none | Verified by icli on iOS 26.4 |
 | Running apps | `runningApps` | mobile | `no-sandbox` (RunningBoard); `com.apple.private.coreservices.canmaplsdatabase`, `.lsaw` for app metadata | Unverified separately |
+| Process list, installed apps | `listProcesses` (sysctl `KERN_PROC_ALL`, `proc_pidpath`), `listApps` | mobile | `no-sandbox`, `proc_info-allow` for other users' paths; `canmaplsdatabase` and the storage pair for app bundles | Unverified in Luros as calls of their own; `runningApps`, which confirmLoaded has used on devices, makes the same sysctl, `proc_pidpath` and `listApps` calls inside it. Mac tests only |
 | Respring fallback | `respring` | root for the launchd half | FrontBoard relaunch: `com.apple.frontboard.shutdown` (with the `launchapplications` keys); launchd stop: `com.apple.private.xpc.service-configure`, and launchd's own caller checks | Unverified in Luros; icli acceptance `springboard_restart` passes. The normal respring is lurosd's closed operation |
 | Root log read | `SystemLogReader` | root | diagnosticd may still want `com.apple.private.logging.stream` / `com.apple.diagnosticd.stream` from root | Unverified on iOS. On macOS 27 an unentitled user process receives its own lines (test passes) |
 | Filter match, symbolication, blame | pure | any | none — reads the project's own dSYMs | Verified by tests |
+| Device passcode | keychain item, then the `icli` executable's `device passcode` | mobile | `keychain-access-groups` `wiki.qaq.luros.device-passcode`; the keybag's `com.apple.keystore.device` is icli's own | Status, a no-passcode unlock and the keychain on the iOS 27.0.1 vphone, which cannot have a passcode; the passcode path by tests only |
 
 `OSLogStore` is not an option on iOS: its only scope there is
 `.currentProcessIdentifier` (`.local()` and `.system` are macOS-only). Both

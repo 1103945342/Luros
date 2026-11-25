@@ -405,6 +405,24 @@ public struct ProjectCheck: Sendable {
                 add("environment.device.swift", .error, refusal, field: "/products")
             }
         }
+        // Below iOS 16 the Swift frontend force-loads a back-deployment
+        // library (swiftCompatibility56, named by every frontend from CLT 15.0
+        // on) that only Xcode carries for iOS; a retargeted Command Line Tools
+        // tree has none, so the link fails.
+        if project.language == .swift,
+           project.deploymentTarget.compare(Self.swiftDeploymentTarget, options: .numeric) == .orderedAscending
+        {
+            let major = project.deploymentTarget.split(separator: ".").first.map(String.init) ?? project.deploymentTarget
+            add(
+                "project.swift.deploymentTarget",
+                .error,
+                "Swift projects need a deployment target of \(Self.swiftDeploymentTarget) or later (currently "
+                    + "\(project.deploymentTarget)): the Command Line Tools lack the Xcode libraries Swift needs on "
+                    + "iOS \(major); raise the deployment target to \(Self.swiftDeploymentTarget), or use Objective-C "
+                    + "or C for iOS \(major)",
+                field: "/deploymentTarget",
+            )
+        }
         // C++ files get cxxFlags after cFlags, and -fcxx-modules is theirs:
         // both lists are what the C++ compile line may carry.
         let modules = [project.configurations.Debug, project.configurations.Release].contains { configuration in
