@@ -1191,7 +1191,7 @@ final class ChatController: UIViewController {
         let visible = ChatProcessPresentation.rows(items) {
             ChatTraceExpansion.isExpanded(turn: $0)
         }
-// A run still writing re-frames the list on every batch; its own path
+        // A run still writing re-frames the list on every batch; its own path
         // hands over only the row that changed, and a batch that does take the
         // list's general path must not animate its movements mid-run, which
         // laid the whole viewport out again between them. A settled transcript

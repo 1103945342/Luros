@@ -45,6 +45,8 @@ final class ChatWelcomeView: UIView {
     /// as ink arriving rather than as a line of lamps switching on.
     private static let fadeCharacters = 1.5
     private static let blinkSeconds = 0.5
+    /// How wide the caret is drawn, in points.
+    private static let caretWidth: CGFloat = 2
 
     /// The ink's own strength: a greeting is read, not shouted.
     private static let inkAlpha: CGFloat = 0.9
@@ -260,12 +262,17 @@ final class ChatWelcomeView: UIView {
         guard let layout = textLayout else { return }
         let manager = layout.manager
         let container = layout.container
+        let width = Self.caretWidth
         let frame: CGRect
         if written == 0 || ranges.isEmpty {
             let fragment = manager.numberOfGlyphs > 0
                 ? manager.lineFragmentRect(forGlyphAt: 0, effectiveRange: nil)
                 : manager.extraLineFragmentRect
-            frame = CGRect(x: fragment.minX, y: fragment.minY, width: 2, height: fragment.height)
+            // The line's leading edge, which is its right one in a sentence
+            // that runs right to left: an Arabic opening starts at the right,
+            // and a caret parked on the left is a caret in the wrong place.
+            let edge = runsRightToLeft ? fragment.maxX - width : fragment.minX
+            frame = CGRect(x: edge, y: fragment.minY, width: width, height: fragment.height)
         } else {
             // The last character's whole glyph run, so a cluster of several
             // glyphs puts the caret after all of them.
@@ -273,7 +280,10 @@ final class ChatWelcomeView: UIView {
             let glyphs = manager.glyphRange(forCharacterRange: characters, actualCharacterRange: nil)
             let rect = manager.boundingRect(forGlyphRange: glyphs, in: container)
             let line = manager.lineFragmentRect(forGlyphAt: max(NSMaxRange(glyphs) - 1, 0), effectiveRange: nil)
-            frame = CGRect(x: rect.maxX, y: line.minY, width: 2, height: line.height)
+            // Past the last glyph as the eye reads it: to its right while the
+            // line runs left to right, to its left while it runs the other way.
+            let edge = runsRightToLeft ? rect.minX - width : rect.maxX
+            frame = CGRect(x: edge, y: line.minY, width: width, height: line.height)
         }
         // UILabel centres its text block in its bounds; the layout starts at
         // the top, so the caret moves by the same amount the text does.
@@ -282,11 +292,23 @@ final class ChatWelcomeView: UIView {
         let height = min(frame.height, label.bounds.height)
         caret.isHidden = false
         caret.frame = CGRect(
-            x: min(max(frame.minX, 0), max(0, label.bounds.width - 2)),
+            x: min(max(frame.minX, 0), max(0, label.bounds.width - width)),
             y: min(max(offsetY + frame.midY - height / 2, 0), max(0, label.bounds.height - height)),
-            width: 2,
+            width: width,
             height: height,
         )
+    }
+
+    /// Whether the sentence on the fixed layout runs right to left, read off
+    /// that layout rather than from the language: its first glyph sits near
+    /// the right edge of its line, because it is written from there.
+    private var runsRightToLeft: Bool {
+        guard let layout = textLayout, layout.manager.numberOfGlyphs > 0 else { return false }
+        let manager = layout.manager
+        let glyph = manager.glyphIndexForCharacter(at: 0)
+        let origin = manager.location(forGlyphAt: glyph)
+        let line = manager.lineFragmentRect(forGlyphAt: glyph, effectiveRange: nil)
+        return origin.x > line.midX
     }
 
     private func startBlinking() {

@@ -165,6 +165,74 @@ enum Preferences {
         }
     }
 
+    /// The language the interface is drawn in.
+    ///
+    /// A bundle settles its language once, when the process starts, from
+    /// `AppleLanguages` in the app's own defaults — the key iOS Settings ▸
+    /// Luros writes for its per-app language. A choice made here is written to
+    /// the same key, so the two pages never disagree, and it is what the next
+    /// launch opens in: `changes(_:)` says whether that is this one.
+    enum Language {
+        private static let key = "AppleLanguages"
+
+        /// The language chosen, or nil while the interface follows the system.
+        static var chosen: String? {
+            UserDefaults.standard.stringArray(forKey: key)?.first
+        }
+
+        /// What the row says: the chosen language by the name it calls itself,
+        /// or the system's while nothing is chosen.
+        static var summary: String {
+            guard let chosen else { return String(localized: "Follow System") }
+            return name(of: chosen)
+        }
+
+        /// The languages this build carries (the tables `Localizable.xcstrings`
+        /// gave it), in the reading order of the language on screen, each
+        /// called what it calls itself.
+        ///
+        /// Deduplicated: `Bundle.main` answers each language twice — once for
+        /// the `…lproj` folder, once for the `CFBundleLocalizations` entry the
+        /// package's Info.plist carries beside them.
+        static var choices: [(code: String, title: String)] {
+            var codes: [String] = []
+            for code in Bundle.main.localizations where code != "Base" && !codes.contains(code) {
+                codes.append(code)
+            }
+            return codes
+                .map { (code: $0, title: name(of: $0)) }
+                .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+        }
+
+        /// `zh-Hans` as 简体中文, `ja` as 日本語.
+        static func name(of code: String) -> String {
+            Locale(identifier: code).localizedString(forIdentifier: code) ?? code
+        }
+
+        /// nil follows the system: the key goes, and iOS Settings' own row
+        /// reads "Default" again, as this one does.
+        static func choose(_ code: String?) {
+            if let code {
+                UserDefaults.standard.set([code], forKey: key)
+            } else {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+            // `QuietExit` ends the process with `exit`, which never runs the
+            // flush a terminated app is given: the choice has to be on disk
+            // before the reader can press Quit on the notice that follows.
+            CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication)
+        }
+
+        /// Whether a launch would have to start again to show what was just
+        /// chosen, and whether anything changed at all. Read *before*
+        /// `choose`: following the system changes nothing while the app
+        /// already follows it.
+        static func changes(_ code: String?) -> Bool {
+            guard let code else { return chosen != nil }
+            return code != Bundle.main.preferredLocalizations.first
+        }
+    }
+
     /// The share of a conversation's context that compacts it by itself.
     ///
     /// The agent compacts a conversation when what it holds reaches this
