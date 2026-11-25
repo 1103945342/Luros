@@ -639,10 +639,8 @@ actor ToolRunner {
             return text(notices.sentMessage)
 
         case .conversationCompact:
-            // No host request: the session compacts its own conversation, at
-            // the run's next step (`AgentSession.compactIfAsked`).
-            guard let compaction else { throw ToolDeniedError(message: "Compaction is unavailable.") }
-            return try await text(compaction())
+            // Our fork compacts on its own; the host has no request for this.
+            throw ToolDeniedError(message: "Compaction is unavailable.")
 
         case .questionAsk:
             return try await askQuestion(arguments, toolCallID: context.toolCallID, cancellation: cancellation)

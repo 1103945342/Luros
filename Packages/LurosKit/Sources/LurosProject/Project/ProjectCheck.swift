@@ -17,6 +17,11 @@ public struct ProjectCheck: Sendable {
     /// Nil checks the project alone.
     public var installRoot: String?
 
+    /// The oldest iOS a Swift project builds for. The schema lets a project
+    /// name 15.0, the oldest iOS a rootless or roothide bootstrap runs on;
+    /// C and Objective-C build there, Swift does not (issue #71).
+    public static let swiftDeploymentTarget = "16.0"
+
     /// Below this much free space a build fails; below `lowSpace` it warns.
     public var minimumSpace: UInt64 = 64 << 20
     public var lowSpace: UInt64 = 512 << 20

@@ -62,9 +62,13 @@ public enum AppOperation: String, Codable, CaseIterable, Sendable {
 
     case confirmLoaded
     case confirmLoadedAttach
+    case confirmLoadedCancel
     case captureScreen
     case readUITree
     case uiAction
+    case devicePasscodeState
+    case devicePasscodeSave
+    case devicePasscodeRemove
 
     case agentOpen
     case agentDelegation
@@ -230,7 +234,7 @@ public enum AppOperation: String, Codable, CaseIterable, Sendable {
             .git
         case .transferExport, .transferInspect, .transferImport: .transfer
         case .distributionRepositoryList, .distributionRepositoryCreate, .distributionRepositoryLink,
-             .distributionRepositoryUnlink, .distributionPublish, .feedbackSend, .feedbackRead, .feedbackEdit,
+             .distributionRepositoryUnlink, .distributionPublish, .distributionRelease, .feedbackSend, .feedbackRead, .feedbackEdit,
              .feedbackStarState, .feedbackStar:
             .distribution
         case .channelStatus, .channelSignIn, .channelVerifyCode, .channelConfigure, .channelSignOut:
@@ -290,6 +294,7 @@ public enum AppOperation: String, Codable, CaseIterable, Sendable {
         case .devicePasscodeState: DevicePasscodeStateRequest.self
         case .devicePasscodeSave: DevicePasscodeSaveRequest.self
         case .devicePasscodeRemove: DevicePasscodeRemoveRequest.self
+        case .confirmLoadedCancel: ConfirmLoadedCancelRequest.self
         case .agentOpen: AgentOpenRequest.self
         case .agentPrompt: AgentPromptRequest.self
         case .agentGenerateImage: AgentGenerateImageRequest.self
@@ -377,6 +382,7 @@ public enum AppOperation: String, Codable, CaseIterable, Sendable {
         case .distributionRepositoryLink: DistributionRepositoryLinkRequest.self
         case .distributionRepositoryUnlink: DistributionRepositoryUnlinkRequest.self
         case .distributionPublish: DistributionPublishRequest.self
+        case .distributionRelease: DistributionReleaseRequest.self
         case .feedbackSend: FeedbackSendRequest.self
         case .feedbackRead: FeedbackReadRequest.self
         case .feedbackEdit: FeedbackEditRequest.self

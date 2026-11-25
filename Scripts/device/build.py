@@ -61,17 +61,16 @@ def sdk_path():
 
 
 def architecture():
-    """The slice the package wants: arm64e on roothide, arm64 on rootless.
+    """The slice to compile: arm64, the one the shipped binaries use.
 
-    LUROS_ARCHITECTURE is the package's Architecture ("iphoneos-arm64e"),
-    which is the bootstrap's, not necessarily this device's own.
+    LUROS_ARCHITECTURE names the *package's* Architecture, which is
+    iphoneos-arm64e on roothide; the binaries inside it are arm64 — that
+    is what the installed package holds, and what the only build of
+    GhosttyKit offers. An arm64e output cannot link an arm64 library, and
+    an arm64 binary runs on the same devices, so the build makes arm64
+    and says so.
     """
-    value = os.environ.get("LUROS_ARCHITECTURE", "")
-    if value.endswith("-arm64e"):
-        return "arm64e"
-    if value.endswith("-arm64"):
-        return "arm64"
-    return "arm64e"
+    return os.environ.get("LUROS_BINARY_ARCH", "arm64")
 
 
 def configuration():
@@ -154,6 +153,8 @@ def module_sources(target):
             if not name.endswith(suffixes) or path in excluded:
                 continue
             found.append(os.path.relpath(path, ROOT))
+    for relative in target.extra:
+        found.append(relative)
     if not found and target.kind == "swift":
         raise BuildError(f"{target.name}: {target.path} holds no swift sources")
     # A C target may publish only headers and a module map: it is
@@ -202,9 +203,19 @@ def stage_module(target, sources):
                 shutil.copyfile(source, target_path)
     staged = []
     for relative in sources:
-        staged_path = os.path.join(destination, os.path.relpath(os.path.join(ROOT, relative), root))
-        if not os.path.exists(staged_path):
-            raise BuildError(f"{target.name}: {relative} was not staged")
+        source = os.path.normpath(os.path.join(ROOT, relative))
+        if os.path.commonpath([source, root]) != root:
+            # A file from outside the target's folder (Shared/Protocol):
+            # staged under its own name, so two targets never share it.
+            staged_path = os.path.join(destination, os.path.basename(source))
+            with open(source, encoding="utf-8") as handle:
+                text = handle.read()
+            with open(staged_path, "w", encoding="utf-8") as handle:
+                handle.write(stage.stage_text(text) if target.kind == "swift" else text)
+        else:
+            staged_path = os.path.join(destination, os.path.relpath(source, root))
+            if not os.path.exists(staged_path):
+                raise BuildError(f"{target.name}: {relative} was not staged")
         staged.append(staged_path)
     accessor = write_accessor(target)
     if accessor:
@@ -274,6 +285,39 @@ def write_module_map(target):
     headers = os.path.join(ROOT, target.path, target.headers)
     if not os.path.isdir(headers):
         raise BuildError(f"{target.name}: no public headers at {target.path}/{target.headers}")
+    # A binary framework publishes its map beside its modules, and a
+    # source target may carry its own (TreeSitter does); keep it.
+    if target.module_map:
+        own = os.path.join(ROOT, target.path, target.module_map)
+        if not os.path.exists(own):
+            raise BuildError(f"{target.name}: no module map at {target.path}/{target.module_map}")
+        if not target.library:
+            return own
+        # Only a `framework module` makes the linker auto-link a
+        # framework; a plain module map is used exactly as it is.
+        with open(own, encoding="utf-8") as handle:
+            if "framework module" not in handle.read():
+                return own
+        # A binary framework's own map is a `framework module`, and the
+        # linker then auto-links `-framework <name>`, which no device
+        # has. Its headers are plain files here, and the library is
+        # handed to the linker by path, so the map is written again
+        # without the framework.
+        local = os.path.join(HEADERS, target.name)
+        os.makedirs(local, exist_ok=True)
+        for name in os.listdir(headers):
+            link = os.path.join(local, name)
+            if not os.path.exists(link):
+                os.symlink(os.path.join(headers, name), link)
+        module_map = os.path.join(local, "module.modulemap")
+        with open(module_map, "w", encoding="utf-8") as handle:
+            handle.write(
+                "module " + target.name + " {\n"
+                '    umbrella "."\n'
+                "    export *\n"
+                "}\n"
+            )
+        return module_map
     own = os.path.join(headers, "module.modulemap")
     if os.path.exists(own):
         return own
@@ -301,10 +345,20 @@ def base_swift_flags(arch):
         "-sdk", sdk_path(),
         "-swift-version", "5",
         "-enable-upcoming-feature", "ConciseMagicFile",
+        # SE-0409, spelled by this project as `public import`: Swift 6
+        # language mode, experimental in 5.10, same meaning.
+        "-enable-experimental-feature", "AccessLevelOnImport",
+        # SE-0411: a default argument may name an isolated value.
+        "-enable-upcoming-feature", "IsolatedDefaultValues",
         "-file-prefix-map", ROOT + "=.",
         "-file-prefix-map", BUILD + "=DerivedData",
         "-module-cache-path", relative(os.path.join(BUILD, "module-cache")),
         "-I", relative(MODULES_DIR),
+        # Luros's local declarations for what the SDK leaves out (the
+        # XPC C API); see Vendor/include/xpc/xpc.h.
+        "-Xcc", "-I" + os.path.join("Vendor", "include"),
+        "-Xcc", "-fblocks",
+        "-Xcc", "-I.",
     ]
     if configuration() == "debug":
         flags += ["-Onone", "-g"]
@@ -343,10 +397,47 @@ def c_interop_flags(target):
     return flags
 
 
+def c_modules_behind(names):
+    """Every C module reachable from `names`, each once, in order."""
+    found = []
+    seen = set()
+
+    def walk(name):
+        module = plan.BY_NAME.get(name)
+        if module is None or name in seen:
+            return
+        seen.add(name)
+        if module.kind == "c":
+            found.append(module)
+        for dependency in module.deps:
+            walk(dependency)
+
+    for name in names:
+        walk(name)
+    return found
+
+
+def with_dependencies(target, key, state):
+    """Fold the modules this one imports into its cache key.
+
+    A module's own sources can be untouched while what it imports changed
+    shape — turning a `let` into a `var` renames the symbol its callers
+    reference — so a stale object would fail at link time. The digests of
+    the modules it depends on are part of the key for that reason.
+    """
+    for dependency in target.deps:
+        remembered = state.get(dependency, {}).get("digest")
+        if remembered:
+            key = hashlib.sha256((key + remembered).encode()).hexdigest()
+    return key
+
+
 def compile_swift(target, staged, state):
     arch = architecture()
     flags = base_swift_flags(arch) + c_interop_flags(target) + list(target.swiftflags)
-    key = digest_of(target, staged, flags)
+    if not target.entry:
+        flags.append("-parse-as-library")
+    key = with_dependencies(target, digest_of(target, staged, flags), state)
     remember = state.get(target.name, {})
     module_path = os.path.join(MODULES_DIR, f"{target.name}.swiftmodule")
     object_path = os.path.join(OBJECTS, f"{target.name}.o")
@@ -374,12 +465,19 @@ def compile_swift(target, staged, state):
 
 def compile_c(target, staged, state):
     arch = architecture()
-    include_flags = [f"-I{os.path.join(target.path, target.headers)}"]
+    include_flags = [
+        f"-I{os.path.join(target.path, target.headers)}",
+        "-I" + os.path.join("Vendor", "include"),
+        "-I.",
+    ]
     include_flags += [f"-I{os.path.join(target.path, search)}" for search in target.header_search]
-    for dependency in target.deps:
-        module = plan.BY_NAME.get(dependency)
-        if module is not None and module.kind == "c":
-            include_flags.append(f"-I{os.path.join(module.path, module.headers)}")
+    for module in c_modules_behind(target.deps):
+        include_flags.append(f"-I{os.path.join(module.path, module.headers)}")
+        if module.module_map:
+            # A binary framework is also reached the way its own
+            # headers are written: `#include <libarchive/archive.h>`
+            # needs the folder that holds the .framework.
+            include_flags.append(f"-F{os.path.dirname(module.path)}")
     flags = [
         "-target", f"{arch}-apple-ios{DEPLOYMENT_TARGET}",
         "-isysroot", sdk_path(),
@@ -388,7 +486,7 @@ def compile_c(target, staged, state):
         "-ffile-prefix-map=" + ROOT + "=.",
         "-O0" if configuration() == "debug" else "-O2",
     ] + include_flags + list(target.cflags)
-    key = digest_of(target, staged, flags)
+    key = with_dependencies(target, digest_of(target, staged, flags), state)
     # The module map is rewritten every run: its umbrella path is
     # relative, and the build folder may have moved.
     module_map = write_module_map(target)
@@ -453,6 +551,17 @@ def build(names):
     return failures
 
 
+def write_xpc_stub():
+    """The libxpc .tbd the linker needs, from the local declarations."""
+    library = os.path.join(BUILD, "lib")
+    os.makedirs(library, exist_ok=True)
+    stub = os.path.join(library, "libxpc.tbd")
+    code, output, _ = run([sys.executable, os.path.join(HERE, "xpc.py"), stub])
+    if code != 0:
+        raise SystemExit("could not write the libxpc stub: " + output)
+    return library
+
+
 def link_product(product):
     """Compile the product's modules, then link and sign the executable."""
     if build(product.modules):
@@ -461,23 +570,54 @@ def link_product(product):
         state = json.load(handle)
     objects = []
     frameworks = set(product.frameworks)
+    libraries = []
+    extra = []
     for name in product.modules:
         for target in plan.build_order((name,)):
             objects.extend(state[target.name]["objects"])
             frameworks.update(target.frameworks)
+            extra.extend(target.link_flags)
+            if target.library:
+                libraries.append(os.path.join(ROOT, target.path, target.library))
     output = os.path.join(BUILD, "products", product.name)
     os.makedirs(os.path.dirname(output), exist_ok=True)
     if os.path.exists(output):
         os.remove(output)
+    # A system overlay's stub is handed over by path: the SDK's own .tbd
+    # of that name sits earlier on the search path and lists no symbols.
+    extra_arguments = []
+    for flag in extra:
+        stub = os.path.join(BUILD, "lib", "lib" + flag[2:] + ".tbd") if flag.startswith("-l") else ""
+        extra_arguments.append(relative(stub) if stub and os.path.exists(stub) else flag)
+
     command = [tool("swiftc")] + base_swift_flags(architecture()) + [
+        "-L", relative(write_xpc_stub()),
         "-o", relative(output),
-    ] + [relative(path) for path in objects] + [f"-framework{F}" for F in sorted(frameworks)]
+    ] + [relative(path) for path in objects] + [
+        relative(path) for path in libraries
+    ] + extra_arguments + [
+        argument for framework in sorted(frameworks) for argument in ("-framework", framework)
+    ] + [
+        # libclang_rt's availability check calls a libSystem internal the
+        # 17.4 SDK's stubs do not name; dyld resolves it at launch, so
+        # the link lets it stay undefined instead of refusing.
+        "-Xlinker", "-U", "-Xlinker", "__availability_version_check",
+        "-Xlinker", "-U", "-Xlinker", "_reboot3",
+        # Two UIKit symbols the SDK's stub omits although the system has
+        # them: `UICellAccessory`'s type metadata and
+        # `UICollectionViewDiffableDataSource`'s
+        # `init(collectionView:cellProvider:)`, both there since iOS 14.
+        # Optimised code references them (unoptimised code never did, which
+        # is why this only surfaced with -O), and dyld binds both at launch.
+        "-Xlinker", "-U", "-Xlinker", "_$s5UIKit15UICellAccessoryVMn",
+        "-Xlinker", "-U", "-Xlinker",
+        "_$s5UIKit34UICollectionViewDiffableDataSourceC010collectionC012cellProviderACyxq_GSo0bC0C_So0bC4CellCSgAH_10Foundation9IndexPathVq_tctcfc",
+    ]
     code, _, elapsed = run(command)
     if code != 0:
+        if os.environ.get("LUROS_LINK_DEBUG"):
+            log("  command: " + " ".join(command))
         raise SystemExit(f"{product.name}: link failed")
-    if os.environ.get("LUROS_BOOTSTRAP", "roothide") == "rootless":
-        with open(output, "rb") as handle:
-            assert handle.read(4)
     if product.entitlements:
         entitlements = os.path.join(ROOT, product.entitlements)
         code, _, _ = run([tool("ldid"), f"-S{relative(entitlements)}", relative(output)])
