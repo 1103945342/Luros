@@ -724,11 +724,13 @@ final class ChatController: UIViewController {
             restoreReadingPlace()
         }
         updateLatestMessageButton()
+        // No tail below the bar: the frost's own gradient is what fades it into
+        // the page, so the band stops where the navigation bar does.
         topBlur.frame = CGRect(
             x: 0,
             y: 0,
             width: view.bounds.width,
-            height: min(view.bounds.height, view.safeAreaInsets.top + 20),
+            height: min(view.bounds.height, view.safeAreaInsets.top),
         )
         layoutMessageRuler()
     }

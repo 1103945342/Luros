@@ -112,18 +112,25 @@ final class ChatTopBlurView: UIView {
             color = ChatBackgroundView.base(paper, traits: traitCollection)
                 .resolvedColor(with: traitCollection)
         case .image:
-            // Half the picture's own colour, so the bar belongs to the picture
-            // and still softens what scrolls under it.
-            color = ChatBackgroundView.topTint()?.withAlphaComponent(0.8)
+            // The picture's own colour across its top, or the whole picture's
+            // when its top cannot be read yet, so the bar is never left with
+            // nothing but the material's white.
+            color = ChatBackgroundView.topTint() ?? ChatBackgroundView.pictureTint()
         }
         if blurView != nil {
-            // The material already has the system's colour; a frost under it
-            // would be a second, opaque sheet. Over it, the page's own shade
-            // is what gives the bar its body over a picture.
+            // The material is milk in light mode and thin in both, so the bar
+            // read as a window onto the page and as white rather than as the
+            // page. Its own colour, laid on all but solid and thinning only
+            // at the very bottom, is the frosted edge it should be.
             frost.colors = [UIColor.clear.cgColor, UIColor.clear.cgColor]
+            veil?.gradient.locations = [0, 0.7, 1]
             veil?.gradient.colors = color.map {
-                [$0.withAlphaComponent(0.45).cgColor, $0.withAlphaComponent(0).cgColor]
-            } ?? [UIColor.clear.cgColor, UIColor.clear.cgColor]
+                [
+                    $0.cgColor,
+                    $0.withAlphaComponent(0.85).cgColor,
+                    $0.withAlphaComponent(0).cgColor,
+                ]
+            } ?? [UIColor.clear.cgColor, UIColor.clear.cgColor, UIColor.clear.cgColor]
             return
         }
         frost.colors = color.map {
