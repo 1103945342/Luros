@@ -39,6 +39,11 @@ final class ChatMessageRow: ListRowView {
     /// The message this row shows: only a change to it animates, never the
     /// row taking another message out of the pool.
     private var shownID: UUID?
+    /// The text and text size it last drew. A row is shown again on every
+    /// event of the turn it belongs to, and giving a label an attributed
+    /// string it already holds costs the layout of it.
+    private var shownText: String?
+    private var shownTextSize: CGFloat?
     private let label = TextLabelView()
     /// The element VoiceOver reads a message by: where the chat's "Your
     /// Messages" rotor puts the cursor.
@@ -171,6 +176,8 @@ final class ChatMessageRow: ListRowView {
         senderLabel.text = nil
         senderLabel.isHidden = true
         shownID = nil
+        shownText = nil
+        shownTextSize = nil
         finishesStreamWhenStill = false
         markdownView.reset()
         markdownView.isStreaming = false
@@ -194,7 +201,12 @@ final class ChatMessageRow: ListRowView {
             publishedDocumentHeight = 0
         }
         isUser = message.role == .user
-        label.attributedText = Self.attributedText(message.text)
+        let textSize = Self.font.pointSize
+        if shownText != message.text || shownTextSize != textSize {
+            shownText = message.text
+            shownTextSize = textSize
+            label.attributedText = Self.attributedText(message.text)
+        }
         label.accessibilityLabel = message.text
         // A message the run has not taken yet waits faded, and settles in
         // place once it does.

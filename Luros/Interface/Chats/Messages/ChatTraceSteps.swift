@@ -1,3 +1,4 @@
+import os
 import SnapKit
 import UIKit
 
@@ -20,16 +21,11 @@ final class ChatTraceSteps: UIView {
     /// What each view shows now. Compare only the fields it draws rather
     /// than the whole message, its attachments and nested trace.
     private var shown: [UUID: ChatMessageShape] = [:]
-    /// The height these steps were last fitted at, and the state they were
-    /// fitted in: laying out a stack whose call is open is not free, and a
-    /// row asks for it on every layout pass.
-    private var fit: (width: CGFloat, size: UIContentSizeCategory, generation: Int, height: CGFloat)?
-    private var generation = 0
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         stack.axis = .vertical
-        stack.spacing = 4
+        stack.spacing = Self.spacing
         stack.translatesAutoresizingMaskIntoConstraints = true
         addSubview(stack)
     }
@@ -56,7 +52,6 @@ final class ChatTraceSteps: UIView {
                     row.show(step)
                 }
                 shown[step.id] = shape
-                changed()
             }
             // What the reader folded or unfolded is not part of the step's
             // message: a row whose step has not changed still follows
@@ -65,20 +60,11 @@ final class ChatTraceSteps: UIView {
             // folded there would give an opened call no room, so the
             // transcript clips what the reader just asked to see.
             if let row = views[step.id] as? ChatToolCallRow {
-                if row.applyExpansion() {
-                    changed()
-                }
+                row.applyExpansion()
             } else if let row = views[step.id] as? ChatThoughtRow {
-                if row.applyExpansion() {
-                    changed()
-                }
+                row.applyExpansion()
             }
         }
-    }
-
-    /// A content or expansion change invalidates the fitted height.
-    private func changed() {
-        generation &+= 1
     }
 
     private func rebuild(with steps: [ChatMessage]) {
@@ -95,14 +81,12 @@ final class ChatTraceSteps: UIView {
             case .thinking:
                 let row = ChatThoughtRow(step: step)
                 row.onToggle = { [weak self] in
-                    self?.changed()
                     self?.onExpansionChange?()
                 }
                 view = row
             default:
                 let row = ChatToolCallRow(step: step)
                 row.onToggle = { [weak self] in
-                    self?.changed()
                     self?.onExpansionChange?()
                 }
                 view = row
@@ -111,7 +95,6 @@ final class ChatTraceSteps: UIView {
             views[step.id] = view
             shown[step.id] = ChatMessageShape(step)
         }
-        changed()
     }
 
     override func layoutSubviews() {
@@ -119,47 +102,93 @@ final class ChatTraceSteps: UIView {
         stack.frame = bounds
     }
 
-    /// The height the steps take at `width`, as they are drawn now. Fitted
-    /// once for as long as nothing in them changes: a row asks for it on
-    /// every layout pass, and a stack holding an opened call is not cheap to
-    /// lay out.
-    func fittingHeight(width: CGFloat) -> CGFloat {
-        guard !order.isEmpty else { return 0 }
-        let size = traitCollection.preferredContentSizeCategory
-        if let fit, fit.width == width, fit.size == size, fit.generation == generation {
-            return fit.height
-        }
-        let height = Self.height(of: stack, width: width)
-        fit = (width, size, generation, height)
-        return height
-    }
-
-    /// The same for a summary the list is measuring, which it does without
-    /// the row that will show it. The answer is kept, because the list asks
-    /// on every pass and on every event of a running turn: building the
-    /// steps again each time — each call's arguments decoded and its text
-    /// laid out — is what made a run stutter, and opening a call in it
-    /// slower still.
+    /// The height the steps take at `width`, as they are drawn now.
+    ///
+    /// Each step is measured on its own and kept by the shape and state it
+    /// was measured in (`ChatStepHeights`), so a row whose call the reader
+    /// opened — or whose thought is still being written — pays for that step
+    /// rather than for the run it sits in. Fitting the whole stack instead
+    /// laid every step out again, and the list asks on every pass and on
+    /// every event of a running turn.
     static func height(for summary: ChatMessage, width: CGFloat) -> CGFloat {
         guard width > 1 else { return 0 }
         let steps = drawn(summary).map { paced($0) }
         guard !steps.isEmpty else { return 0 }
-        let key = Measure(
-            shapes: steps.map(ChatMessageShape.init),
+        var total: CGFloat = 0
+        for (index, step) in steps.enumerated() {
+            if index > 0 { total += spacing }
+            total += measuredHeight(of: step, width: width)
+        }
+        return ceil(total)
+    }
+
+    /// Between two steps: the stack's own, so the sum the list is given and
+    /// the stack that draws them agree.
+    private static let spacing: CGFloat = 4
+
+    /// What a step's height depends on besides its own shape.
+    private struct StepStamp: Equatable {
+        var shape: ChatMessageShape
+        var opened: Bool
+        var width: CGFloat
+        var size: UIContentSizeCategory
+    }
+
+    private static var heights = ChatStepHeights<StepStamp>()
+
+    /// One view per kind of step, out of the hierarchy: a step is measured in
+    /// one of these, never by laying the whole stack out.
+    private static var sizingCall: ChatToolCallRow?
+    private static var sizingThought: ChatThoughtRow?
+
+    /// A step that takes longer than a whole frame to measure is worth a line
+    /// in the log the first time a device reports a stutter.
+    private static let slowStep: CFTimeInterval = 0.004
+    private static let log = Logger(subsystem: "com.fluoxetine.luros", category: "ChatTranscript")
+
+    private static func measuredHeight(of step: ChatMessage, width: CGFloat) -> CGFloat {
+        let stamp = StepStamp(
+            shape: ChatMessageShape(step),
+            opened: isOpened(step),
             width: width,
             size: UIApplication.shared.preferredContentSizeCategory,
-            opened: steps.map(Self.isOpened),
         )
-        if let measured = measures[key] {
-            return measured
+        return heights.height(for: step.id, stamp: stamp) {
+            let started = CACurrentMediaTime()
+            let height = fittedHeight(of: step, width: width)
+            let elapsed = CACurrentMediaTime() - started
+            if elapsed > slowStep {
+                log.notice("step measured in \(elapsed * 1000, privacy: .public) ms at \(width, privacy: .public) pt, \(step.text.utf8.count, privacy: .public) bytes")
+            }
+            return height
         }
-        sizing.show(summary)
-        let measured = height(of: sizing.stack, width: width)
-        if measures.count >= measureCapacity {
-            measures.removeAll(keepingCapacity: true)
+    }
+
+    private static func fittedHeight(of step: ChatMessage, width: CGFloat) -> CGFloat {
+        let row: UIView
+        if case .thinking = step.role {
+            let thought = sizingThought ?? ChatThoughtRow(step: step)
+            sizingThought = thought
+            // The step's own text and the reader's wanting it open are both
+            // what its height is; the row reads them for itself.
+            thought.show(step)
+            thought.applyExpansion()
+            row = thought
+        } else {
+            let call = sizingCall ?? ChatToolCallRow(step: step)
+            sizingCall = call
+            call.show(step)
+            call.applyExpansion()
+            row = call
         }
-        measures[key] = measured
-        return measured
+        row.frame = CGRect(x: 0, y: 0, width: width, height: 1)
+        row.setNeedsLayout()
+        row.layoutIfNeeded()
+        return row.systemLayoutSizeFitting(
+            CGSize(width: width, height: 0),
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel,
+        ).height
     }
 
     /// Measurement and display consume the same immutable step snapshot.
@@ -190,33 +219,6 @@ final class ChatTraceSteps: UIView {
         }
         return ChatTraceExpansion.isExpanded(call: step.id)
     }
-
-    /// What a height was measured from: exact step identities/content, width,
-    /// text size and expansion state. Equal byte counts are not equal layout.
-    private struct Measure: Hashable {
-        let shapes: [ChatMessageShape]
-        let width: CGFloat
-        let size: UIContentSizeCategory
-        let opened: [Bool]
-    }
-
-    /// Past this many the cache starts again: it only ever holds the
-    /// summaries a list is showing and the widths they are shown at, and a
-    /// long conversation shows many of them.
-    private static let measureCapacity = 256
-    private static var measures: [Measure: CGFloat] = [:]
-
-    private static func height(of stack: UIStackView, width: CGFloat) -> CGFloat {
-        let fitted = stack.systemLayoutSizeFitting(
-            CGSize(width: width, height: 0),
-            withHorizontalFittingPriority: .required,
-            verticalFittingPriority: .fittingSizeLevel,
-        )
-        return ceil(fitted.height)
-    }
-
-    /// The one view the list's heights are measured in.
-    private static let sizing = ChatTraceSteps()
 }
 
 /// One thought of a run, folded into a line: how long it thought, and — once
@@ -365,7 +367,9 @@ final class ChatThoughtRow: UIView {
     /// Answers whether anything changed.
     @discardableResult
     func applyExpansion() -> Bool {
-        guard ChatTraceExpansion.isExpanded(thought: stepID) != showsBody else { return false }
+        // The step, not the id this row was made with: the list measures a
+        // step in a row it reuses for the next one.
+        guard ChatTraceExpansion.isExpanded(thought: step.id) != showsBody else { return false }
         configure(step)
         updateChevron(animated: false)
         return true
