@@ -4,15 +4,27 @@
 import UIKit
 
 /// FlowDown's square icon tile with its caption underneath.
+///
+/// The panel sits below the composer's glass card, on the chat's background
+/// rather than on it, so the tile carries that same material itself: its 5%
+/// wash was all but invisible over a picture, and the icon and caption with
+/// it.
 final class ComposerGiantButton: UIButton {
     private let iconView = UIImageView()
-    private let backgroundView = UIView()
+    private let backgroundView = UIVisualEffectView()
     private let labelView = UILabel()
     @objc dynamic var actionBlock: () -> Void = {}
 
     init(title: String, icon: String) {
         super.init(frame: .zero)
-        backgroundView.backgroundColor = .label.withAlphaComponent(0.05)
+        if #available(iOS 26, *) {
+            backgroundView.effect = UIGlassEffect()
+        } else {
+            // What the composer's own card is made of here: readable over a
+            // background, and still letting the page behind it through.
+            backgroundView.effect = UIBlurEffect(style: .systemThinMaterial)
+        }
+        backgroundView.clipsToBounds = true
         backgroundView.layer.cornerRadius = 16
         backgroundView.layer.cornerCurve = .continuous
         backgroundView.isUserInteractionEnabled = false
@@ -20,7 +32,7 @@ final class ComposerGiantButton: UIButton {
         iconView.contentMode = .scaleAspectFit
         iconView.tintColor = .label.withAlphaComponent(0.75)
         iconView.image = UIImage(named: icon)?.withRenderingMode(.alwaysTemplate)
-        backgroundView.addSubview(iconView)
+        backgroundView.contentView.addSubview(iconView)
         labelView.text = title
         labelView.textAlignment = .center
         labelView.font = .preferredFont(forTextStyle: .footnote)
@@ -28,7 +40,7 @@ final class ComposerGiantButton: UIButton {
         labelView.adjustsFontSizeToFitWidth = true
         labelView.minimumScaleFactor = 0.7
         labelView.textColor = .secondaryLabel
-        addSubview(labelView)
+        backgroundView.contentView.addSubview(labelView)
         isAccessibilityElement = true
         accessibilityTraits = .button
         accessibilityLabel = title
@@ -46,21 +58,29 @@ final class ComposerGiantButton: UIButton {
 
     override var isHighlighted: Bool {
         didSet {
-            backgroundView.alpha = isHighlighted ? 0.4 : 1
-            labelView.alpha = isHighlighted ? 0.4 : 1
+            backgroundView.contentView.alpha = isHighlighted ? 0.4 : 1
         }
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        backgroundView.frame = bounds
+        // The caption is on the glass with the icon now, so the tile's height
+        // is the button's whole height: the icon sits in what the caption
+        // leaves over it.
         let labelHeight = max(32, labelView.font.lineHeight + 12)
-        backgroundView.frame = CGRect(x: 0, y: 0, width: bounds.width, height: bounds.height - labelHeight)
+        let iconArea = max(0, bounds.height - labelHeight)
         iconView.frame = CGRect(
-            x: (backgroundView.bounds.width - 28) / 2,
-            y: (backgroundView.bounds.height - 28) / 2,
+            x: (bounds.width - 28) / 2,
+            y: (iconArea - 28) / 2,
             width: 28,
             height: 28,
         )
-        labelView.frame = CGRect(x: 0, y: backgroundView.frame.maxY, width: bounds.width, height: labelHeight)
+        labelView.frame = CGRect(
+            x: 8,
+            y: iconArea,
+            width: max(0, bounds.width - 16),
+            height: min(labelHeight, bounds.height),
+        )
     }
 }
