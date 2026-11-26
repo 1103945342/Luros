@@ -24,6 +24,12 @@ final class SettingsViewController: TableController {
         case permissionMode
         /// Settings ▸ Agent ▸ Prompt Injection: the text before every prompt.
         case promptInjection
+        /// Settings ▸ Agent ▸ Custom Instructions: what every chat's agent
+        /// follows, whichever project it is in.
+        case instructions
+        /// Settings ▸ Agent ▸ Device Passcode: the one the agent unlocks the
+        /// device with when a test needs it.
+        case devicePasscode
         case memories
         case skills
         case toolchain
@@ -131,7 +137,7 @@ final class SettingsViewController: TableController {
     private func rows(in section: Section) -> [Row] {
         switch section {
         case .chat: [.preferences]
-        case .agent: [.modelProviders, .defaultModels, .permissionMode, .promptInjection, .memories, .skills]
+        case .agent: [.modelProviders, .defaultModels, .permissionMode, .promptInjection, .instructions, .devicePasscode, .memories, .skills]
         case .environment: [.toolchain, .sdks, .developmentTools, .apps, .templates]
         case .storage: [.storage]
         case .git: [.git]
@@ -198,6 +204,10 @@ final class SettingsViewController: TableController {
             content.text = String(localized: "Permission Mode")
         case .promptInjection:
             content.text = String(localized: "Prompt Injection")
+        case .instructions:
+            content.text = String(localized: "Custom Instructions")
+        case .devicePasscode:
+            content.text = String(localized: "Device Passcode")
         case .memories:
             content.text = String(localized: "Memories")
         case .skills:
@@ -239,6 +249,8 @@ final class SettingsViewController: TableController {
         case .defaultModels: page = DefaultModelsController()
         case .permissionMode: page = PermissionModeController()
         case .promptInjection: page = PromptInjectionController()
+        case .instructions: page = InstructionsEditorController(scope: .allChats)
+        case .devicePasscode: page = DevicePasscodeController()
         case .memories: page = MemoriesController()
         case .skills: page = SkillsController()
         case .toolchain: page = ToolchainController()
