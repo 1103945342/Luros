@@ -336,6 +336,7 @@ final class SidebarController: UIViewController {
             // sidebar leaves it for General Chat, as Delete in All Projects
             // does.
             let deleted = await runtime.forgetDeletedProjects()
+            CustomInstructionsUpkeep.removeGoneProjects()
             if let name = project?.name, deleted.contains(name) {
                 switchWorkspace(to: nil)
             } else if let name = project?.name, let resolved = projects.first(where: { $0.name == name }),

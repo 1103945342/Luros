@@ -26,6 +26,7 @@ public enum AgentToolName: String, Sendable, Hashable, Codable, CaseIterable {
     case packageRemove = "luros_package_remove"
     case packageList = "luros_package_list"
     case packagePublish = "luros_package_publish"
+    case packageRelease = "luros_package_release"
     case deviceRespring = "luros_device_respring"
     case packageConfirmLoaded = "luros_package_confirm_loaded"
     case logRead = "luros_log_read"
@@ -105,6 +106,7 @@ public enum AgentToolName: String, Sendable, Hashable, Codable, CaseIterable {
     /// The host-kept delegation plan of a conversation an agent opened
     /// (`AgentDelegation`): read, and the moves its owner may ask for.
     case conversationPlan = "luros_conversation_plan"
+    case conversationCompact = "luros_conversation_compact"
     case toolchainList = "luros_toolchain_list"
     case sdkList = "luros_sdk_list"
     case toolchainSetup = "luros_toolchain_setup"

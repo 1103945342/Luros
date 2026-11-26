@@ -172,7 +172,7 @@ public enum DebianPreparation {
         else { throw CocoaError(.fileReadCorruptFile) }
         func name(_ text: UnsafePointer<CChar>?) -> String? {
             guard let text, text.pointee != 0 else { return nil }
-            return String(validatingCString: text)
+            return String(validatingUTF8: text)
         }
         return (
             UInt32(archive_entry_uid(entry)),

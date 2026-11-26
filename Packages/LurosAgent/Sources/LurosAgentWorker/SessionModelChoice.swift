@@ -1,14 +1,15 @@
 import LurosProtocol
 
-/// The provider, model, effort, tier and model figures a session runs with
-/// now: what its open request named, then what each of the app's prompts
-/// named. A conversation the session opens starts with the same.
+/// The provider, model, effort, tier, model limits and model figures a session
+/// runs with now: what its open request named, then what each of the app's
+/// prompts named. A conversation the session opens starts with the same.
 public actor SessionModelChoice {
     public struct Choice: Sendable, Equatable {
         public var provider: AgentProvider?
         public var model: String?
         public var reasoningEffort: AgentReasoningEffort?
         public var serviceTier: AgentServiceTier?
+        public var modelLimits: AgentModelLimits?
         public var modelParameters: AgentModelParameters?
     }
 
@@ -28,6 +29,7 @@ public actor SessionModelChoice {
         model: String? = nil,
         reasoningEffort: AgentReasoningEffort? = nil,
         serviceTier: AgentServiceTier? = nil,
+        modelLimits: AgentModelLimits? = nil,
         modelParameters: AgentModelParameters? = nil,
     ) {
         current = Choice(
@@ -35,6 +37,7 @@ public actor SessionModelChoice {
             model: model,
             reasoningEffort: reasoningEffort,
             serviceTier: serviceTier,
+            modelLimits: modelLimits,
             modelParameters: modelParameters,
         )
     }
@@ -44,6 +47,7 @@ public actor SessionModelChoice {
         model: String?,
         reasoningEffort: AgentReasoningEffort?,
         serviceTier: AgentServiceTier?,
+        modelLimits: AgentModelLimits? = nil,
         modelParameters: AgentModelParameters? = nil,
     ) {
         current = Choice(
@@ -51,6 +55,7 @@ public actor SessionModelChoice {
             model: model,
             reasoningEffort: reasoningEffort,
             serviceTier: serviceTier,
+            modelLimits: modelLimits,
             modelParameters: modelParameters,
         )
     }

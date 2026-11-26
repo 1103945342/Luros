@@ -36,6 +36,9 @@ public enum ProjectDeletion {
         try? FileManager.default.removeItem(
             at: ProjectStore(dataFolder: folder).buildCache(of: request.projectID)
         )
+        // the user's custom instructions for it go with it; one left behind
+        // is taken by the app's next sweep (`removeGoneProjects`)
+        try? CustomInstructionsStore(root: folder.root).removeProject(request.projectID)
         return ProjectDeleteResponse(projectID: request.projectID, projectName: name)
     }
 

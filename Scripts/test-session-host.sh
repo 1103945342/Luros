@@ -159,6 +159,7 @@ sources=(
     "$root/Tests/SessionHost/ResetToRemoteChecks.swift"
     "$root/Tests/SessionHost/GitBranchChecks.swift"
     "$root/Tests/SessionHost/AppPlacementChecks.swift"
+    "$root/Tests/SessionHost/LoadCheckCancelChecks.swift"
     "$root/Tests/SessionHost/ToolchainEndToEnd.swift"
     "$root/Tests/SessionHost/ToolchainPruneChecks.swift"
     "$root/Tests/SessionHost/TerminalChecks.swift"

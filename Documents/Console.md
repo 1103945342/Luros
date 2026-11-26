@@ -389,11 +389,16 @@ error, or on `ok: false` where the exact refusal is the worker's to choose.
   `crashOpen` and `crashSymbolicate` of the newest report (allowed to fail
   on a device with none); an unknown report is refused.
 - `diagnostics.json` — a `uiAction` wake, which presses nothing on a
-  device already awake and leaves `screenOff` false, `captureScreen`,
+  device already awake and leaves `screenOff` false, a `press` `unlock`,
+  which does nothing on a device already unlocked and awake and leaves
+  `locked` false, `devicePasscodeState`, `captureScreen`,
   `readUITree`, one `uiAction` tap in
   the status bar at (200, 4) — not its corner, where iPadOS 26 puts a
-  window's close control —, and a `confirmLoaded` for a build that does not
-  exist (allowed to fail).
+  window's close control —, a `confirmLoaded` for a build that does not
+  exist (allowed to fail), whose answer must say SpringBoard was running
+  (`result.process`, the process list read as mobile), and a ten-minute
+  `confirmLoaded` of a process that does not exist, stopped at once with
+  `confirmLoadedCancel` and read back `cancelled`.
 - `agent.json` — needs the tweak extension; a Copilot credential in
   `inbox/credentials/` for the prompt to be answered.
   `agentCredentialImport`, `agentList`, a Confirm `agentOpen` unfollowed,
@@ -415,6 +420,11 @@ error, or on `ok: false` where the exact refusal is the worker's to choose.
   `openai-compatible` sign-in with a placeholder key through `agentSignIn`
   and `agentSignInRespond`, lists it under its host, `agentSignOut`, lists
   it gone.
+- `p1-device-passcode.json` — by name only: `devicePasscodeRemove`
+  takes away the device passcode a person saved and tested in Settings,
+  and `devicePasscodeState` then reads none saved. `devicePasscodeSave`
+  has no script: the console refuses it before sending, since the
+  passcode is a person's to type and its test locks the device.
 - `a3-endpoint-beside.json` — a further OpenAI-compatible endpoint
   (`openAICompatible.99`, a number no device uses) signed in to with a
   placeholder key beside whatever the device has: `agentModelList` is
@@ -437,8 +447,9 @@ error, or on `ok: false` where the exact refusal is the worker's to choose.
   an `.apetc` (a GB or more, minutes; RootHide's runtime brand undone),
   inspects it (already set up here) and is refused an import of it.
 - `distribution.json` — nothing written to GitHub: `distributionRepositoryList`
-  without GitHub, a bad repository name, a bad `owner/name` and a package
-  outside `Builds/` each refused `badRequest` before a task starts, an
+  without GitHub, a bad repository name, a bad `owner/name`, a package
+  outside `Builds/` and a GitHub Release to a repository named without its
+  owner each refused `badRequest` before a task starts, an
   empty feedback title, a `feedbackRead` of issue 0 and a `feedbackEdit`
   to an empty title each refused before anything reaches GitHub,
   `feedbackStarState` (a read: `denied` without a GitHub sign-in),

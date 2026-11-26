@@ -62,9 +62,13 @@ public enum AppOperation: String, Codable, CaseIterable, Sendable {
 
     case confirmLoaded
     case confirmLoadedAttach
+    case confirmLoadedCancel
     case captureScreen
     case readUITree
     case uiAction
+    case devicePasscodeState
+    case devicePasscodeSave
+    case devicePasscodeRemove
 
     case agentOpen
     case agentDelegation
@@ -176,6 +180,7 @@ public enum AppOperation: String, Codable, CaseIterable, Sendable {
     case channelVerifyCode
     case channelConfigure
     case channelSignOut
+    case distributionRelease
     case feedbackSend
     case feedbackRead
     case feedbackEdit
@@ -206,7 +211,9 @@ public enum AppOperation: String, Codable, CaseIterable, Sendable {
         case .fileRead, .protectedEditOpen, .protectedEditCommit: .files
         case .ptyOpen, .ptyAttach, .ptyResize, .ptyClose: .terminal
         case .logStream, .crashList, .crashOpen, .crashSymbolicate: .logs
-        case .confirmLoaded, .confirmLoadedAttach, .captureScreen, .readUITree, .uiAction: .diagnostics
+        case .confirmLoaded, .confirmLoadedAttach, .confirmLoadedCancel, .captureScreen, .readUITree, .uiAction,
+             .devicePasscodeState, .devicePasscodeSave, .devicePasscodeRemove:
+            .diagnostics
         case .agentDelegation, .agentOpen, .agentPrompt, .agentGenerateImage, .agentSteer, .agentAbort, .agentCompact, .agentConfigure, .agentSetRunMode, .agentQueue, .agentApprove, .agentAttach, .agentList,
              .agentClose, .agentRunCode, .agentCredentialImport, .agentAccountList, .agentSkillList,
              .agentRewritePrompt, .agentModelTest,
@@ -227,7 +234,7 @@ public enum AppOperation: String, Codable, CaseIterable, Sendable {
             .git
         case .transferExport, .transferInspect, .transferImport: .transfer
         case .distributionRepositoryList, .distributionRepositoryCreate, .distributionRepositoryLink,
-             .distributionRepositoryUnlink, .distributionPublish, .feedbackSend, .feedbackRead, .feedbackEdit,
+             .distributionRepositoryUnlink, .distributionPublish, .distributionRelease, .feedbackSend, .feedbackRead, .feedbackEdit,
              .feedbackStarState, .feedbackStar:
             .distribution
         case .channelStatus, .channelSignIn, .channelVerifyCode, .channelConfigure, .channelSignOut:
@@ -284,6 +291,10 @@ public enum AppOperation: String, Codable, CaseIterable, Sendable {
         case .readUITree: ReadUITreeRequest.self
         case .uiAction: UIActionRequest.self
         case .agentDelegation: AgentDelegationRequest.self
+        case .devicePasscodeState: DevicePasscodeStateRequest.self
+        case .devicePasscodeSave: DevicePasscodeSaveRequest.self
+        case .devicePasscodeRemove: DevicePasscodeRemoveRequest.self
+        case .confirmLoadedCancel: ConfirmLoadedCancelRequest.self
         case .agentOpen: AgentOpenRequest.self
         case .agentPrompt: AgentPromptRequest.self
         case .agentGenerateImage: AgentGenerateImageRequest.self
@@ -371,6 +382,7 @@ public enum AppOperation: String, Codable, CaseIterable, Sendable {
         case .distributionRepositoryLink: DistributionRepositoryLinkRequest.self
         case .distributionRepositoryUnlink: DistributionRepositoryUnlinkRequest.self
         case .distributionPublish: DistributionPublishRequest.self
+        case .distributionRelease: DistributionReleaseRequest.self
         case .feedbackSend: FeedbackSendRequest.self
         case .feedbackRead: FeedbackReadRequest.self
         case .feedbackEdit: FeedbackEditRequest.self

@@ -13,6 +13,7 @@ enum SystemPrompt {
         skills: [SkillDocument],
         mcpServers: [MCPServerConfiguration],
         projectInstructions: ProjectInstructions? = nil,
+        userInstructions: UserInstructions = .none,
         buildSystem: ProjectBuildSystem = .luros,
         memory: String = "",
         environment: String = "",
@@ -51,6 +52,10 @@ enum SystemPrompt {
                 file: projectInstructions.file,
                 text: projectInstructions.text,
             ))
+        }
+        // the user's own (`UserInstructions`), after the file they rank above
+        if !userInstructions.isEmpty {
+            sections.append(userInstructions.section)
         }
         if !mcpServers.isEmpty {
             let list = mcpServers.map { "- \($0.name)\($0.description.map { ": \($0)" } ?? "")" }

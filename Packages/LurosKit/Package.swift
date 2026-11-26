@@ -135,6 +135,7 @@ let package = Package(
             name: "LurosEnvironmentTests",
             dependencies: [
                 "LurosEnvironment", "LurosGit", "LurosProject", "LurosProtocol",
+                .product(name: "LurosToolchain", package: "LurosToolchain"),
                 .product(name: "ArchiveKit", package: "libarchive.xcframework"),
                 .product(name: "LurosDebArchive", package: "LurosFormats"),
                 .product(name: "LurosDebian", package: "LurosFormats"),

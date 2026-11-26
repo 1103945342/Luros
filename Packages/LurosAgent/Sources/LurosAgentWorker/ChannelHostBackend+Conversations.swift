@@ -33,6 +33,7 @@ public extension ChannelHostBackend {
                 approvalMode: .confirm,
                 reasoningEffort: inherits ? choice.reasoningEffort : nil,
                 serviceTier: inherits ? choice.serviceTier : nil,
+                modelLimits: inherits ? choice.modelLimits : nil,
                 modelParameters: inherits ? choice.modelParameters : nil,
                 prompt: request.prompt,
                 title: request.title,
@@ -42,7 +43,8 @@ public extension ChannelHostBackend {
         return ConversationCreateToolResponse(
             sessionID: opened.sessionID,
             taskID: opened.task.taskID.rawValue,
-            project: request.target,
+            project: target,
+            isThisProject: request.target == nil,
         )
     }
 

@@ -1013,6 +1013,10 @@ actor EventRelay {
         // distributionPublish to (AgentPublishRules).
         case let .packagePublish(publication):
             payload["detail"] = .object(["packagePublish": (try? LurosCore.JSONValue(encoding: publication)) ?? .null])
+        // The project, repository, tag, commit, notes, files and digests the
+        // host matches an agent's distributionRelease to (AgentReleaseRules).
+        case let .packageRelease(release):
+            payload["detail"] = .object(["packageRelease": (try? LurosCore.JSONValue(encoding: release)) ?? .null])
         // What the host matches an agent's readUITree, uiAction or
         // agentRunCode to while Ask Before Using the Screen is on
         // (AgentScreenRules).

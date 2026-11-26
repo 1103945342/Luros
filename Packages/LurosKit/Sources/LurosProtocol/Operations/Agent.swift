@@ -509,6 +509,9 @@ public struct AgentOpenRequest: OperationRequest {
     public var asksBeforeScreen: Bool?
     public var reasoningEffort: AgentReasoningEffort?
     public var serviceTier: AgentServiceTier?
+    /// The model's context window and largest reply as the user set them
+    /// (`AgentModelLimits`); absent, or a field of it, is automatic.
+    public var modelLimits: AgentModelLimits?
     /// The model's own figures for this choice, as the app's model settings
     /// have them: nil leaves what the model's record says.
     public var modelParameters: AgentModelParameters?
@@ -567,6 +570,7 @@ public struct AgentOpenRequest: OperationRequest {
         asksBeforeScreen: Bool? = nil,
         reasoningEffort: AgentReasoningEffort? = nil,
         serviceTier: AgentServiceTier? = nil,
+        modelLimits: AgentModelLimits? = nil,
         modelParameters: AgentModelParameters? = nil,
         promptInjection: String? = nil,
         prompt: String? = nil,
@@ -588,6 +592,7 @@ public struct AgentOpenRequest: OperationRequest {
         self.asksBeforeScreen = asksBeforeScreen
         self.reasoningEffort = reasoningEffort
         self.serviceTier = serviceTier
+        self.modelLimits = modelLimits
         self.modelParameters = modelParameters
         self.promptInjection = promptInjection
         self.prompt = prompt
@@ -653,6 +658,9 @@ public struct AgentPromptRequest: OperationRequest {
     public var modelDefaults: AgentModelDefaults?
     public var reasoningEffort: AgentReasoningEffort?
     public var serviceTier: AgentServiceTier?
+    /// The model's limits as the user set them, read with the provider and
+    /// model as effort and tier are; absent is automatic.
+    public var modelLimits: AgentModelLimits?
     /// The model's own figures for this choice, as the app's model settings
     /// have them: nil leaves what the model's record says.
     public var modelParameters: AgentModelParameters?
@@ -714,6 +722,7 @@ public struct AgentPromptRequest: OperationRequest {
         fromSessionID: String? = nil,
         source: String? = nil,
         delivery: AgentMessageDelivery? = nil,
+        modelLimits: AgentModelLimits? = nil,
         modelParameters: AgentModelParameters? = nil,
         reports: [AgentTurnReport]? = nil,
     ) {
@@ -725,6 +734,7 @@ public struct AgentPromptRequest: OperationRequest {
         self.modelDefaults = modelDefaults
         self.reasoningEffort = reasoningEffort
         self.serviceTier = serviceTier
+        self.modelLimits = modelLimits
         self.modelParameters = modelParameters
         self.attachments = attachments
         self.approvalMode = approvalMode

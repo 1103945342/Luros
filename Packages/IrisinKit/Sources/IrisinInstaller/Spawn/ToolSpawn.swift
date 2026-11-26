@@ -64,7 +64,7 @@ public enum ToolSpawn {
             )
         } catch {
             closeAll()
-            throw Failure(errno: error.errno)
+            throw Failure(errno: (error as? Failure)?.errno ?? EIO)
         }
         close(writeEnd)
         if errorWriteEnd >= 0 {
