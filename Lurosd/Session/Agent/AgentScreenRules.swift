@@ -23,6 +23,20 @@ enum AgentScreenRules {
         guard let session, let entry = await AgentSessionTable.shared.entry(session) else {
             return LurosError(.denied, "no agent session for this worker")
         }
+        // Let the Agent Unlock the Device (owner, 2026-11-27): with Ask Before
+        // Using the Screen off, that switch is the only thing that lets an
+        // agent press unlock, and the refusal says which one to turn on.
+        // Anything else is refused here, whatever the mode.
+        if request.operation == .uiAction,
+           let action = try? request.decode(UIActionRequest.self),
+           action.action == .press(button: DevicePasscode.unlockButton),
+           !ScreenConsent.mayUnlock(asksBeforeScreen: entry.asksBeforeScreen, allowsUnlock: entry.allowsUnlock)
+        {
+            return LurosError(
+                .denied,
+                "unlocking the screen is off in Settings ▸ Permission Mode, so the user unlocks the device themselves: ask them to, or to turn on Let the Agent Unlock the Device",
+            )
+        }
         guard entry.asksBeforeScreen else { return nil }
         let covers: (JSONValue) -> Bool
         let what: String

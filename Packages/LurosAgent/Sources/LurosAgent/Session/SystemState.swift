@@ -106,6 +106,10 @@ enum SystemState {
         var runMode: LurosProtocol.AgentRunMode?
         /// Ask Before Using the Screen, the app's setting beside the mode.
         var asksBeforeScreen = true
+        /// Whether this session may press unlock on the Lock Screen
+        /// (`ScreenConsent.mayUnlock`): decided when the facts are made, from
+        /// the two app settings.
+        var canUnlock = false
         /// What sent this message besides the app (`AgentPromptRequest.source`);
         /// nil for the app's own. Names the channel, so the model knows the
         /// reader is not looking at Luros.
@@ -131,6 +135,7 @@ enum SystemState {
         mode: ApprovalMode,
         runMode: LurosProtocol.AgentRunMode? = nil,
         asksBeforeScreen: Bool = true,
+        allowsUnlock: Bool = false,
         changes: [String] = [],
         hostRestarted: Bool = false,
         installRoot: String? = nil,
@@ -144,6 +149,7 @@ enum SystemState {
             mode: mode,
             runMode: runMode,
             asksBeforeScreen: asksBeforeScreen,
+            canUnlock: ScreenConsent.mayUnlock(asksBeforeScreen: asksBeforeScreen, allowsUnlock: allowsUnlock),
             parentSessionID: parentSessionID,
             changes: changes,
             hostRestarted: hostRestarted,
@@ -174,6 +180,13 @@ enum SystemState {
             "- Approval mode: \(modeName(facts.mode)).",
             "- Ask Before Using the Screen: \(facts.asksBeforeScreen ? "on" : "off").",
         ]
+        // Let the Agent Unlock the Device, the app's other switch: said here, not
+        // in the system prompt, because it can change between messages.
+        lines.append(
+            facts.canUnlock
+                ? "- Unlocking the screen: allowed. While the device is locked, press unlock with luros_screen_interact before asking the user to unlock it."
+                : "- Unlocking the screen: off in Settings ▸ Permission Mode. Do not press unlock: ask the user to unlock the device, or to turn on Let the Agent Unlock the Device there.",
+        )
         if let source = facts.source, let line = channelLine(source) {
             // Also here, and not in the system prompt: a conversation opened
             // in Luros is reached from a phone with /use, and its prompt has

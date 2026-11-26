@@ -21,6 +21,15 @@ enum AgentPermissions {
         set { UserDefaults.standard.set(newValue, forKey: "agent.asksBeforeScreen") }
     }
 
+    /// Let the Agent Unlock the Device (owner, 2026-11-27): off unless the reader
+    /// turned it on. It shows in Permission Mode only while Ask Before Using
+    /// the Screen is off, and while it is on the agent may press unlock on
+    /// the Lock Screen with the passcode saved and tested there.
+    static var allowsUnlock: Bool {
+        get { UserDefaults.standard.object(forKey: "agent.allowsUnlock") as? Bool ?? false }
+        set { UserDefaults.standard.set(newValue, forKey: "agent.allowsUnlock") }
+    }
+
     static func title(for mode: ApprovalMode) -> String {
         switch mode {
         case .confirm: String(localized: "Strict")

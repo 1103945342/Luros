@@ -507,6 +507,10 @@ public struct AgentOpenRequest: OperationRequest {
     /// Ask Before Using the Screen (`ScreenConsent`): nil is on. An agent's
     /// open takes its opener's, whatever it sends.
     public var asksBeforeScreen: Bool?
+    /// Let the Agent Unlock the Device (`ScreenConsent`): nil is off, and the
+    /// switch is the app's, shown only while Ask Before Using the Screen is
+    /// off. An agent's open takes its opener's.
+    public var allowsUnlock: Bool?
     public var reasoningEffort: AgentReasoningEffort?
     public var serviceTier: AgentServiceTier?
     /// The model's context window and largest reply as the user set them
@@ -568,6 +572,7 @@ public struct AgentOpenRequest: OperationRequest {
         modelDefaults: AgentModelDefaults? = nil,
         approvalMode: ApprovalMode = .confirm,
         asksBeforeScreen: Bool? = nil,
+        allowsUnlock: Bool? = nil,
         reasoningEffort: AgentReasoningEffort? = nil,
         serviceTier: AgentServiceTier? = nil,
         modelLimits: AgentModelLimits? = nil,
@@ -590,6 +595,7 @@ public struct AgentOpenRequest: OperationRequest {
         self.modelDefaults = modelDefaults
         self.approvalMode = approvalMode
         self.asksBeforeScreen = asksBeforeScreen
+        self.allowsUnlock = allowsUnlock
         self.reasoningEffort = reasoningEffort
         self.serviceTier = serviceTier
         self.modelLimits = modelLimits
@@ -670,6 +676,10 @@ public struct AgentPromptRequest: OperationRequest {
     /// nil leaves the session's as it is, as a nil `approvalMode` does. The
     /// host drops it from an agent's prompt.
     public var asksBeforeScreen: Bool?
+    /// Let the Agent Unlock the Device (`ScreenConsent`), as the app has it now;
+    /// nil leaves the session's as it is. The host drops it from an agent's
+    /// prompt.
+    public var allowsUnlock: Bool?
     /// What this run is allowed to do, from the composer's pill: `plan` reads
     /// and answers without changing anything, `build` works as the approval
     /// mode allows, `auto` is a build run that stops asking. Not the approval
@@ -717,6 +727,7 @@ public struct AgentPromptRequest: OperationRequest {
         serviceTier: AgentServiceTier? = nil,
         approvalMode: ApprovalMode? = nil,
         asksBeforeScreen: Bool? = nil,
+        allowsUnlock: Bool? = nil,
         runMode: AgentRunMode? = nil,
         promptInjection: String? = nil,
         fromSessionID: String? = nil,
@@ -739,6 +750,7 @@ public struct AgentPromptRequest: OperationRequest {
         self.attachments = attachments
         self.approvalMode = approvalMode
         self.asksBeforeScreen = asksBeforeScreen
+        self.allowsUnlock = allowsUnlock
         self.runMode = runMode
         self.promptInjection = promptInjection
         self.fromSessionID = fromSessionID

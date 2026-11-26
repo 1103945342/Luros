@@ -350,6 +350,9 @@ actor AgentSessionTable {
         /// Ask Before Using the Screen, as the app last sent it; an agent's
         /// session has its opener's.
         var asksBeforeScreen = true
+        /// Let the Agent Unlock the Device (`ScreenConsent`), as the app last sent
+        /// it, and off until it does; an agent's session has its opener's.
+        var allowsUnlock = false
         /// The reader's standing instructions, as the session opened with
         /// them: an agent's session has its opener's.
         var promptInjection: String? = nil
@@ -445,6 +448,10 @@ actor AgentSessionTable {
 
     func setAsksBeforeScreen(_ asks: Bool, session: String) {
         entries[session]?.asksBeforeScreen = asks
+    }
+
+    func setAllowsUnlock(_ allows: Bool, session: String) {
+        entries[session]?.allowsUnlock = allows
     }
 
     /// The reader's standing instructions as they are now: a conversation an

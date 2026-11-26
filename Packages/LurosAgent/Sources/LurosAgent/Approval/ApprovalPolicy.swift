@@ -1,4 +1,6 @@
 import enum LurosProtocol.AgentToolName
+import enum LurosProtocol.DevicePasscode
+import enum LurosProtocol.ScreenConsent
 import CryptoKit
 import Foundation
 import KWWKAI
@@ -243,11 +245,21 @@ public struct ApprovalPolicy: Sendable, Hashable {
     /// on, the UI tree, every UI action and every command that runs icli
     /// ask each time, in every mode (`evaluateScreen`).
     public var asksBeforeScreen: Bool
+    /// Let the Agent Unlock the Device (owner, 2026-11-27): the app's switch
+    /// beside Ask Before Using the Screen, shown while that one is off. Off,
+    /// pressing unlock is denied here and by the host (`evaluateScreen`).
+    public var allowsUnlock: Bool
 
-    public init(mode: ApprovalMode, presets: ApprovalPresets = .default, asksBeforeScreen: Bool = true) {
+    public init(
+        mode: ApprovalMode,
+        presets: ApprovalPresets = .default,
+        asksBeforeScreen: Bool = true,
+        allowsUnlock: Bool = false,
+    ) {
         self.mode = mode
         self.presets = presets
         self.asksBeforeScreen = asksBeforeScreen
+        self.allowsUnlock = allowsUnlock
     }
 
     public func evaluate(_ facts: InvocationFacts, root: ScopedRoot) -> GateVerdict {
@@ -333,6 +345,17 @@ public struct ApprovalPolicy: Sendable, Hashable {
     /// there; the host spends that one approval. Nil leaves the call to the
     /// mode.
     private func evaluateScreen(_ facts: InvocationFacts) -> GateVerdict? {
+        // Let the Agent Unlock the Device: with the screen switch off, that one
+        // is what lets the agent press unlock, and off it is refused here
+        // rather than asked — the host refuses it too, in every mode.
+        if !ScreenConsent.mayUnlock(asksBeforeScreen: asksBeforeScreen, allowsUnlock: allowsUnlock),
+           case let .interact(_, .pressButton(button))? = facts.screenControl,
+           button == DevicePasscode.unlockButton
+        {
+            return .deny(
+                "Unlocking the screen is off in Settings ▸ Permission Mode: ask the user to unlock the device, or to turn on Let the Agent Unlock the Device there. Never ask for, read or type the passcode, and never run icli device passcode.",
+            )
+        }
         guard asksBeforeScreen else { return nil }
         switch facts.tool {
         case .local(.screenReadTree), .local(.screenInteract):
@@ -433,6 +456,8 @@ public struct ApprovalPolicy: Sendable, Hashable {
             "Swipes from \(point(fromX, fromY)) to \(point(toX, toY))"
         case let .pressButton(button):
             switch button {
+            case DevicePasscode.unlockButton:
+                "Unlocks the device, with the passcode saved in Luros's Settings when it is locked, and goes to the Home Screen"
             case "wake": "Presses wake, which turns the screen on"
             case "home": "Presses Home, which sends the app in front to the home screen"
             case "lock": "Presses the side button, which turns the screen off and locks the device"

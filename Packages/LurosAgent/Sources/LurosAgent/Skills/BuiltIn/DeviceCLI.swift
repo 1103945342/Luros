@@ -81,18 +81,21 @@ extension BuiltInSkills {
         screen; on a device already awake it presses nothing, so wake the
         device with it, never with home, and use it rather than `icli
         button`. `press_button` `unlock` wakes the device, unlocks it with
-        the passcode the user saved and tested in Luros's Settings ▸ Agent
-        when it is locked, and goes to the Home Screen; on a device already
-        unlocked and awake it does nothing. Each answer says whether the
-        device is still locked; `icli screen info` reads the same `locked`
-        and `screen_off` at any time, locked or not.
+        the passcode the user saved and tested under Settings ▸ Permission
+        Mode ▸ Let the Agent Unlock the Device when it is locked, and goes to the
+        Home Screen; on a device already unlocked and awake it does nothing.
+        That switch shows only while Ask Before Using the Screen is off, and
+        while unlocking is off the host refuses an unlock. Each answer says
+        whether the device is still locked; `icli screen info` reads the same
+        `locked` and `screen_off` at any time, locked or not.
 
         Luros tries the saved passcode once, only while the device has no
         failed passcode attempt on record, and removes it when it is
         rejected. When an unlock is refused (no passcode saved, a failed
         attempt on record, the passcode rejected) or the lock screen stays
-        up, ask the user to unlock the device, or to save and test the
-        passcode in Settings; never press unlock again to retry a
+        up, ask the user to unlock the device, or to turn on Allow Unlocking
+        the Screen in Settings ▸ Permission Mode and save and test the
+        passcode there; never press unlock again to retry a
         rejection. Never ask for, read or type a passcode, in the
         conversation or on the screen, and never run `icli device
         passcode`, which would spend an attempt Luros's checks do not see.

@@ -216,12 +216,18 @@ struct ScreenUseConsentTests {
         let date = Date(timeIntervalSince1970: 1_793_000_000)
         let zone = try #require(TimeZone(identifier: "UTC"))
         let on = SystemState.make(SystemState.Facts(languages: ["en-US"], region: "US", date: date, timeZone: zone, mode: .full))
-        #expect(on.contains("- Approval mode: Full.\n- Ask Before Using the Screen: on.\n"))
+        #expect(on.contains("- Approval mode: Full.\n- Ask Before Using the Screen: on.\n- Unlocking the screen: allowed."))
         let off = SystemState.make(SystemState.Facts(
             languages: ["en-US"], region: "US", date: date, timeZone: zone, mode: .relaxed, asksBeforeScreen: false,
         ))
         #expect(off.contains("- Ask Before Using the Screen: off."))
-        #expect(on.utf8.count < 440, "\(on.utf8.count) bytes")
+        #expect(off.contains("- Unlocking the screen: off in Settings ▸ Permission Mode."))
+        let unlocked = SystemState.make(SystemState.Facts(
+            languages: ["en-US"], region: "US", date: date, timeZone: zone, mode: .relaxed,
+            asksBeforeScreen: false, allowsUnlock: true,
+        ))
+        #expect(unlocked.contains("- Unlocking the screen: allowed."))
+        #expect(on.utf8.count < 700, "\(on.utf8.count) bytes")
 
         let provider = await registerFauxProvider()
         defer { provider.unregister() }

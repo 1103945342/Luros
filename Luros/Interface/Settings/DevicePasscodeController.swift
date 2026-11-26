@@ -2,12 +2,14 @@ import LurosProtocol
 import SPIndicator
 import UIKit
 
-/// Settings ▸ Agent ▸ Device Passcode (owner, 2026-11-21): the passcode the
-/// agent's unlock uses (`uiAction` `press` `unlock`), kept by
-/// luros-diagnostics in its own keychain group. It is saved only once a
-/// test, which locks the device and has icli unlock it with the passcode,
-/// passed; the field is emptied whatever the test answered. A device with no
-/// passcode needs none, and an icli too old to unlock says so.
+/// Settings ▸ Permission Mode ▸ Let the Agent Unlock the Device (owner,
+/// 2026-11-21; the page moved there 2026-11-27): the passcode the agent's
+/// unlock uses (`uiAction` `press` `unlock`), kept by luros-diagnostics in its
+/// own keychain group. It is saved only once a test, which locks the device
+/// and has icli unlock it with the passcode, passed; the field is emptied
+/// whatever the test answered. A device with no passcode needs none, and an
+/// icli too old to unlock says so. Permission Mode pushes this page to save
+/// and test the passcode the switch then uses (`onSaved`).
 final class DevicePasscodeController: TableController {
     private enum Section: Hashable {
         case status
@@ -44,6 +46,11 @@ final class DevicePasscodeController: TableController {
     ) { [weak self] table, _, row in
         self?.cell(in: table, row: row)
     }
+
+    /// Called once the passcode the switch needs is saved and tested, or the
+    /// device turned out to need none: Permission Mode then turns Allow
+    /// Unlocking the Screen on.
+    var onSaved: (() -> Void)?
 
     /// What luros-diagnostics last answered; nil until it has.
     private var state: DevicePasscodeState?
@@ -243,6 +250,9 @@ final class DevicePasscodeController: TableController {
             state = response.state
             failure = nil
             updateRows()
+            if response.state.saved || response.state.device == .noPasscode {
+                onSaved?()
+            }
             report(response.outcome)
         case let .failure(error):
             updateRows()
@@ -281,6 +291,9 @@ final class DevicePasscodeController: TableController {
             state = answer
             failure = nil
             updateRows()
+            if answer.saved {
+                onSaved?()
+            }
             report(answer.saved ? .saved : .failed)
         } catch {
             failure = error

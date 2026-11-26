@@ -1221,6 +1221,8 @@ actor WeChatChannel {
             origin: origin
         )
         request.asksBeforeScreen = false
+        // A phone cannot unlock the screen; the setting stays the app's.
+        request.allowsUnlock = false
         guard let wire = try? WireRequest(request) else { return false }
         let reply = await route(wire, [])
         if case let .failure(error) = reply.result {

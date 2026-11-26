@@ -51,14 +51,15 @@ struct DeviceUnlockPromptTests {
     func `the prompt, the tool and the skill send the agent to unlock and keep it off the passcode`() throws {
         defer { home.remove() }
         let prompt = Self.words(SystemPrompt.make(project: home.project, projectRoot: home.projectURL.path, skills: [], mcpServers: []))
-        #expect(prompt.contains("To get past the lock screen, press unlock with luros_screen_interact, which uses the passcode the user saved and tested in Luros's Settings; when it is refused or the lock screen stays, ask the user to unlock the device. Never guess a passcode, ask for one in the conversation or type one, and never run icli device passcode."))
+        #expect(prompt.contains("To get past the lock screen, press unlock with luros_screen_interact, which uses the passcode the user saved and tested in Luros's Settings; when <system-state> says unlocking the screen is off, or the unlock is refused, ask the user to unlock the device, or to turn on Let the Agent Unlock the Device in Settings ▸ Permission Mode. Never guess a passcode, ask for one in the conversation or type one, and never run icli device passcode."))
 
         let tool = AgentToolName.screenInteract.summary
         #expect(tool.contains("To get past the lock screen press unlock, which uses the passcode the user saved and tested in Luros's Settings"))
+        #expect(tool.contains("when <system-state> says unlocking the screen is off, ask the user to unlock the device instead"))
         #expect(tool.contains("Never ask for, read or type the passcode, and never run icli device passcode."))
 
         let icli = try Self.words(#require(BuiltInSkills.all.first { $0.name == "luros-icli" }).body)
-        #expect(icli.contains("`press_button` `unlock` wakes the device, unlocks it with the passcode the user saved and tested in Luros's Settings ▸ Agent when it is locked, and goes to the Home Screen"))
+        #expect(icli.contains("`press_button` `unlock` wakes the device, unlocks it with the passcode the user saved and tested under Settings ▸ Permission Mode ▸ Let the Agent Unlock the Device when it is locked, and goes to the Home Screen"))
         #expect(icli.contains("Luros tries the saved passcode once, only while the device has no failed passcode attempt on record, and removes it when it is rejected."))
         #expect(icli.contains("never press unlock again to retry a rejection. Never ask for, read or type a passcode, in the conversation or on the screen, and never run `icli device passcode`"))
     }

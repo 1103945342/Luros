@@ -35,6 +35,24 @@ public enum ScreenConsent {
         setting != false
     }
 
+    /// Let the Agent Unlock the Device (owner, 2026-11-27): the app's second
+    /// switch, shown in Permission Mode only while Ask Before Using the
+    /// Screen is off. It lets an agent press unlock on the Lock Screen with
+    /// the passcode the user saved and tested in Luros, so work that needs
+    /// the screen can carry on while the device is locked. Absent is off, so
+    /// a caller that never heard of it cannot unlock, and a device with no
+    /// passcode needs none to be unlocked.
+    public static func allowsUnlock(_ setting: Bool?) -> Bool {
+        setting == true
+    }
+
+    /// Whether a session may press unlock: either switch lets it, since the
+    /// screen switch asks for that use of the screen on a card, which names
+    /// the unlock, before any approval mode runs it.
+    public static func mayUnlock(asksBeforeScreen: Bool, allowsUnlock: Bool) -> Bool {
+        asksBeforeScreen || allowsUnlock
+    }
+
     /// Whether `spec` runs one of `programs`: one of its words, or its
     /// script's interpreter or source, names one as a word.
     public static func usesScreen(_ spec: RunCodeSpec) -> Bool {

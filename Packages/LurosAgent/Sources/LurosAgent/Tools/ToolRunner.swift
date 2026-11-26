@@ -119,6 +119,15 @@ actor ToolRunner {
         policy.asksBeforeScreen
     }
 
+    /// Let the Agent Unlock the Device (`ScreenConsent`), as the app has it.
+    func setAllowsUnlock(_ allows: Bool) {
+        policy.allowsUnlock = allows
+    }
+
+    var allowsUnlock: Bool {
+        policy.allowsUnlock
+    }
+
     /// The composer's pill, sent with each prompt: a plan run is a hard
     /// sandbox, not a request of the model's. Write and system tools are
     /// denied here whatever the approval mode allows, so a plan answers

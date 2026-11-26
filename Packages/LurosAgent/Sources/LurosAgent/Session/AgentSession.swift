@@ -428,6 +428,12 @@ public actor AgentSession {
         await runner.setAsksBeforeScreen(asks)
     }
 
+    /// Let the Agent Unlock the Device, as the app has it now: from the next call
+    /// on, and in the next message's `<system-state>`.
+    public func setAllowsUnlock(_ allows: Bool) async {
+        await runner.setAllowsUnlock(allows)
+    }
+
     /// The reader's standing instructions (Settings ▸ Agent ▸ Prompt
     /// Injection), as the app has them now: "" while the switch is off.
     ///
@@ -590,6 +596,7 @@ public actor AgentSession {
             mode: runner.approvalMode,
             runMode: runner.currentRunMode,
             asksBeforeScreen: runner.asksBeforeScreen,
+            allowsUnlock: runner.allowsUnlock,
             changes: changes,
             hostRestarted: delta && restartUntoldBefore,
             installRoot: configuration.installRoot,
@@ -1141,6 +1148,7 @@ public actor AgentSession {
             var facts = await SystemState.facts(
                 configuration.systemState, mode: runner.approvalMode,
                 runMode: runner.currentRunMode, asksBeforeScreen: runner.asksBeforeScreen,
+                allowsUnlock: runner.allowsUnlock,
                 installRoot: configuration.installRoot
             )
             // A message the reader sent from a chat channel: the model is told

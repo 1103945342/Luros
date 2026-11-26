@@ -215,6 +215,41 @@ func screenConsentChecks(scratch: URL, scratchPath: String) async {
     let backOff = await passes(tree, from: unasking)
     check(backOff, "and turned off, it does not")
 
+    // MARK: Let the Agent Unlock the Device
+
+    // The app's second screen switch (owner, 2026-11-27): with Ask Before
+    // Using the Screen off, pressing unlock is the unlock switch's to allow,
+    // in every mode, and every other action passes as before.
+    let unlock = UIActionRequest(action: .press(button: DevicePasscode.unlockButton))
+    let wake = UIActionRequest(action: .press(button: "wake"))
+    check(!ScreenConsent.allowsUnlock(nil) && !ScreenConsent.allowsUnlock(false) && ScreenConsent.allowsUnlock(true), "absent is off; only true turns unlocking on")
+    check(
+        ScreenConsent.mayUnlock(asksBeforeScreen: true, allowsUnlock: false)
+            && ScreenConsent.mayUnlock(asksBeforeScreen: false, allowsUnlock: true)
+            && !ScreenConsent.mayUnlock(asksBeforeScreen: false, allowsUnlock: false),
+        "either switch lets an unlock, and neither keeps it out"
+    )
+    for mode in [ApprovalMode.confirm, .relaxed, .full] {
+        let entry = await session("unlock-\(mode.rawValue)", mode: mode, asks: false)
+        let refused = await passes(unlock, from: entry)
+        check(!refused, "\(mode): an unlock the switch does not allow is refused")
+        let woken = await passes(wake, from: entry)
+        check(woken, "\(mode): while waking the screen still passes")
+        await sessions.setAllowsUnlock(true, session: entry.sessionID)
+        let allowed = await passes(unlock, from: entry)
+        check(allowed, "\(mode): with the switch on the unlock goes through")
+        // The screen switch, on again, asks for the unlock as for any use.
+        await sessions.setAllowsUnlock(false, session: entry.sessionID)
+        await sessions.setAsksBeforeScreen(true, session: entry.sessionID)
+        let asked = await passes(unlock, from: entry)
+        check(!asked, "\(mode): with the screen switch on the unlock needs its approval")
+        let unlockDetail = json(#"{"screenControl":{"operation":"uiAction","request":{"action":{"press":{"button":"unlock"}}}}}"#)
+        await ask(entry, "unlock", tool: .screenInteract, detail: unlockDetail)
+        await approve(entry, "unlock")
+        let approved = await passes(unlock, from: entry)
+        check(approved, "\(mode): and the approved unlock goes through")
+    }
+
     // MARK: shell_run that runs icli, in every mode
 
     let open: RunCodeSpec = .argv(openURL)
@@ -309,6 +344,12 @@ func screenConsentChecks(scratch: URL, scratchPath: String) async {
         target: project,
     )
     check(laxChild?.asksBeforeScreen == false, "an opener that does not ask opens one that does not")
+    let unlockLax = try? AgentConversationRules.childOpen(
+        AgentOpenRequest(approvalMode: .relaxed, allowsUnlock: true, prompt: "go", delegationBrief: screenBrief),
+        opener: lax,
+        target: project,
+    )
+    check(unlockLax?.allowsUnlock == false, "an opener that never turned unlocking on opens one that cannot unlock")
     let target = await session("screen-target", mode: .relaxed)
     let sent = try? AgentConversationRules.childPrompt(
         AgentPromptRequest(sessionID: target.sessionID, text: "go", asksBeforeScreen: false),
