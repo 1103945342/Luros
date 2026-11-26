@@ -41,10 +41,13 @@ final class ComposerAttachmentImport: NSObject, UIImagePickerControllerDelegate,
         presenter?.present(picker, animated: true)
     }
 
-    @objc dynamic func photos() {
+    /// Pictures and videos from the library: an image goes in as it did,
+    /// and a video goes in as a file of its own, kept whole and named in the
+    /// workspace, since a model reads pictures and not film.
+    @objc dynamic func media() {
         var configuration = PHPickerConfiguration()
         configuration.selectionLimit = 4
-        configuration.filter = .images
+        configuration.filter = .any(of: [.images, .videos])
         let picker = PHPickerViewController(configuration: configuration)
         picker.delegate = self
         presenter?.present(picker, animated: true)
@@ -74,10 +77,44 @@ final class ComposerAttachmentImport: NSObject, UIImagePickerControllerDelegate,
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         picker.dismiss(animated: true)
         for result in results {
-            result.itemProvider.loadObject(ofClass: UIImage.self) { [self] reading, _ in
-                Task { @MainActor in
-                    guard let image = reading as? UIImage else { return }
-                    importImage(image)
+            // A film is asked for as a film first: a provider may hand a
+            // still of one to `UIImage`, and a frame is not the clip.
+            let provider = result.itemProvider
+            if provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
+                importVideo(from: provider)
+            } else if provider.canLoadObject(ofClass: UIImage.self) {
+                provider.loadObject(ofClass: UIImage.self) { [self] reading, _ in
+                    Task { @MainActor in
+                        guard let image = reading as? UIImage else { return }
+                        importImage(image)
+                    }
+                }
+            }
+        }
+    }
+
+    /// A video pick: the provider's file lives only while its callback runs,
+    /// so it is copied beside the others before the draft takes it.
+    private func importVideo(from provider: NSItemProvider) {
+        let suggested = provider.suggestedName ?? String(localized: "Video")
+        provider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { [self] url, error in
+            let read = Result { () throws -> ComposerAttachment in
+                guard let url else {
+                    throw error ?? LurosError(.badRequest, String(localized: "The selected file could not be read."))
+                }
+                let extensionName = url.pathExtension
+                let name = extensionName.isEmpty ? suggested : suggested + "." + extensionName
+                let staged = FileManager.default.temporaryDirectory
+                    .appendingPathComponent(UUID().uuidString + "-" + url.lastPathComponent)
+                defer { try? FileManager.default.removeItem(at: staged) }
+                try FileManager.default.copyItem(at: url, to: staged)
+                return try Self.readAttachment(at: staged, name: name)
+            }
+            Task { @MainActor in
+                do {
+                    receive(try read.get())
+                } catch {
+                    presenter?.presentNotice(title: "Unable to Import File", message: error.readableMessage)
                 }
             }
         }

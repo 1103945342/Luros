@@ -63272,6 +63272,88 @@
         }
       }
     },
+    "Let the Agent Unlock the Device": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let the Agent Unlock the Device"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السماح للوكيل بإلغاء قفل الجهاز"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Den Agenten das Gerät entsperren lassen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permitir que el agente desbloquee el dispositivo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laisser l’agent déverrouiller l’appareil"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consenti all’agente di sbloccare il dispositivo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "エージェントによるデバイスのロック解除を許可"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "에이전트가 기기 잠금을 해제하도록 허용"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permitir que o agente desbloqueie o dispositivo"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Разрешить агенту разблокировать устройство"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cho phép tác tử mở khóa thiết bị"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "让智能体自行解锁设备"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "讓代理程式自行解鎖裝置"
+          }
+        }
+      }
+    },
     "Let the agent run commands as root without asking.": {
       "localizations": {
         "ar": {
@@ -68653,6 +68735,88 @@
           "stringUnit": {
             "state": "translated",
             "value": "下次一定"
+          }
+        }
+      }
+    },
+    "Media": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Media"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الوسائط"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medien"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multimedia"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Médias"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contenuti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メディア"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "미디어"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mídia"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Медиафайлы"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phương tiện"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "媒体"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "媒體"
           }
         }
       }
@@ -85661,89 +85825,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "權限模式"
-          }
-        }
-      }
-    },
-    "Photo": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "الصور"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Photo"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Photo"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "写真"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "사진"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Foto"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Фото"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ảnh"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "照片"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "照片"
           }
         }
       }
@@ -149009,6 +149090,88 @@
         }
       }
     },
+    "Video": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فيديو"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vídeo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vidéo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ビデオ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "비디오"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vídeo"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видео"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "视频"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "影片"
+          }
+        }
+      }
+    },
     "View Diff": {
       "localizations": {
         "ar": {
@@ -151429,6 +151592,88 @@
           "stringUnit": {
             "state": "translated",
             "value": "開啟後，在任何權限模式下，代理程式在開啟 App 或連結、讀取螢幕內容或操作螢幕之前都會先詢問你，無論是透過 Luros 的螢幕工具還是 icli。截圖前一律會在聊天中詢問。每個聊天會在你傳送下一則訊息時套用變更。"
+          }
+        }
+      }
+    },
+    "While this is on, the agent can press unlock on the Lock Screen by itself, using the passcode you save and test here, so work that needs the screen can carry on while the device is locked. A device with no passcode needs none, and the passcode stays in this device’s keychain: the agent never sees it. Each chat follows a change when you send its next message.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "While this is on, the agent can press unlock on the Lock Screen by itself, using the passcode you save and test here, so work that needs the screen can carry on while the device is locked. A device with no passcode needs none, and the passcode stays in this device’s keychain: the agent never sees it. Each chat follows a change when you send its next message."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عند التشغيل، يمكن للوكيل إلغاء قفل شاشة القفل بنفسه مستخدمًا رمزًا تحفظه وتختبره هنا، لتستمر الأعمال التي تحتاج الشاشة بينما الجهاز مقفل. الجهاز بلا رمز لا يحتاج رمزًا، ويبقى الرمز في سلسلة مفاتيح هذا الجهاز: لا يراه الوكيل أبدًا. تتبع كل محادثة التغيير عند إرسال رسالتها التالية."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wenn dies aktiviert ist, kann der Agent den Sperrbildschirm selbst entsperren und dabei den hier gespeicherten und getesteten Code verwenden, sodass Arbeiten, die den Bildschirm brauchen, bei gesperrtem Gerät weiterlaufen. Ein Gerät ohne Code braucht keinen, und der Code bleibt im Schlüsselbund dieses Geräts: Der Agent sieht ihn nie. Jeder Chat übernimmt eine Änderung mit deiner nächsten Nachricht."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si se activa, el agente puede desbloquear la pantalla de bloqueo por su cuenta con el código que guardes y pruebes aquí, para que el trabajo que necesita la pantalla continúe mientras el dispositivo está bloqueado. Un dispositivo sin código no necesita ninguno, y el código permanece en el llavero de este dispositivo: el agente nunca lo ve. Cada chat adopta un cambio cuando envías su siguiente mensaje."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activé, l’agent peut déverrouiller l’écran verrouillé de lui-même avec le code que vous enregistrez et testez ici, afin que le travail qui a besoin de l’écran continue pendant que l’appareil est verrouillé. Un appareil sans code n’en a pas besoin, et le code reste dans le trousseau de cet appareil : l’agent ne le voit jamais. Chaque conversation suit un changement quand vous envoyez son message suivant."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se attivo, l’agente può sbloccare la schermata di blocco da solo con il codice che salvi e verifichi qui, così il lavoro che richiede lo schermo può continuare mentre il dispositivo è bloccato. Un dispositivo senza codice non ne ha bisogno, e il codice resta nel portachiavi di questo dispositivo: l’agente non lo vede mai. Ogni chat segue una modifica quando invii il suo messaggio successivo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オンにすると、ここで保存してテストしたパスコードを使って、エージェントがロック画面で自分でロック解除できるようになり、画面が必要な作業をデバイスのロック中に続けられます。パスコードのないデバイスでは不要です。パスコードはこのデバイスのキーチェーンに保管され、エージェントが目にすることはありません。各チャットは次にメッセージを送信したときに変更が反映されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "켜면 여기에서 저장하고 테스트한 암호를 사용해 에이전트가 잠금 화면에서 스스로 잠금을 해제할 수 있어, 화면이 필요한 작업을 기기가 잠긴 동안 이어갈 수 있습니다. 암호가 없는 기기에는 필요하지 않으며, 암호는 이 기기의 키체인에 보관되어 에이전트는 절대 볼 수 없습니다. 각 대화는 다음 메시지를 보낼 때 변경이 반영됩니다."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ativado, o agente pode desbloquear a tela de bloqueio sozinho com o código que você salva e testa aqui, para que o trabalho que precisa da tela continue enquanto o dispositivo está bloqueado. Um dispositivo sem código não precisa de nenhum, e o código fica no chaveiro deste dispositivo: o agente nunca o vê. Cada conversa segue uma alteração quando você envia a próxima mensagem."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Если включено, агент может сам разблокировать экран блокировки, используя код, сохранённый и проверенный здесь, чтобы работа, которой нужен экран, продолжалась, пока устройство заблокировано. Устройству без кода код не нужен, а код остаётся в связке ключей этого устройства: агент его никогда не видит. Каждый чат применяет изменение при отправке следующего сообщения."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi bật, tác tử có thể tự mở khóa màn hình khóa bằng mật mã bạn lưu và kiểm tra tại đây, để công việc cần màn hình tiếp tục khi thiết bị đang khóa. Thiết bị không có mật mã thì không cần, và mật mã nằm trong chuỗi khóa của thiết bị này: tác tử không bao giờ thấy. Mỗi cuộc trò chuyện áp dụng thay đổi khi bạn gửi tin nhắn tiếp theo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开启后，智能体可以在锁屏上自行解锁，使用你在这里保存并测试过的密码，让需要屏幕的工作在设备锁定时继续。没有密码的设备无需密码；密码保存在本机的钥匙串中，智能体永远看不到。每个聊天会在你下次发送消息时应用更改。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟後，代理程式可以在鎖定畫面上自行解鎖，使用你在這裡儲存並測試過的密碼，讓需要螢幕的工作在裝置鎖定時繼續。沒有密碼的裝置無需密碼；密碼保存在本機的鑰匙圈中，代理程式永遠看不到。每個聊天會在你傳送下一則訊息時套用變更。"
           }
         }
       }
