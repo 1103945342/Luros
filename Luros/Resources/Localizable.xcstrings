@@ -540,89 +540,6 @@
         }
       }
     },
-    "%@ Your chats keep working, and Apelin tries again with the next change.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ تستمر المحادثات في العمل، وسيحاول Luros مرة أخرى عند التغيير التالي."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ Deine Chats laufen weiter, und Luros versucht es bei der nächsten Änderung erneut."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ Your chats keep working, and Luros tries again with the next change."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ Tus chats siguen funcionando y Luros lo volverá a intentar con el próximo cambio."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ Vos discussions continuent de fonctionner et Luros réessaiera à la prochaine modification."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ Le chat continuano a funzionare e Luros riproverà alla prossima modifica."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ チャットは引き続き使用できます。Lurosは次の変更時にもう一度保存を試みます。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ 채팅은 계속 사용할 수 있으며, Luros은 다음 변경 시 다시 저장을 시도합니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ Suas conversas continuam funcionando, e o Luros tentará novamente na próxima alteração."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ Чаты продолжают работать, а Luros повторит попытку при следующем изменении."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ Các cuộc trò chuyện vẫn hoạt động và Luros sẽ thử lại ở lần thay đổi tiếp theo."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ 聊天可以继续，Luros 会在下次有改动时再试一次。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ 聊天可以繼續進行，Luros 會在下次有變更時再試一次。"
-          }
-        }
-      }
-    },
     "%@ Your chats keep working, and Luros tries again with the next change.": {
       "extractionState": "manual",
       "localizations": {
@@ -702,82 +619,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ 聊天可以繼續進行，Luros 會在下次有變更時再試一次。"
-          }
-        }
-      }
-    },
-    "%@ asks for a sign-in. Give your agent a token for it in a chat, which it saves for Apelin, then import again.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يطلب %@ تسجيل الدخول. أعطِ الوكيل رمزًا مميزًا له في محادثة ليحفظه لـ Luros، ثم أعد الاستيراد."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ verlangt eine Anmeldung. Gib deinem Agent in einem Chat ein Token dafür, das er für Luros sichert, und importiere dann erneut."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ pide iniciar sesión. Dale a tu agente un token para ese sitio en un chat, que lo guardará para Luros, y vuelve a importar."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ demande une connexion. Donnez un jeton pour ce site à votre agent dans une discussion ; il l’enregistre pour Luros. Puis importez à nouveau."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ richiede l’accesso. Fornisci all’agente un token per questo sito in una chat: lo salverà per Luros. Poi importa di nuovo."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ はサインインを求めています。チャットでエージェントにそのトークンを渡すと、Luros用に保存されます。その後、もう一度インポートしてください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@에서 로그인을 요구합니다. 채팅에서 에이전트에게 해당 토큰을 주면 Luros용으로 저장합니다. 그런 다음 다시 가져오세요."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ pede para entrar. Dê ao seu agente um token para esse site em uma conversa; ele o salva para o Luros. Depois importe de novo."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ требует входа. Передайте агенту токен для этого сайта в чате — он сохранит его для Luros, — затем повторите импорт."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ yêu cầu đăng nhập. Hãy đưa token của trang này cho tác nhân trong một cuộc trò chuyện để lưu cho Luros, rồi nhập lại."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ 要求登录。请在聊天中把该站点的令牌交给智能体，它会为 Luros 保存，然后重新导入。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ 要求登入。請在聊天中將該網站的權杖交給代理程式，它會為 Luros 儲存，然後重新匯入。"
           }
         }
       }
@@ -6529,7 +6370,7 @@
         }
       }
     },
-    "A maximum output above half the context window leaves little room for the chat, and Apelin will compact the chat sooner.": {
+    "A maximum output above half the context window leaves little room for the chat, and Luros will compact the chat sooner.": {
       "extractionState": "manual",
       "localizations": {
         "ar": {
@@ -7894,7 +7735,7 @@
         }
       }
     },
-    "A public repository, a folder in one, or a SKILL.md. Apelin lists the skills it finds there. Nothing in the repository runs, and hidden files, links and submodules stay behind.": {
+    "A public repository, a folder in one, or a SKILL.md. Luros lists the skills it finds there. Nothing in the repository runs, and hidden files, links and submodules stay behind.": {
       "extractionState": "manual",
       "localizations": {
         "ar": {
@@ -11273,7 +11114,7 @@
         }
       }
     },
-    "After locking, the device didn’t ask for its passcode in time, so Apelin didn’t try it. Make sure Require Passcode is set to Immediately, then try again.": {
+    "After locking, the device didn’t ask for its passcode in time, so Luros didn’t try it. Make sure Require Passcode is set to Immediately, then try again.": {
       "localizations": {
         "ar": {
           "stringUnit": {
@@ -11985,89 +11826,6 @@
         }
       }
     },
-    "Allow Apelin to add photos in Settings.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "اسمح لـ Luros بإضافة الصور من الإعدادات."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erlaube Luros in den Einstellungen, Fotos hinzuzufügen."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Allow Luros to add photos in Settings."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Permite que Luros añada fotos en Ajustes."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Autorisez Luros à ajouter des photos dans Réglages."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Consenti ad Luros di aggiungere foto in Impostazioni."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "設定で Luros に写真の追加を許可してください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "설정에서 Luros이 사진을 추가하도록 허용하세요."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Permita que o Luros adicione fotos em Ajustes."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Разрешите Luros добавлять фото в Настройках."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cho phép Luros thêm ảnh trong Cài đặt."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "请在“设置”中允许 Luros 添加照片。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "請在「設定」中允許 Luros 加入照片。"
-          }
-        }
-      }
-    },
     "Allow Luros to add photos in Settings.": {
       "extractionState": "manual",
       "localizations": {
@@ -12230,89 +11988,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "允許一次"
-          }
-        }
-      }
-    },
-    "Allow notifications from Apelin. You can change permission in Settings at any time.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "اسمح لـ Luros بإرسال الإشعارات. يمكنك تغيير الإذن في «الإعدادات» في أي وقت."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erlaube Mitteilungen von Luros. Du kannst die Berechtigung jederzeit in den Einstellungen ändern."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Allow notifications from Luros. You can change permission in Settings at any time."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Permite las notificaciones de Luros. Puedes cambiar el permiso en Ajustes en cualquier momento."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Autorisez les notifications d’Luros. Vous pouvez modifier cette autorisation à tout moment dans Réglages."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Consenti le notifiche di Luros. Puoi modificare l’autorizzazione in qualsiasi momento in Impostazioni."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosからの通知を許可してください。許可はいつでも「設定」で変更できます。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros의 알림을 허용하세요. 권한은 언제든지 ‘설정’에서 변경할 수 있습니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Permita as notificações do Luros. Você pode alterar a permissão em Ajustes a qualquer momento."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Разрешите уведомления от Luros. Изменить разрешение можно в любой момент в «Настройках»."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cho phép Luros gửi thông báo. Bạn có thể thay đổi quyền này trong Cài đặt bất cứ lúc nào."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允许 Luros 发送通知。你随时可以在“设置”中更改权限。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "允許 Luros 傳送通知。你隨時可以在「設定」中變更權限。"
           }
         }
       }
@@ -12787,7 +12462,7 @@
         }
       }
     },
-    "An earlier version of Apelin set up this toolchain. It still builds projects, but otool and ar do not work with it. Apple no longer offers this release, so set up Command Line Tools %@ to add a toolchain that includes them. Projects keep using this toolchain until you switch them.": {
+    "An earlier version of Luros set up this toolchain. It still builds projects, but otool and ar do not work with it. Apple no longer offers this release, so set up Command Line Tools %@ to add a toolchain that includes them. Projects keep using this toolchain until you switch them.": {
       "localizations": {
         "ar": {
           "stringUnit": {
@@ -12863,7 +12538,7 @@
         }
       }
     },
-    "An earlier version of Apelin set up this toolchain. It still builds projects, but otool and ar do not work with it. Set up Command Line Tools %@ again to add a toolchain that includes them. Projects keep using this toolchain until you switch them.": {
+    "An earlier version of Luros set up this toolchain. It still builds projects, but otool and ar do not work with it. Set up Command Line Tools %@ again to add a toolchain that includes them. Projects keep using this toolchain until you switch them.": {
       "localizations": {
         "ar": {
           "stringUnit": {
@@ -13738,1486 +13413,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apache 2.0"
-          }
-        }
-      }
-    },
-    "Apelin": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros"
-          }
-        }
-      }
-    },
-    "Apelin Updated or Removed": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تم تحديث Luros أو إزالته"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros aktualisiert oder entfernt"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros se ha actualizado o eliminado"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros mis à jour ou supprimé"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros aggiornato o rimosso"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosがアップデートまたは削除されました"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros이 업데이트되었거나 제거됨"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Luros foi atualizado ou removido"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros обновлён или удалён"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros đã được cập nhật hoặc gỡ bỏ"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 已更新或已移除"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 已更新或移除"
-          }
-        }
-      }
-    },
-    "Apelin and its background service are different versions. Reinstall Apelin with your preferred package manager, then try again.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "إصدار Luros يختلف عن إصدار خدمته في الخلفية. أعد تثبيت Luros باستخدام مدير الحزم المفضّل لديك، ثم حاول مرة أخرى."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros und sein Hintergrunddienst haben unterschiedliche Versionen. Installiere Luros mit deinem bevorzugten Paketmanager neu und versuche es dann erneut."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros y su servicio en segundo plano tienen versiones distintas. Vuelve a instalar Luros con tu gestor de paquetes preferido e inténtalo de nuevo."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros et son service d’arrière-plan ne sont pas de la même version. Réinstallez Luros avec votre gestionnaire de paquets préféré, puis réessayez."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros e il suo servizio in background hanno versioni diverse. Reinstalla Luros con il tuo gestore di pacchetti preferito, poi riprova."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosとそのバックグラウンドサービスのバージョンが一致しません。お使いのパッケージマネージャでLurosを再インストールしてから、もう一度お試しください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros과 백그라운드 서비스의 버전이 다릅니다. 선호하는 패키지 관리자로 Luros을 다시 설치한 후 다시 시도하세요."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Luros e o serviço em segundo plano dele estão em versões diferentes. Reinstale o Luros com seu gerenciador de pacotes preferido e tente novamente."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Версии Luros и его фоновой службы не совпадают. Переустановите Luros через удобный вам менеджер пакетов и повторите попытку."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros và dịch vụ nền của nó khác phiên bản. Hãy cài đặt lại Luros bằng trình quản lý gói bạn ưa dùng, rồi thử lại."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 与它的后台服务版本不一致。请用你喜欢的软件包管理器重新安装 Luros，然后重试。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 與其背景服務的版本不一致。請使用你偏好的套件管理器重新安裝 Luros，然後再試一次。"
-          }
-        }
-      }
-    },
-    "Apelin cannot build on roothide Bootstrap. Bootstrap runs only programs it signs itself, and it does not sign Apelin’s build tools or the programs they build.": {
-      "comment": "luros-environment's and luros-build's refusal on roothide Bootstrap (HostSigning.bootstrapRefusal in LurosCore), shown in alerts and on the Build Tools welcome page. The key must stay that text.",
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "لا يمكن لـ Luros البناء على roothide Bootstrap. لا يشغّل Bootstrap إلا البرامج التي يوقّعها بنفسه، ولا يوقّع أدوات البناء في Luros ولا البرامج المبنية بها."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros kann auf roothide Bootstrap nicht bauen. Bootstrap führt nur Programme aus, die es selbst signiert, und signiert weder die Build-Tools von Luros noch die damit gebauten Programme."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros cannot build on roothide Bootstrap. Bootstrap runs only programs it signs itself, and it does not sign Luros’s build tools or the programs they build."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros no puede compilar en roothide Bootstrap. Bootstrap solo ejecuta programas que firma él mismo, y no firma las herramientas de compilación de Luros ni los programas compilados con ellas."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros ne peut pas compiler sur roothide Bootstrap. Bootstrap n’exécute que les programmes qu’il signe lui-même, et il ne signe ni les outils de compilation d’Luros ni les programmes compilés avec eux."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros non può compilare su roothide Bootstrap. Bootstrap esegue solo i programmi che firma da sé e non firma né gli strumenti di compilazione di Luros né i programmi compilati con essi."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros は roothide Bootstrap 上ではビルドできません。Bootstrap は自身が署名したプログラムしか実行せず、Luros のビルドツールやそれでビルドしたプログラムには署名しません。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros은 roothide Bootstrap에서 빌드할 수 없습니다. Bootstrap은 직접 서명한 프로그램만 실행하며, Luros의 빌드 도구나 이 도구로 빌드한 프로그램에는 서명하지 않습니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Luros não pode compilar no roothide Bootstrap. O Bootstrap só executa programas que ele mesmo assina e não assina as ferramentas de compilação do Luros nem os programas compilados com elas."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros не может собирать программы в roothide Bootstrap. Bootstrap запускает только программы, которые подписывает сам, а инструменты сборки Luros и собранные ими программы он не подписывает."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros không thể xây dựng trên roothide Bootstrap. Bootstrap chỉ chạy các chương trình do chính nó ký và không ký công cụ xây dựng của Luros hay các chương trình được xây dựng bằng chúng."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 无法在 roothide Bootstrap 上构建。Bootstrap 只运行由它自己签名的程序，而它不会为 Luros 的构建工具及其构建出的程序签名。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 無法在 roothide Bootstrap 上建置。Bootstrap 只會執行由它自己簽署的程式，而它不會為 Luros 的建置工具及其建置出的程式簽署。"
-          }
-        }
-      }
-    },
-    "Apelin clones it as a project, adds the package index’s files it lacks — a GitHub Pages workflow and an index script — without changing any it has, pushes them, and turns on GitHub Pages.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يستنسخه Luros كمشروع، ويضيف ملفات فهرس الحزم الناقصة — سير عمل GitHub Pages وسكربت الفهرسة — دون تغيير أي ملف موجود، ثم يدفعها ويشغّل GitHub Pages."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros klont es als Projekt, fügt die fehlenden Dateien des Paketindex hinzu – einen GitHub-Pages-Workflow und ein Indexskript –, ohne vorhandene zu ändern, pusht sie und schaltet GitHub Pages ein."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros lo clona como proyecto, añade los archivos del índice de paquetes que le falten —un flujo de trabajo de GitHub Pages y un script de índice— sin cambiar los que tiene, los envía y activa GitHub Pages."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros le clone en tant que projet, ajoute les fichiers de l’index des paquets qui lui manquent — un workflow GitHub Pages et un script d’index — sans modifier ceux qu’il a, les pousse et active GitHub Pages."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros lo clona come progetto, aggiunge i file dell’indice dei pacchetti che mancano — un workflow di GitHub Pages e uno script di indice — senza cambiare quelli presenti, li invia e attiva GitHub Pages."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosはプロジェクトとしてクローンし、パッケージインデックスに足りないファイル（GitHub Pagesのワークフローとインデックススクリプト）を既存のファイルを変えずに追加してプッシュし、GitHub Pagesをオンにします。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros이 프로젝트로 복제하고, 패키지 색인에 없는 파일(GitHub Pages 워크플로와 색인 스크립트)을 기존 파일은 바꾸지 않고 추가한 뒤 푸시하고 GitHub Pages를 켭니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Luros o clona como projeto, adiciona os arquivos do índice de pacotes que faltam — um fluxo de trabalho do GitHub Pages e um script de índice — sem alterar os existentes, envia-os e ativa o GitHub Pages."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros клонирует его как проект, добавляет недостающие файлы индекса пакетов — рабочий процесс GitHub Pages и скрипт индекса, — не меняя существующие, отправляет их и включает GitHub Pages."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros sao chép nó thành một dự án, thêm các tệp chỉ mục gói còn thiếu — một quy trình GitHub Pages và một tập lệnh chỉ mục — mà không thay đổi tệp đã có, đẩy chúng lên và bật GitHub Pages."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 会把它克隆为项目，补上软件包索引缺少的文件（一个 GitHub Pages 工作流和一个索引脚本），不改动已有的任何文件，然后推送并开启 GitHub Pages。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 會把它複製為專案，補上套件索引缺少的檔案（一個 GitHub Pages 工作流程和一個索引指令碼），不改動既有的任何檔案，然後推送並開啟 GitHub Pages。"
-          }
-        }
-      }
-    },
-    "Apelin could not remove the project “%@”. Delete it in All Projects.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تعذّر على Luros إزالة المشروع «%@». احذفه من «كل المشاريع»."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros konnte das Projekt „%@“ nicht entfernen. Lösche es unter „Alle Projekte“."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros no pudo quitar el proyecto “%@”. Elimínalo en Todos los proyectos."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros n’a pas pu supprimer le projet « %@ ». Supprimez-le dans Tous les projets."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros non è riuscito a rimuovere il progetto “%@”. Eliminalo in Tutti i progetti."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosはプロジェクト「%@」を削除できませんでした。「すべてのプロジェクト」で削除してください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros이 ‘%@’ 프로젝트를 제거하지 못했습니다. ‘모든 프로젝트’에서 삭제하세요."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Luros não conseguiu remover o projeto “%@”. Apague-o em Todos os projetos."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros не удалось удалить проект «%@». Удалите его в разделе «Все проекты»."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros không thể xóa dự án “%@”. Hãy xóa dự án trong Tất cả dự án."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 无法移除项目“%@”。请在“所有项目”中删除它。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 無法移除專案「%@」。請在「所有專案」中刪除它。"
-          }
-        }
-      }
-    },
-    "Apelin does not have permission to complete this action.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ليس لدى Luros إذن لإكمال هذا الإجراء."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros hat keine Berechtigung, diese Aktion auszuführen."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros no tiene permiso para completar esta acción."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros n’est pas autorisé à effectuer cette action."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros non ha l’autorizzazione per completare questa azione."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosにはこの操作を完了する権限がありません。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros에 이 작업을 완료할 권한이 없습니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Luros não tem permissão para concluir esta ação."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "У Luros нет разрешения на это действие."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros không có quyền thực hiện thao tác này."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 没有完成此操作的权限。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 沒有完成此操作的權限。"
-          }
-        }
-      }
-    },
-    "Apelin downloads the repository into a new project and opens it. Nothing in it runs, and nothing is sent to your agent.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ينزّل Luros المستودع إلى مشروع جديد ويفتحه. لا يُشغَّل أي شيء منه، ولا يُرسَل أي شيء إلى الوكيل."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros lädt das Repository in ein neues Projekt und öffnet es. Nichts darin wird ausgeführt und nichts an deinen Agent gesendet."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros descarga el repositorio en un proyecto nuevo y lo abre. No se ejecuta nada de su contenido ni se envía nada a tu agente."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros télécharge le dépôt dans un nouveau projet et l’ouvre. Rien de son contenu n’est exécuté, et rien n’est envoyé à votre agent."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros scarica il repository in un nuovo progetto e lo apre. Nulla al suo interno viene eseguito e nulla viene inviato all’agente."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosはリポジトリを新しいプロジェクトにダウンロードして開きます。その中のものは何も実行されず、エージェントにも何も送信されません。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros이 저장소를 새 프로젝트로 다운로드하고 엽니다. 저장소의 어떤 것도 실행되지 않으며 에이전트에게 아무것도 보내지 않습니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Luros baixa o repositório para um novo projeto e o abre. Nada nele é executado, e nada é enviado ao seu agente."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros загрузит репозиторий в новый проект и откроет его. Ничего из него не запускается, и агенту ничего не отправляется."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros tải kho lưu trữ về một dự án mới và mở dự án đó. Không có gì trong kho được chạy và không có gì được gửi cho tác nhân."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 会把仓库下载到一个新项目中并打开它。仓库中的任何内容都不会运行，也不会向智能体发送任何内容。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 會將儲存庫下載到新專案並打開它。儲存庫中的任何內容都不會執行，也不會傳送任何內容給代理程式。"
-          }
-        }
-      }
-    },
-    "Apelin ended this reply. Send a message to continue.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "أنهى Luros هذا الرد. أرسل رسالة للمتابعة."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros hat diese Antwort beendet. Sende eine Nachricht, um fortzufahren."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros ended this reply. Send a message to continue."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros finalizó esta respuesta. Envía un mensaje para continuar."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros a mis fin à cette réponse. Envoyez un message pour continuer."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros ha terminato questa risposta. Invia un messaggio per continuare."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosがこの返信を終了しました。続けるにはメッセージを送信してください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros이 이 응답을 종료했습니다. 계속하려면 메시지를 보내세요."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Luros encerrou esta resposta. Envie uma mensagem para continuar."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros завершил этот ответ. Отправьте сообщение, чтобы продолжить."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros đã kết thúc phản hồi này. Hãy gửi tin nhắn để tiếp tục."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 已结束此次回复。请发送消息以继续。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 已結束此回覆。請傳送訊息以繼續。"
-          }
-        }
-      }
-    },
-    "Apelin keeps the logs of its last 100 chats.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يحتفظ Luros بسجلات آخر 100 محادثة."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros bewahrt die Protokolle der letzten 100 Chats auf."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros keeps the logs of its last 100 chats."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros conserva los registros de sus últimos 100 chats."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros conserve les journaux de ses 100 dernières discussions."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros conserva i log delle ultime 100 chat."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosは直近100件のチャットのログを保持します。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros은 최근 100개 채팅의 로그를 보관합니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Luros mantém os registros das últimas 100 conversas."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros хранит журналы последних 100 чатов."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros giữ nhật ký của 100 cuộc trò chuyện gần nhất."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 会保留最近 100 个聊天的日志。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 會保留最近 100 個聊天的記錄。"
-          }
-        }
-      }
-    },
-    "Apelin keeps the logs of its last 100 launches.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يحتفظ Luros بسجلات آخر 100 مرة تشغيل."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros bewahrt die Protokolle der letzten 100 Starts auf."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros keeps the logs of its last 100 launches."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros conserva los registros de sus últimos 100 inicios."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros conserve les journaux de ses 100 derniers lancements."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros conserva i log degli ultimi 100 avvii."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosは直近100回の起動のログを保持します。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros은 최근 100번의 실행 로그를 보관합니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Luros mantém os registros das últimas 100 inicializações."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros хранит журналы последних 100 запусков."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros giữ nhật ký của 100 lần khởi chạy gần nhất."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 会保留最近 100 次启动的日志。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 會保留最近 100 次啟動的記錄。"
-          }
-        }
-      }
-    },
-    "Apelin opens toolchains (.apetc), SDKs (.apesdk) and projects (.apeproj).": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يفتح Luros سلاسل الأدوات (.apetc) وSDK (.apesdk) والمشاريع (.apeproj)."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros öffnet Toolchains (.apetc), SDKs (.apesdk) und Projekte (.apeproj)."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros abre cadenas de herramientas (.apetc), SDK (.apesdk) y proyectos (.apeproj)."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros ouvre les chaînes d’outils (.apetc), les SDK (.apesdk) et les projets (.apeproj)."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros apre toolchain (.apetc), SDK (.apesdk) e progetti (.apeproj)."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosで開けるのは、ツールチェーン（.apetc）、SDK（.apesdk）、プロジェクト（.apeproj）です。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros은 툴체인(.apetc), SDK(.apesdk), 프로젝트(.apeproj)를 열 수 있습니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Luros abre cadeias de ferramentas (.apetc), SDKs (.apesdk) e projetos (.apeproj)."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros открывает наборы инструментов (.apetc), SDK (.apesdk) и проекты (.apeproj)."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros mở được chuỗi công cụ (.apetc), SDK (.apesdk) và dự án (.apeproj)."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 可以打开工具链（.apetc）、SDK（.apesdk）和项目（.apeproj）。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 可以打開工具鏈（.apetc）、SDK（.apesdk）和專案（.apeproj）。"
-          }
-        }
-      }
-    },
-    "Apelin sends its instructions and tools with every request, so a context window under %@ tokens leaves little room for the chat.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يرسل Luros تعليماته وأدواته مع كل طلب، لذا فإن نافذة السياق التي تقل عن %@ رمز لا تترك سوى مساحة صغيرة للمحادثة."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros sendet seine Anweisungen und Werkzeuge bei jeder Anfrage mit, sodass ein Kontextfenster unter %@ Tokens wenig Platz für den Chat lässt."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros sends its instructions and tools with every request, so a context window under %@ tokens leaves little room for the chat."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros envía sus instrucciones y herramientas con cada solicitud, por lo que una ventana de contexto inferior a %@ tokens deja poco espacio para el chat."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros envoie ses instructions et ses outils avec chaque requête ; une fenêtre de contexte inférieure à %@ jetons laisse donc peu de place à la discussion."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros invia istruzioni e strumenti con ogni richiesta, quindi una finestra di contesto inferiore a %@ token lascia poco spazio per la chat."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosはリクエストごとに指示とツールを送信するため、%@トークン未満のコンテキストウィンドウではチャット用の空きがほとんど残りません。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros은 모든 요청에 지침과 도구를 함께 보내므로, 컨텍스트 윈도우가 %@토큰 미만이면 채팅에 사용할 공간이 부족해집니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Luros envia suas instruções e ferramentas a cada solicitação, portanto uma janela de contexto abaixo de %@ tokens deixa pouco espaço para a conversa."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros отправляет свои инструкции и инструменты с каждым запросом, поэтому при контекстном окне менее %@ токенов для чата остается мало места."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros gửi kèm hướng dẫn và công cụ trong mỗi yêu cầu, nên cửa sổ ngữ cảnh dưới %@ token sẽ chừa lại rất ít chỗ cho cuộc trò chuyện."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 会在每次请求中发送指令和工具定义，因此小于 %@ 个 Token 的上下文窗口留给聊天的空间很小。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 會在每次請求中傳送指令和工具定義，因此小於 %@ 個 Token 的上下文視窗留給聊天的空間很小。"
-          }
-        }
-      }
-    },
-    "Apelin will lock the screen and unlock it with this passcode. Don’t use the device until it unlocks. A wrong passcode counts as one failed attempt.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "سيقفل Luros الشاشة ثم يفتح قفلها باستخدام رمز الدخول هذا. لا تستخدم الجهاز حتى يُفتح قفله. يُحتسب رمز الدخول الخاطئ كمحاولة فاشلة واحدة."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros sperrt das Display und entsperrt es mit diesem Code. Benutze das Gerät erst, wenn es entsperrt ist. Ein falscher Code zählt als ein fehlgeschlagener Versuch."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros bloqueará la pantalla y la desbloqueará con este código. No uses el dispositivo hasta que se desbloquee. Un código incorrecto cuenta como un intento fallido."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros va verrouiller l’écran puis le déverrouiller avec ce code. N’utilisez pas l’appareil tant qu’il n’est pas déverrouillé. Un code erroné compte comme une tentative échouée."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros bloccherà lo schermo e lo sbloccherà con questo codice. Non usare il dispositivo finché non si sblocca. Un codice errato conta come un tentativo fallito."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosが画面をロックし、このパスコードでロックを解除します。ロックが解除されるまでデバイスを操作しないでください。パスコードが間違っていると、入力失敗が1回記録されます。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros이 화면을 잠근 후 이 암호로 잠금을 해제합니다. 잠금이 해제될 때까지 기기를 조작하지 마세요. 잘못된 암호는 입력 실패 1회로 기록됩니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Luros bloqueará a tela e a desbloqueará com este código. Não use o dispositivo até que ele seja desbloqueado. Um código incorreto conta como uma tentativa malsucedida."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros заблокирует экран и разблокирует его с помощью этого код-пароля. Не используйте устройство, пока оно не разблокируется. Неверный код-пароль засчитывается как одна неудачная попытка."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros sẽ khóa màn hình và mở khóa bằng mật mã này. Không sử dụng thiết bị cho đến khi mở khóa xong. Mật mã sai sẽ được tính là một lần thử không thành công."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 将锁定屏幕并使用此密码解锁。在设备解锁前请勿操作。密码错误会记为一次尝试失败。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 將會鎖定螢幕並使用此密碼解鎖。在裝置解鎖前請勿操作。密碼錯誤會計為一次嘗試失敗。"
-          }
-        }
-      }
-    },
-    "Apelin’s background service could not be reached. Try again in a moment.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تعذّر الوصول إلى خدمة Luros في الخلفية. حاول مرة أخرى بعد قليل."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Der Hintergrunddienst von Luros ist nicht erreichbar. Versuche es gleich noch einmal."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No se ha podido contactar con el servicio en segundo plano de Luros. Inténtalo de nuevo en un momento."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Impossible de joindre le service d’arrière-plan d’Luros. Réessayez dans un instant."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Impossibile raggiungere il servizio in background di Luros. Riprova tra poco."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosのバックグラウンドサービスに接続できませんでした。しばらくしてからもう一度お試しください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 백그라운드 서비스에 연결할 수 없습니다. 잠시 후 다시 시도하세요."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não foi possível acessar o serviço em segundo plano do Luros. Tente novamente em instantes."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось связаться с фоновой службой Luros. Повторите попытку чуть позже."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Không thể kết nối với dịch vụ nền của Luros. Hãy thử lại sau giây lát."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无法连接 Luros 的后台服务。请稍后重试。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無法連線至 Luros 的背景服務。請稍後再試一次。"
-          }
-        }
-      }
-    },
-    "Apelin’s background service did not answer within %@. Try again.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "لم تستجب خدمة Luros في الخلفية خلال %@. حاول مرة أخرى."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Der Hintergrunddienst von Luros hat nicht innerhalb von %@ geantwortet. Versuche es erneut."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El servicio en segundo plano de Luros no respondió en %@. Inténtalo de nuevo."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le service d’arrière-plan d’Luros n’a pas répondu dans un délai de %@. Réessayez."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Il servizio in background di Luros non ha risposto entro %@. Riprova."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosのバックグラウンドサービスが%@以内に応答しませんでした。もう一度お試しください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 백그라운드 서비스가 %@ 이내에 응답하지 않았습니다. 다시 시도하세요."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O serviço em segundo plano do Luros não respondeu em %@. Tente novamente."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Фоновая служба Luros не ответила в течение %@. Повторите попытку."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dịch vụ nền của Luros không phản hồi trong %@. Hãy thử lại."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 的后台服务在 %@ 内没有响应，请重试。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 的背景服務未在 %@ 內回應，請再試一次。"
-          }
-        }
-      }
-    },
-    "Apelin’s background service is unavailable. Reinstall Apelin with your preferred package manager to restore it.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "خدمة Luros في الخلفية غير متاحة. أعد تثبيت Luros باستخدام مدير الحزم المفضّل لديك لاستعادتها."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Der Hintergrunddienst von Luros ist nicht verfügbar. Installiere Luros mit deinem bevorzugten Paketmanager neu, um ihn wiederherzustellen."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El servicio en segundo plano de Luros no está disponible. Vuelve a instalar Luros con tu gestor de paquetes preferido para restaurarlo."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le service d’arrière-plan d’Luros est indisponible. Réinstallez Luros avec votre gestionnaire de paquets préféré pour le rétablir."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Il servizio in background di Luros non è disponibile. Reinstalla Luros con il tuo gestore di pacchetti preferito per ripristinarlo."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosのバックグラウンドサービスを利用できません。復元するには、お使いのパッケージマネージャでLurosを再インストールしてください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 백그라운드 서비스를 사용할 수 없습니다. 복구하려면 선호하는 패키지 관리자로 Luros을 다시 설치하세요."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O serviço em segundo plano do Luros não está disponível. Reinstale o Luros com seu gerenciador de pacotes preferido para restaurá-lo."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Фоновая служба Luros недоступна. Чтобы восстановить её, переустановите Luros через удобный вам менеджер пакетов."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dịch vụ nền của Luros không khả dụng. Hãy cài đặt lại Luros bằng trình quản lý gói bạn ưa dùng để khôi phục."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 的后台服务不可用。请用你喜欢的软件包管理器重新安装 Luros 来恢复。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無法使用 Luros 的背景服務。請使用你偏好的套件管理器重新安裝 Luros 以恢復。"
-          }
-        }
-      }
-    },
-    "Apelin’s background service is unavailable. Reinstall Apelin with your preferred package manager to sign in.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "خدمة Luros في الخلفية غير متاحة. أعد تثبيت Luros باستخدام مدير الحزم المفضّل لديك لتسجيل الدخول."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Der Hintergrunddienst von Luros ist nicht verfügbar. Installiere Luros mit deinem bevorzugten Paketmanager neu, um dich anzumelden."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El servicio en segundo plano de Luros no está disponible. Vuelve a instalar Luros con tu gestor de paquetes preferido para poder iniciar sesión."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le service d’arrière-plan d’Luros est indisponible. Réinstallez Luros avec votre gestionnaire de paquets préféré pour vous connecter."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Il servizio in background di Luros non è disponibile. Reinstalla Luros con il tuo gestore di pacchetti preferito per accedere."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosのバックグラウンドサービスを利用できません。サインインするには、お使いのパッケージマネージャでLurosを再インストールしてください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 백그라운드 서비스를 사용할 수 없습니다. 로그인하려면 선호하는 패키지 관리자로 Luros을 다시 설치하세요."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O serviço em segundo plano do Luros não está disponível. Reinstale o Luros com seu gerenciador de pacotes preferido para iniciar sessão."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Фоновая служба Luros недоступна. Чтобы войти, переустановите Luros через удобный вам менеджер пакетов."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dịch vụ nền của Luros không khả dụng. Hãy cài đặt lại Luros bằng trình quản lý gói bạn ưa dùng để đăng nhập."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 的后台服务不可用。请用你喜欢的软件包管理器重新安装 Luros 后再登录。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無法使用 Luros 的背景服務。請使用你偏好的套件管理器重新安裝 Luros 後再登入。"
-          }
-        }
-      }
-    },
-    "Apelin’s background service returned an incomplete response. Try again.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "أعادت خدمة Luros في الخلفية استجابة غير مكتملة. حاول مرة أخرى."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Der Hintergrunddienst von Luros hat eine unvollständige Antwort gesendet. Versuche es erneut."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El servicio en segundo plano de Luros devolvió una respuesta incompleta. Inténtalo de nuevo."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le service d’arrière-plan d’Luros a renvoyé une réponse incomplète. Réessayez."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Il servizio in background di Luros ha restituito una risposta incompleta. Riprova."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosのバックグラウンドサービスから不完全な応答が返されました。もう一度お試しください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 백그라운드 서비스가 불완전한 응답을 반환했습니다. 다시 시도하세요."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O serviço em segundo plano do Luros retornou uma resposta incompleta. Tente novamente."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Фоновая служба Luros вернула неполный ответ. Повторите попытку."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dịch vụ nền của Luros trả về phản hồi không đầy đủ. Hãy thử lại."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 后台服务返回的响应不完整，请重试。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 背景服務傳回的回應不完整，請再試一次。"
           }
         }
       }
@@ -25188,82 +23383,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "選擇要在聊天模型選擇器中顯示的模型。你可以稍後在「模型供應商」中變更。"
-          }
-        }
-      }
-    },
-    "Choose the repository your packages go to. Apelin adds what the package index needs and leaves everything else as it is.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "اختر المستودع الذي تذهب إليه حزمك. يضيف Luros ما يحتاجه فهرس الحزم ويترك كل ما عداه كما هو."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wähle das Repository, in das deine Pakete kommen. Luros ergänzt, was der Paketindex braucht, und lässt alles andere unverändert."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Elige el repositorio al que van tus paquetes. Luros añade lo que necesita el índice de paquetes y deja todo lo demás como está."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choisissez le dépôt où vont vos paquets. Luros ajoute ce dont l’index des paquets a besoin et laisse tout le reste tel quel."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scegli il repository in cui vanno i tuoi pacchetti. Luros aggiunge ciò che serve all’indice dei pacchetti e lascia tutto il resto com’è."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "パッケージの公開先リポジトリを選んでください。Lurosはパッケージインデックスに必要なものだけを追加し、それ以外はそのままにします。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "패키지를 올릴 저장소를 선택하세요. Luros은 패키지 색인에 필요한 것만 추가하고 나머지는 그대로 둡니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Escolha o repositório para onde vão seus pacotes. O Luros adiciona o que o índice de pacotes precisa e deixa todo o resto como está."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Выберите репозиторий для ваших пакетов. Luros добавит то, что нужно индексу пакетов, и оставит всё остальное как есть."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chọn kho mà các gói của bạn sẽ được đưa vào. Luros chỉ thêm những gì chỉ mục gói cần và giữ nguyên mọi thứ khác."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "选择软件包要发布到的仓库。Luros 只补上软件包索引需要的内容，其余一切保持原样。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選擇套件要發佈到的儲存庫。Luros 只補上套件索引需要的內容，其餘一切保持原樣。"
           }
         }
       }
@@ -42742,89 +40861,6 @@
         }
       }
     },
-    "Do You Like Apelin?": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "هل يعجبك Luros؟"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gefällt dir Luros?"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Do You Like Luros?"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "¿Te gusta Luros?"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vous aimez Luros ?"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ti piace Luros?"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosは気に入りましたか？"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros이 마음에 드시나요?"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Você gosta do Luros?"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вам нравится Luros?"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bạn có thích Luros không?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你喜欢 Luros 吗？"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你喜歡 Luros 嗎？"
-          }
-        }
-      }
-    },
     "Do You Like Luros?": {
       "extractionState": "manual",
       "localizations": {
@@ -54963,7 +52999,7 @@
         }
       }
     },
-    "GitHub asked Apelin to wait. Try again in %@.": {
+    "GitHub asked Luros to wait. Try again in %@.": {
       "extractionState": "manual",
       "localizations": {
         "ar": {
@@ -55129,7 +53165,7 @@
         }
       }
     },
-    "GitHub has no public repository named “%@”. Apelin can import only from public repositories.": {
+    "GitHub has no public repository named “%@”. Luros can import only from public repositories.": {
       "extractionState": "manual",
       "localizations": {
         "ar": {
@@ -55609,82 +53645,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "無法讀取 GitHub 的回應。"
-          }
-        }
-      }
-    },
-    "GitHub’s page asks you to authorize GitHub CLI: Apelin signs in through its app. The token is kept only in this device’s keychain and used for remotes on github.com.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ستطلب منك صفحة GitHub تفويض GitHub CLI: يسجّل Luros الدخول عبر تطبيقه. يُحفظ الرمز المميز في سلسلة مفاتيح هذا الجهاز فقط ويُستخدم للمستودعات البعيدة على github.com."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die GitHub-Seite bittet dich, GitHub CLI zu autorisieren: Luros meldet sich über diese App an. Das Token wird nur im Schlüsselbund dieses Geräts gespeichert und für Remotes auf github.com verwendet."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La página de GitHub te pedirá que autorices GitHub CLI: Luros inicia sesión a través de esa app. El token se guarda solo en el llavero de este dispositivo y se usa para los remotos de github.com."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La page de GitHub vous demande d’autoriser GitHub CLI : Luros se connecte via cette app. Le jeton est conservé uniquement dans le trousseau de cet appareil et sert aux dépôts distants sur github.com."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La pagina di GitHub ti chiede di autorizzare GitHub CLI: Luros accede tramite quell’app. Il token è conservato solo nel portachiavi di questo dispositivo e usato per i remoti su github.com."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "GitHubのページでGitHub CLIの承認を求められます。LurosはこのアプリとしてGitHubにサインインします。トークンはこのデバイスのキーチェーンにのみ保存され、github.comのリモートに使われます。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "GitHub 페이지에서 GitHub CLI 승인을 요청합니다. Luros은 그 앱을 통해 로그인합니다. 토큰은 이 기기의 키체인에만 보관되며 github.com의 원격 저장소에 사용됩니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A página do GitHub pede que você autorize o GitHub CLI: o Luros entra por meio desse app. O token fica apenas no chaveiro deste dispositivo e é usado para remotos em github.com."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Страница GitHub попросит авторизовать GitHub CLI: Luros входит через это приложение. Токен хранится только в связке ключей этого устройства и используется для удалённых репозиториев на github.com."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trang GitHub sẽ yêu cầu bạn cấp quyền cho GitHub CLI: Luros đăng nhập thông qua ứng dụng đó. Mã thông báo chỉ được lưu trong chuỗi khóa của thiết bị này và dùng cho các kho từ xa trên github.com."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "GitHub 页面会请你授权 GitHub CLI：Luros 通过这个 App 登录。令牌只保存在这台设备的钥匙串中，用于 github.com 上的远端仓库。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "GitHub 頁面會請你授權 GitHub CLI：Luros 透過這個 App 登入。權杖只保存在這台裝置的鑰匙圈中，用於 github.com 上的遠端儲存庫。"
           }
         }
       }
@@ -63237,7 +61197,7 @@
         }
       }
     },
-    "It runs only when typed as a command, which Apelin’s chats do not support.": {
+    "It runs only when typed as a command, which Luros’s chats do not support.": {
       "extractionState": "manual",
       "localizations": {
         "ar": {
@@ -63403,7 +61363,7 @@
         }
       }
     },
-    "Its SKILL.md is not a text file Apelin can read.": {
+    "Its SKILL.md is not a text file Luros can read.": {
       "extractionState": "manual",
       "localizations": {
         "ar": {
@@ -67925,83 +65885,6 @@
         }
       }
     },
-    "Logs appear here when Apelin starts.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تظهر السجلات هنا عند بدء Luros."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Beim Start von Luros erscheinen hier Protokolle."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Los registros aparecen aquí al iniciar Luros."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les journaux apparaissent ici au démarrage d’Luros."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "I log compaiono qui all’avvio di Luros."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosの起動時にログがここに表示されます。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros이 시작되면 여기에 로그가 표시됩니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Os registros aparecem aqui quando o Luros inicia."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "При запуске Luros здесь появляются журналы."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nhật ký xuất hiện tại đây khi Luros khởi động."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 启动后，日志会显示在这里。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 啟動後，記錄會顯示在這裡。"
-          }
-        }
-      }
-    },
     "Logs appear here when Luros starts.": {
       "extractionState": "manual",
       "localizations": {
@@ -69177,6 +67060,89 @@
         }
       }
     },
+    "Luros ended this reply. Send a message to continue.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنهى Luros هذا الرد. أرسل رسالة للمتابعة."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros hat diese Antwort beendet. Sende eine Nachricht, um fortzufahren."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros ended this reply. Send a message to continue."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros finalizó esta respuesta. Envía un mensaje para continuar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros a mis fin à cette réponse. Envoyez un message pour continuer."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros ha terminato questa risposta. Invia un messaggio per continuare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lurosがこの返信を終了しました。続けるにはメッセージを送信してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros이 이 응답을 종료했습니다. 계속하려면 메시지를 보내세요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Luros encerrou esta resposta. Envie uma mensagem para continuar."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros завершил этот ответ. Отправьте сообщение, чтобы продолжить."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros đã kết thúc phản hồi này. Hãy gửi tin nhắn để tiếp tục."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros 已结束此次回复。请发送消息以继续。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros 已結束此回覆。請傳送訊息以繼續。"
+          }
+        }
+      }
+    },
     "Luros keeps the logs of its last 100 chats.": {
       "extractionState": "manual",
       "localizations": {
@@ -69491,6 +67457,165 @@
           "stringUnit": {
             "state": "translated",
             "value": "Luros 可以打開工具鏈（.apetc）、SDK（.apesdk）和專案（.apeproj）。"
+          }
+        }
+      }
+    },
+    "Luros sends its instructions and tools with every request, so a context window under %@ tokens leaves little room for the chat.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يرسل Luros تعليماته وأدواته مع كل طلب، لذا فإن نافذة السياق التي تقل عن %@ رمز لا تترك سوى مساحة صغيرة للمحادثة."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros sendet seine Anweisungen und Werkzeuge bei jeder Anfrage mit, sodass ein Kontextfenster unter %@ Tokens wenig Platz für den Chat lässt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros sends its instructions and tools with every request, so a context window under %@ tokens leaves little room for the chat."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros envía sus instrucciones y herramientas con cada solicitud, por lo que una ventana de contexto inferior a %@ tokens deja poco espacio para el chat."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros envoie ses instructions et ses outils avec chaque requête ; une fenêtre de contexte inférieure à %@ jetons laisse donc peu de place à la discussion."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros invia istruzioni e strumenti con ogni richiesta, quindi una finestra di contesto inferiore a %@ token lascia poco spazio per la chat."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lurosはリクエストごとに指示とツールを送信するため、%@トークン未満のコンテキストウィンドウではチャット用の空きがほとんど残りません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros은 모든 요청에 지침과 도구를 함께 보내므로, 컨텍스트 윈도우가 %@토큰 미만이면 채팅에 사용할 공간이 부족해집니다."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Luros envia suas instruções e ferramentas a cada solicitação, portanto uma janela de contexto abaixo de %@ tokens deixa pouco espaço para a conversa."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros отправляет свои инструкции и инструменты с каждым запросом, поэтому при контекстном окне менее %@ токенов для чата остается мало места."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros gửi kèm hướng dẫn và công cụ trong mỗi yêu cầu, nên cửa sổ ngữ cảnh dưới %@ token sẽ chừa lại rất ít chỗ cho cuộc trò chuyện."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros 会在每次请求中发送指令和工具定义，因此小于 %@ 个 Token 的上下文窗口留给聊天的空间很小。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros 會在每次請求中傳送指令和工具定義，因此小於 %@ 個 Token 的上下文視窗留給聊天的空間很小。"
+          }
+        }
+      }
+    },
+    "Luros will lock the screen and unlock it with this passcode. Don’t use the device until it unlocks. A wrong passcode counts as one failed attempt.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سيقفل Luros الشاشة ثم يفتح قفلها باستخدام رمز الدخول هذا. لا تستخدم الجهاز حتى يُفتح قفله. يُحتسب رمز الدخول الخاطئ كمحاولة فاشلة واحدة."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros sperrt das Display und entsperrt es mit diesem Code. Benutze das Gerät erst, wenn es entsperrt ist. Ein falscher Code zählt als ein fehlgeschlagener Versuch."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros bloqueará la pantalla y la desbloqueará con este código. No uses el dispositivo hasta que se desbloquee. Un código incorrecto cuenta como un intento fallido."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros va verrouiller l’écran puis le déverrouiller avec ce code. N’utilisez pas l’appareil tant qu’il n’est pas déverrouillé. Un code erroné compte comme une tentative échouée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros bloccherà lo schermo e lo sbloccherà con questo codice. Non usare il dispositivo finché non si sblocca. Un codice errato conta come un tentativo fallito."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lurosが画面をロックし、このパスコードでロックを解除します。ロックが解除されるまでデバイスを操作しないでください。パスコードが間違っていると、入力失敗が1回記録されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros이 화면을 잠근 후 이 암호로 잠금을 해제합니다. 잠금이 해제될 때까지 기기를 조작하지 마세요. 잘못된 암호는 입력 실패 1회로 기록됩니다."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Luros bloqueará a tela e a desbloqueará com este código. Não use o dispositivo até que ele seja desbloqueado. Um código incorreto conta como uma tentativa malsucedida."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros заблокирует экран и разблокирует его с помощью этого код-пароля. Не используйте устройство, пока оно не разблокируется. Неверный код-пароль засчитывается как одна неудачная попытка."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros sẽ khóa màn hình và mở khóa bằng mật mã này. Không sử dụng thiết bị cho đến khi mở khóa xong. Mật mã sai sẽ được tính là một lần thử không thành công."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros 将锁定屏幕并使用此密码解锁。在设备解锁前请勿操作。密码错误会记为一次尝试失败。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luros 將會鎖定螢幕並使用此密碼解鎖。在裝置解鎖前請勿操作。密碼錯誤會計為一次嘗試失敗。"
           }
         }
       }
@@ -79056,82 +77181,6 @@
         }
       }
     },
-    "No license information is available. Reinstall Apelin to restore it.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "لا تتوفر معلومات الترخيص. أعد تثبيت Luros لاستعادتها."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keine Lizenzinformationen verfügbar. Installiere Luros neu, um sie wiederherzustellen."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No hay información de licencias disponible. Vuelve a instalar Luros para restaurarla."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aucune information de licence n’est disponible. Réinstallez Luros pour la rétablir."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nessuna informazione sulla licenza disponibile. Reinstalla Luros per ripristinarla."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ライセンス情報がありません。Lurosを再インストールすると復元されます。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "라이선스 정보가 없습니다. Luros을 다시 설치하면 복구됩니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nenhuma informação de licença disponível. Reinstale o Luros para restaurá-la."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сведения о лицензиях недоступны. Переустановите Luros, чтобы восстановить их."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Không có thông tin giấy phép. Hãy cài đặt lại Luros để khôi phục."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "没有可用的许可信息。重新安装 Luros 即可恢复。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "沒有可用的授權資訊。重新安裝 Luros 即可恢復。"
-          }
-        }
-      }
-    },
     "No license information is available. Reinstall Luros to restore it.": {
       "localizations": {
         "ar": {
@@ -81259,82 +79308,6 @@
         }
       }
     },
-    "Not an Apelin File": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ليس ملف Luros"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keine Luros-Datei"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No es un archivo de Luros"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pas un fichier Luros"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Non è un file di Luros"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosのファイルではありません"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 파일이 아님"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não é um arquivo do Luros"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Это не файл Luros"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Không phải tệp Luros"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "不是 Luros 文件"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "不是 Luros 檔案"
-          }
-        }
-      }
-    },
     "Not an Luros File": {
       "localizations": {
         "ar": {
@@ -82188,89 +80161,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "無法使用通知"
-          }
-        }
-      }
-    },
-    "Notifications from Apelin will appear here.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ستظهر إشعارات Luros هنا."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mitteilungen von Luros erscheinen hier."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notifications from Luros will appear here."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Las notificaciones de Luros aparecerán aquí."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les notifications d’Luros apparaîtront ici."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le notifiche di Luros appariranno qui."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosからの通知はここに表示されます。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros의 알림이 여기에 표시됩니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "As notificações do Luros aparecerão aqui."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Здесь будут появляться уведомления от Luros."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Thông báo của Luros sẽ xuất hiện ở đây."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 的通知会显示在这里。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 的通知會顯示在這裡。"
           }
         }
       }
@@ -88966,89 +86856,6 @@
         }
       }
     },
-    "Prepare this project for distribution to %@: run apelin_project_check_distribution, fix everything it lists (the package’s name, description, author and version, its identifiers, and the app’s icon if it has one), then tell me what you changed. Do not build yet.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "جهّز هذا المشروع للتوزيع على %@: شغّل luros_project_check_distribution، وأصلح كل ما يذكره (اسم الحزمة ووصفها ومؤلفها وإصدارها، ومعرّفاتها، وأيقونة التطبيق إن وُجدت)، ثم أخبرني بما غيّرته. لا تبنِ بعد."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bereite dieses Projekt für die Verteilung auf %@ vor: Führe luros_project_check_distribution aus, behebe alles, was es auflistet (Name, Beschreibung, Autor und Version des Pakets, seine Bezeichner und das Symbol der App, falls vorhanden), und sag mir dann, was du geändert hast. Baue noch nicht."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prepare this project for distribution to %@: run luros_project_check_distribution, fix everything it lists (the package’s name, description, author and version, its identifiers, and the app’s icon if it has one), then tell me what you changed. Do not build yet."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prepara este proyecto para distribuirlo en %@: ejecuta luros_project_check_distribution, corrige todo lo que indique (el nombre, la descripción, el autor y la versión del paquete, sus identificadores y el icono de la app, si tiene) y luego dime qué cambiaste. No compiles todavía."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Préparez ce projet pour la distribution vers %@ : exécutez luros_project_check_distribution, corrigez tout ce qu’il signale (nom, description, auteur et version du paquet, ses identifiants, et l’icône de l’app s’il y en a une), puis dites-moi ce que vous avez modifié. Ne compilez pas encore."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prepara questo progetto per la distribuzione su %@: esegui luros_project_check_distribution, correggi tutto ciò che segnala (nome, descrizione, autore e versione del pacchetto, i suoi identificatori e l’icona dell’app, se presente), poi dimmi cosa hai modificato. Non compilare ancora."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@向けに配布できるよう、このプロジェクトを準備してください。luros_project_check_distribution を実行し、表示された項目（パッケージの名前、説明、作者、バージョン、識別子、AppがあればAppのアイコン）をすべて修正してから、変更内容を教えてください。まだビルドはしないでください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@에 배포할 수 있도록 이 프로젝트를 준비해 주세요. luros_project_check_distribution을 실행하고, 표시된 항목(패키지의 이름, 설명, 작성자, 버전, 식별자, 앱이 있다면 앱 아이콘)을 모두 수정한 다음 무엇을 변경했는지 알려 주세요. 아직 빌드하지 마세요."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prepare este projeto para distribuição em %@: execute luros_project_check_distribution, corrija tudo o que ele listar (o nome, a descrição, o autor e a versão do pacote, seus identificadores e o ícone do app, se houver) e depois me diga o que você alterou. Não compile ainda."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Подготовьте этот проект к распространению для %@: запустите luros_project_check_distribution, исправьте всё, что он перечислит (название, описание, автора и версию пакета, его идентификаторы, а также значок приложения, если оно есть), затем расскажите, что изменили. Пока не собирайте."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hãy chuẩn bị dự án này để phân phối cho %@: chạy luros_project_check_distribution, sửa mọi mục mà nó liệt kê (tên, mô tả, tác giả và phiên bản của gói, các định danh, và biểu tượng ứng dụng nếu có), rồi cho tôi biết bạn đã thay đổi những gì. Chưa xây dựng vội."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "为分发到 %@ 准备这个项目：运行 luros_project_check_distribution，修正它列出的所有问题（软件包的名称、描述、作者和版本、各个标识符，以及 App 的图标，如果有的话），然后告诉我你改了什么。先不要构建。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為分發到 %@ 準備這個專案：執行 luros_project_check_distribution，修正它列出的所有問題（套件的名稱、描述、作者和版本、各個識別碼，以及 App 的圖像，如果有的話），然後告訴我你改了什麼。先不要建置。"
-          }
-        }
-      }
-    },
     "Prepare this project for distribution to %@: run luros_project_check_distribution, fix everything it lists (the package’s name, description, author and version, its identifiers, and the app’s icon if it has one), then tell me what you changed. Do not build yet.": {
       "extractionState": "manual",
       "localizations": {
@@ -89132,89 +86939,6 @@
         }
       }
     },
-    "Prepare this project for distribution: run apelin_project_check_distribution, fix everything it lists (the package’s name, description, author and version, its identifiers, and the app’s icon if it has one), then tell me what you changed. Do not build yet.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "جهّز هذا المشروع للتوزيع: شغّل luros_project_check_distribution، وأصلح كل ما يذكره (اسم الحزمة ووصفها ومؤلفها وإصدارها، ومعرّفاتها، وأيقونة التطبيق إن وُجدت)، ثم أخبرني بما غيّرته. لا تبنِ بعد."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bereite dieses Projekt für die Verteilung vor: Führe luros_project_check_distribution aus, behebe alles, was es auflistet (Name, Beschreibung, Autor und Version des Pakets, seine Bezeichner und das Symbol der App, falls vorhanden), und sag mir dann, was du geändert hast. Baue noch nicht."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prepare this project for distribution: run luros_project_check_distribution, fix everything it lists (the package’s name, description, author and version, its identifiers, and the app’s icon if it has one), then tell me what you changed. Do not build yet."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prepara este proyecto para distribuirlo: ejecuta luros_project_check_distribution, corrige todo lo que indique (el nombre, la descripción, el autor y la versión del paquete, sus identificadores y el icono de la app, si tiene) y luego dime qué cambiaste. No compiles todavía."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Préparez ce projet pour la distribution : exécutez luros_project_check_distribution, corrigez tout ce qu’il signale (nom, description, auteur et version du paquet, ses identifiants, et l’icône de l’app s’il y en a une), puis dites-moi ce que vous avez modifié. Ne compilez pas encore."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prepara questo progetto per la distribuzione: esegui luros_project_check_distribution, correggi tutto ciò che segnala (nome, descrizione, autore e versione del pacchetto, i suoi identificatori e l’icona dell’app, se presente), poi dimmi cosa hai modificato. Non compilare ancora."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "配布できるよう、このプロジェクトを準備してください。luros_project_check_distribution を実行し、表示された項目（パッケージの名前、説明、作者、バージョン、識別子、AppがあればAppのアイコン）をすべて修正してから、変更内容を教えてください。まだビルドはしないでください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "배포할 수 있도록 이 프로젝트를 준비해 주세요. luros_project_check_distribution을 실행하고, 표시된 항목(패키지의 이름, 설명, 작성자, 버전, 식별자, 앱이 있다면 앱 아이콘)을 모두 수정한 다음 무엇을 변경했는지 알려 주세요. 아직 빌드하지 마세요."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prepare este projeto para distribuição: execute luros_project_check_distribution, corrija tudo o que ele listar (o nome, a descrição, o autor e a versão do pacote, seus identificadores e o ícone do app, se houver) e depois me diga o que você alterou. Não compile ainda."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Подготовьте этот проект к распространению: запустите luros_project_check_distribution, исправьте всё, что он перечислит (название, описание, автора и версию пакета, его идентификаторы, а также значок приложения, если оно есть), затем расскажите, что изменили. Пока не собирайте."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hãy chuẩn bị dự án này để phân phối: chạy luros_project_check_distribution, sửa mọi mục mà nó liệt kê (tên, mô tả, tác giả và phiên bản của gói, các định danh, và biểu tượng ứng dụng nếu có), rồi cho tôi biết bạn đã thay đổi những gì. Chưa xây dựng vội."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "为分发准备这个项目：运行 luros_project_check_distribution，修正它列出的所有问题（软件包的名称、描述、作者和版本、各个标识符，以及 App 的图标，如果有的话），然后告诉我你改了什么。先不要构建。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為分發準備這個專案：執行 luros_project_check_distribution，修正它列出的所有問題（套件的名稱、描述、作者和版本、各個識別碼，以及 App 的圖像，如果有的話），然後告訴我你改了什麼。先不要建置。"
-          }
-        }
-      }
-    },
     "Prepare this project for distribution: run luros_project_check_distribution, fix everything it lists (the package’s name, description, author and version, its identifiers, and the app’s icon if it has one), then tell me what you changed. Do not build yet.": {
       "extractionState": "manual",
       "localizations": {
@@ -89294,89 +87018,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "為發佈準備這個專案：執行 luros_project_check_distribution，修正它列出的所有問題（套件的名稱、描述、作者和版本、各個識別碼，以及 App 的圖像，如果有的話），然後告訴我你改了什麼。先不要建置。"
-          }
-        }
-      }
-    },
-    "Prepare this workspace for distribution: run apelin_project_check_distribution and fix everything it lists, and make sure its build script writes a release package for each target when APELIN_CONFIGURATION is release, with the package’s real name, identifier, author and a new version. Then tell me what you changed. Do not build yet.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "جهّز مساحة العمل هذه للتوزيع: شغّل luros_project_check_distribution وأصلح كل ما يذكره، وتأكد من أن سكربت البناء يكتب حزمة إصدار لكل هدف عندما تكون قيمة APELIN_CONFIGURATION هي release، باسم الحزمة الحقيقي ومعرّفها ومؤلفها وإصدار جديد. ثم أخبرني بما غيّرته. لا تبنِ بعد."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bereite diesen Arbeitsbereich für die Verteilung vor: Führe luros_project_check_distribution aus, behebe alles, was es auflistet, und stelle sicher, dass sein Build-Skript für jedes Ziel ein Release-Paket schreibt, wenn APELIN_CONFIGURATION release ist – mit dem echten Namen, Bezeichner und Autor des Pakets und einer neuen Version. Sag mir dann, was du geändert hast. Baue noch nicht."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prepare this workspace for distribution: run luros_project_check_distribution and fix everything it lists, and make sure its build script writes a release package for each target when APELIN_CONFIGURATION is release, with the package’s real name, identifier, author and a new version. Then tell me what you changed. Do not build yet."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prepara este espacio de trabajo para distribuirlo: ejecuta luros_project_check_distribution, corrige todo lo que indique y asegúrate de que su script de compilación genere un paquete de publicación para cada destino cuando APELIN_CONFIGURATION sea release, con el nombre, el identificador y el autor reales del paquete y una versión nueva. Luego dime qué cambiaste. No compiles todavía."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Préparez cet espace de travail pour la distribution : exécutez luros_project_check_distribution, corrigez tout ce qu’il signale et assurez-vous que son script de compilation produit un paquet de publication pour chaque cible lorsque APELIN_CONFIGURATION vaut release, avec le vrai nom, l’identifiant et l’auteur du paquet et une nouvelle version. Puis dites-moi ce que vous avez modifié. Ne compilez pas encore."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prepara questo spazio di lavoro per la distribuzione: esegui luros_project_check_distribution, correggi tutto ciò che segnala e assicurati che il suo script di build produca un pacchetto di release per ogni destinazione quando APELIN_CONFIGURATION è release, con il nome, l’identificatore e l’autore reali del pacchetto e una nuova versione. Poi dimmi cosa hai modificato. Non compilare ancora."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "配布できるよう、このワークスペースを準備してください。luros_project_check_distribution を実行して表示された項目をすべて修正し、APELIN_CONFIGURATION が release のときにビルドスクリプトが各ターゲット向けのリリースパッケージを書き出すようにしてください。パッケージには実際の名前、識別子、作者と新しいバージョンを使ってください。その後、変更内容を教えてください。まだビルドはしないでください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "배포할 수 있도록 이 작업 공간을 준비해 주세요. luros_project_check_distribution을 실행해 표시된 항목을 모두 수정하고, APELIN_CONFIGURATION이 release일 때 빌드 스크립트가 각 대상용 릴리스 패키지를 만들도록 해 주세요. 패키지에는 실제 이름, 식별자, 작성자와 새 버전을 사용해 주세요. 그런 다음 무엇을 변경했는지 알려 주세요. 아직 빌드하지 마세요."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prepare este espaço de trabalho para distribuição: execute luros_project_check_distribution, corrija tudo o que ele listar e garanta que o script de compilação gere um pacote de release para cada destino quando APELIN_CONFIGURATION for release, com o nome, o identificador e o autor reais do pacote e uma nova versão. Depois me diga o que você alterou. Não compile ainda."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Подготовьте это рабочее пространство к распространению: запустите luros_project_check_distribution, исправьте всё, что он перечислит, и убедитесь, что скрипт сборки создаёт релизный пакет для каждой цели, когда APELIN_CONFIGURATION равно release, — с настоящими названием, идентификатором и автором пакета и новой версией. Затем расскажите, что изменили. Пока не собирайте."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hãy chuẩn bị không gian làm việc này để phân phối: chạy luros_project_check_distribution, sửa mọi mục mà nó liệt kê và bảo đảm tập lệnh bản dựng tạo gói phát hành cho từng đích khi APELIN_CONFIGURATION là release, với tên, định danh, tác giả thật của gói và một phiên bản mới. Rồi cho tôi biết bạn đã thay đổi những gì. Chưa xây dựng vội."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "为分发准备这个工作区：运行 luros_project_check_distribution，修正它列出的所有问题，并确保在 APELIN_CONFIGURATION 为 release 时，构建脚本会为每个目标写出正式版软件包，使用软件包真实的名称、标识符、作者和新的版本号。然后告诉我你改了什么。先不要构建。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "為分發準備這個工作區：執行 luros_project_check_distribution，修正它列出的所有問題，並確保在 APELIN_CONFIGURATION 為 release 時，建置指令碼會為每個目標寫出正式版套件，使用套件真實的名稱、識別碼、作者和新的版本號。然後告訴我你改了什麼。先不要建置。"
           }
         }
       }
@@ -124796,82 +122437,6 @@
         }
       }
     },
-    "The connection to Apelin’s background service closed. Try again.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "انقطع الاتصال بخدمة Luros في الخلفية. حاول مرة أخرى."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Verbindung zum Hintergrunddienst von Luros wurde getrennt. Versuche es erneut."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Se ha cerrado la conexión con el servicio en segundo plano de Luros. Inténtalo de nuevo."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La connexion au service d’arrière-plan d’Luros a été fermée. Réessayez."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La connessione al servizio in background di Luros si è chiusa. Riprova."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosのバックグラウンドサービスとの接続が切断されました。もう一度お試しください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros 백그라운드 서비스와의 연결이 끊어졌습니다. 다시 시도하세요."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A conexão com o serviço em segundo plano do Luros foi encerrada. Tente novamente."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Соединение с фоновой службой Luros прервано. Повторите попытку."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kết nối với dịch vụ nền của Luros đã bị đóng. Hãy thử lại."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "与 Luros 后台服务的连接已断开，请重试。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "與 Luros 背景服務的連線已中斷，請再試一次。"
-          }
-        }
-      }
-    },
     "The connection to Luros’s background service closed. Try again.": {
       "localizations": {
         "ar": {
@@ -129940,7 +127505,7 @@
         }
       }
     },
-    "The total tokens a model can process at once. Apelin compacts the chat when the context reaches %@ of this window.": {
+    "The total tokens a model can process at once. Luros compacts the chat when the context reaches %@ of this window.": {
       "extractionState": "manual",
       "localizations": {
         "ar": {
@@ -132566,7 +130131,7 @@
         }
       }
     },
-    "This device has a failed passcode attempt on record, so Apelin didn’t try the passcode. Unlock the device with its passcode, then try again.": {
+    "This device has a failed passcode attempt on record, so Luros didn’t try the passcode. Unlock the device with its passcode, then try again.": {
       "localizations": {
         "ar": {
           "stringUnit": {
@@ -132876,82 +130441,6 @@
         }
       }
     },
-    "This file contains Apple’s Command Line Tools adapted for your own devices. Apelin does not upload it.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يحتوي هذا الملف على Command Line Tools من Apple مكيّفة لأجهزتك الخاصة. لا يرفعه Luros إلى أي مكان."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Datei enthält die für deine eigenen Geräte angepassten Command Line Tools von Apple. Luros lädt sie nicht hoch."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Este archivo contiene las Command Line Tools de Apple adaptadas para tus propios dispositivos. Luros no lo sube a ningún sitio."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ce fichier contient les Command Line Tools d’Apple adaptés pour vos propres appareils. Luros ne l’envoie sur aucun serveur."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Questo file contiene i Command Line Tools di Apple adattati per i tuoi dispositivi. Luros non lo carica online."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "このファイルには、ご自身のデバイス向けに調整されたAppleのCommand Line Toolsが含まれています。Lurosがこのファイルをアップロードすることはありません。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "이 파일에는 본인의 기기에 맞게 변환된 Apple의 Command Line Tools가 들어 있습니다. Luros은 이 파일을 업로드하지 않습니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Este arquivo contém as Command Line Tools da Apple adaptadas para seus próprios dispositivos. O Luros não o envia para lugar nenhum."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот файл содержит Command Line Tools от Apple, адаптированные для ваших собственных устройств. Luros не выгружает его в сеть."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tệp này chứa Command Line Tools của Apple đã được điều chỉnh cho các thiết bị của riêng bạn. Luros không tải tệp này lên."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此文件包含为你自己的设备适配的 Apple Command Line Tools。Luros 不会上传它。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此檔案包含為你自己的裝置調整過的 Apple Command Line Tools。Luros 不會上傳此檔案。"
-          }
-        }
-      }
-    },
     "This file contains Apple’s Command Line Tools adapted for your own devices. Luros does not upload it.": {
       "localizations": {
         "ar": {
@@ -133024,82 +130513,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "此檔案包含為你自己的裝置調整過的 Apple Command Line Tools。Luros 不會上傳此檔案。"
-          }
-        }
-      }
-    },
-    "This file contains Apple’s iPhoneOS SDK for your own devices. Apelin does not upload it.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يحتوي هذا الملف على iPhoneOS SDK من Apple لأجهزتك الخاصة. لا يرفعه Luros إلى أي مكان."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Datei enthält das iPhoneOS SDK von Apple für deine eigenen Geräte. Luros lädt sie nicht hoch."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Este archivo contiene el SDK de iPhoneOS de Apple para tus propios dispositivos. Luros no lo sube a ningún sitio."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ce fichier contient le SDK iPhoneOS d’Apple pour vos propres appareils. Luros ne l’envoie sur aucun serveur."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Questo file contiene l’SDK iPhoneOS di Apple per i tuoi dispositivi. Luros non lo carica online."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "このファイルには、ご自身のデバイスで使用するためのAppleのiPhoneOS SDKが含まれています。Lurosがこのファイルをアップロードすることはありません。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "이 파일에는 본인의 기기에서 사용할 Apple의 iPhoneOS SDK가 들어 있습니다. Luros은 이 파일을 업로드하지 않습니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Este arquivo contém o SDK do iPhoneOS da Apple para seus próprios dispositivos. O Luros não o envia para lugar nenhum."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Этот файл содержит iPhoneOS SDK от Apple для ваших собственных устройств. Luros не выгружает его в сеть."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tệp này chứa iPhoneOS SDK của Apple dành cho các thiết bị của riêng bạn. Luros không tải tệp này lên."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此文件包含供你自己的设备使用的 Apple iPhoneOS SDK。Luros 不会上传它。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此檔案包含供你自己的裝置使用的 Apple iPhoneOS SDK。Luros 不會上傳此檔案。"
           }
         }
       }
@@ -134615,82 +132028,6 @@
         }
       }
     },
-    "This link names no HTTPS repository Apelin can import.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "لا يشير هذا الرابط إلى مستودع HTTPS يمكن لـ Luros استيراده."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dieser Link nennt kein HTTPS-Repository, das Luros importieren kann."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Este enlace no indica ningún repositorio HTTPS que Luros pueda importar."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ce lien n’indique aucun dépôt HTTPS qu’Luros peut importer."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Questo link non indica alcun repository HTTPS che Luros possa importare."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "このリンクには、LurosがインポートできるHTTPSリポジトリが指定されていません。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "이 링크에는 Luros이 가져올 수 있는 HTTPS 저장소가 없습니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Este link não indica nenhum repositório HTTPS que o Luros possa importar."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Эта ссылка не указывает на репозиторий HTTPS, который Luros может импортировать."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Liên kết này không chỉ đến kho lưu trữ HTTPS nào mà Luros có thể nhập."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此链接没有指向 Luros 可以导入的 HTTPS 仓库。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此連結沒有指向 Luros 可以匯入的 HTTPS 儲存庫。"
-          }
-        }
-      }
-    },
     "This link names no HTTPS repository Luros can import.": {
       "localizations": {
         "ar": {
@@ -134933,82 +132270,6 @@
         }
       }
     },
-    "This needs Apelin’s background service, which is not running on this device. Reinstall Apelin with your preferred package manager to set it up again.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يتطلب هذا خدمة Luros في الخلفية، وهي لا تعمل على هذا الجهاز. أعد تثبيت Luros باستخدام مدير الحزم المفضّل لديك لإعدادها مرة أخرى."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dafür wird der Hintergrunddienst von Luros benötigt, der auf diesem Gerät nicht läuft. Installiere Luros mit deinem bevorzugten Paketmanager neu, um ihn wieder einzurichten."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esto requiere el servicio en segundo plano de Luros, que no se está ejecutando en este dispositivo. Vuelve a instalar Luros con tu gestor de paquetes preferido para configurarlo de nuevo."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cette action nécessite le service d’arrière-plan d’Luros, qui ne s’exécute pas sur cet appareil. Réinstallez Luros avec votre gestionnaire de paquets préféré pour le configurer à nouveau."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Questa operazione richiede il servizio in background di Luros, che non è in esecuzione su questo dispositivo. Reinstalla Luros con il tuo gestore di pacchetti preferito per configurarlo di nuovo."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "この操作にはLurosのバックグラウンドサービスが必要ですが、このデバイスでは実行されていません。もう一度セットアップするには、お使いのパッケージマネージャでLurosを再インストールしてください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "이 작업에는 Luros 백그라운드 서비스가 필요하지만 이 기기에서 실행되고 있지 않습니다. 다시 설정하려면 선호하는 패키지 관리자로 Luros을 다시 설치하세요."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Isso requer o serviço em segundo plano do Luros, que não está em execução neste dispositivo. Reinstale o Luros com seu gerenciador de pacotes preferido para configurá-lo novamente."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Для этого нужна фоновая служба Luros, но она не запущена на этом устройстве. Чтобы настроить её заново, переустановите Luros через удобный вам менеджер пакетов."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Thao tác này cần dịch vụ nền của Luros, nhưng dịch vụ này không chạy trên thiết bị. Hãy cài đặt lại Luros bằng trình quản lý gói bạn ưa dùng để thiết lập lại."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此操作需要 Luros 的后台服务，但它没有在这台设备上运行。请使用你喜欢的软件包管理器重新安装 Luros，以重新配置该服务。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此操作需要 Luros 的背景服務，但它未在此裝置上執行。請使用你偏好的套件管理器重新安裝 Luros，以重新設定該服務。"
-          }
-        }
-      }
-    },
     "This needs Luros’s background service, which is not running on this device. Reinstall Luros with your preferred package manager to set it up again.": {
       "localizations": {
         "ar": {
@@ -135081,89 +132342,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "此操作需要 Luros 的背景服務，但它未在此裝置上執行。請使用你偏好的套件管理器重新安裝 Luros 以重新設定。"
-          }
-        }
-      }
-    },
-    "This overwrites the repository’s home page, README, icon, GitHub Pages workflow and index script with Apelin’s current template, replacing any changes made to them, then commits and pushes. Packages, depictions and banners stay as they are.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "سيؤدي هذا إلى استبدال الصفحة الرئيسية للمستودع وREADME والأيقونة وسير عمل GitHub Pages وبرنامج الفهرسة بالقالب الحالي لـ Luros، مع فقدان أي تغييرات أُجريت عليها، ثم الإيداع والدفع. تبقى الحزم والأوصاف واللافتات كما هي."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dies überschreibt die Startseite, README, das Symbol, den GitHub-Pages-Workflow und das Indexskript des Repositorys mit Luross aktueller Vorlage, ersetzt alle Änderungen daran, erstellt dann einen Commit und pusht. Pakete, Depictions und Banner bleiben, wie sie sind."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This overwrites the repository’s home page, README, icon, GitHub Pages workflow and index script with Luros’s current template, replacing any changes made to them, then commits and pushes. Packages, depictions and banners stay as they are."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esto sobrescribe la página de inicio, el README, el icono, el flujo de GitHub Pages y el script de índice del repositorio con la plantilla actual de Luros, reemplazando cualquier cambio hecho en ellos, y luego hace commit y push. Los paquetes, las descripciones y los banners se quedan como están."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cela remplace la page d’accueil, le README, l’icône, le workflow GitHub Pages et le script d’index du dépôt par le modèle actuel d’Luros, en écrasant toute modification, puis crée un commit et pousse. Les paquets, les descriptions et les bannières restent tels quels."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Questo sovrascrive la home page, il README, l’icona, il workflow di GitHub Pages e lo script di indicizzazione del repository con il modello attuale di Luros, sostituendo qualsiasi modifica, poi esegue commit e push. Pacchetti, descrizioni e banner restano come sono."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "リポジトリのホームページ、README、アイコン、GitHub Pages のワークフロー、インデックススクリプトを Luros の現在のテンプレートで上書きし、加えた変更は失われます。その後コミットしてプッシュします。パッケージ、説明ページ、バナーはそのままです。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "저장소의 홈페이지, README, 아이콘, GitHub Pages 워크플로, 색인 스크립트를 Luros의 현재 템플릿으로 덮어쓰며, 여기에 적용한 변경 사항은 사라집니다. 그런 다음 커밋하고 푸시합니다. 패키지, 설명, 배너는 그대로 유지됩니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Isso substitui a página inicial, o README, o ícone, o workflow do GitHub Pages e o script de índice do repositório pelo modelo atual do Luros, descartando quaisquer alterações feitas neles, e então faz commit e push. Pacotes, descrições e banners permanecem como estão."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Домашняя страница, README, значок, workflow GitHub Pages и скрипт индексации репозитория будут перезаписаны текущим шаблоном Luros, все внесённые в них изменения пропадут, затем будет выполнен коммит и push. Пакеты, описания и баннеры останутся без изменений."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Thao tác này ghi đè trang chủ, README, biểu tượng, quy trình GitHub Pages và tập lệnh lập chỉ mục của kho bằng mẫu hiện tại của Luros, thay thế mọi thay đổi bạn đã thực hiện, rồi commit và push. Các gói, trang mô tả và biểu ngữ vẫn giữ nguyên."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "这将用 Luros 当前的模板覆盖仓库的首页、README、图标、GitHub Pages 工作流和索引脚本，你对这些文件的修改都会丢失，然后提交并推送。软件包、介绍页和横幅保持不变。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "這將以 Luros 目前的範本覆寫儲存庫的首頁、README、圖像、GitHub Pages 工作流程與索引指令碼，你對這些檔案的修改都會遺失，接著提交並推送。套件、介紹頁與橫幅維持不變。"
           }
         }
       }
@@ -137749,7 +134927,7 @@
         }
       }
     },
-    "To test the passcode before saving, Apelin locks the screen and tries this passcode only once to unlock it. A wrong passcode counts as one failed passcode attempt on this device.": {
+    "To test the passcode before saving, Luros locks the screen and tries this passcode only once to unlock it. A wrong passcode counts as one failed passcode attempt on this device.": {
       "localizations": {
         "ar": {
           "stringUnit": {
@@ -146017,89 +143195,6 @@
         }
       }
     },
-    "Unable to Star Apelin": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تعذّر منح نجمة لـ Luros"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stern für Luros kann nicht vergeben werden"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unable to Star Luros"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No se puede dar una estrella a Luros"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Impossible d’ajouter une étoile à Luros"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Impossibile aggiungere una stella ad Luros"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosにスターを付けられません"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros에 별표를 누를 수 없음"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não foi possível dar estrela ao Luros"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось поставить звезду Luros"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Không thể gắn sao cho Luros"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无法为 Luros 加星标"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無法為 Luros 加上星標"
-          }
-        }
-      }
-    },
     "Unable to Star Luros": {
       "extractionState": "manual",
       "localizations": {
@@ -153775,89 +150870,6 @@
         }
       }
     },
-    "Welcome to\nApelin": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "مرحبًا بك في\nLuros"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Willkommen bei\nLuros"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Welcome to\nLuros"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Te damos la bienvenida a\nLuros"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bienvenue dans\nLuros"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ti diamo il benvenuto in\nLuros"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lurosへ\nようこそ"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Luros에 오신 것을\n환영합니다"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Boas-vindas ao\nLuros"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Добро пожаловать\nв Luros"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chào mừng bạn đến với\nLuros"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "欢迎使用\nLuros"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "歡迎使用\nLuros"
-          }
-        }
-      }
-    },
     "Welcome to\nLuros": {
       "extractionState": "manual",
       "localizations": {
@@ -154334,89 +151346,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "思之所向，皆可成形。"
-          }
-        }
-      }
-    },
-    "While this is on, the agent asks you before it opens an app or a link, reads what is on the screen or acts on it, through Apelin’s screen tools or icli, in every permission mode. Before a screenshot it always asks in the conversation. Each chat follows a change when you send its next message.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "عند تفعيل هذا الخيار، يسألك الوكيل قبل أن يفتح تطبيقًا أو رابطًا، أو يقرأ ما على الشاشة، أو يتفاعل معها، سواء عبر أدوات الشاشة في Luros أو عبر icli، في كل أوضاع الأذونات. وقبل لقطة الشاشة يسأل دائمًا في المحادثة. تتبع كل محادثة التغيير عند إرسال رسالتها التالية."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Solange dies aktiviert ist, fragt dich der Agent, bevor er eine App oder einen Link öffnet, liest, was auf dem Bildschirm zu sehen ist, oder ihn bedient – über die Bildschirmwerkzeuge von Luros oder über icli, in jedem Berechtigungsmodus. Vor einem Bildschirmfoto fragt er immer im Chat. Jeder Chat übernimmt eine Änderung, wenn du seine nächste Nachricht sendest."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "While this is on, the agent asks you before it opens an app or a link, reads what is on the screen or acts on it, through Luros’s screen tools or icli, in every permission mode. Before a screenshot it always asks in the conversation. Each chat follows a change when you send its next message."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mientras esté activado, el agente te pregunta antes de abrir una app o un enlace, leer lo que hay en la pantalla o actuar sobre ella, con las herramientas de pantalla de Luros o con icli, en todos los modos de permisos. Antes de una captura de pantalla siempre pregunta en el chat. Cada chat aplica el cambio cuando envías su siguiente mensaje."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tant que cette option est activée, l’agent vous demande avant d’ouvrir une app ou un lien, de lire ce qui est à l’écran ou d’agir dessus, avec les outils d’écran d’Luros ou avec icli, dans tous les modes d’autorisation. Avant une capture d’écran, il demande toujours dans la discussion. Chaque discussion applique le changement lorsque vous envoyez son prochain message."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Finché è attiva, l’agente ti chiede prima di aprire un’app o un link, leggere ciò che è sullo schermo o agire su di esso, con gli strumenti dello schermo di Luros o con icli, in ogni modalità dei permessi. Prima di uno screenshot chiede sempre nella chat. Ogni chat applica la modifica quando invii il suo prossimo messaggio."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "オンのあいだ、エージェントはAppやリンクを開く前、画面の内容を読み取る前、画面を操作する前に、どの権限モードでも確認します。Lurosの画面ツールでもicliでも同じです。スクリーンショットの前には常にチャットで確認します。各チャットは、次にメッセージを送信したときに変更が反映されます。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "켜져 있는 동안 에이전트는 앱이나 링크를 열기 전, 화면 내용을 읽기 전, 화면을 조작하기 전에 모든 권한 모드에서 묻습니다. Luros의 화면 도구든 icli든 마찬가지입니다. 스크린샷을 찍기 전에는 항상 채팅에서 묻습니다. 각 채팅은 다음 메시지를 보낼 때 변경 사항을 따릅니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enquanto estiver ativado, o agente pergunta a você antes de abrir um app ou um link, ler o que está na tela ou agir sobre ela, pelas ferramentas de tela do Luros ou pelo icli, em todos os modos de permissões. Antes de uma captura de tela, ele sempre pergunta na conversa. Cada conversa aplica a mudança quando você envia a próxima mensagem dela."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пока этот параметр включён, агент спрашивает вас, прежде чем открыть приложение или ссылку, прочитать то, что на экране, или выполнить на нём действие — через инструменты экрана Luros или через icli, в любом режиме разрешений. Перед снимком экрана он всегда спрашивает в чате. Каждый чат применит изменение, когда вы отправите в нём следующее сообщение."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Khi bật, tác nhân sẽ hỏi bạn trước khi mở một ứng dụng hoặc một liên kết, đọc nội dung trên màn hình hoặc thao tác trên đó, dù qua các công cụ màn hình của Luros hay qua icli, ở mọi chế độ quyền. Trước khi chụp màn hình, tác nhân luôn hỏi trong cuộc trò chuyện. Mỗi cuộc trò chuyện sẽ áp dụng thay đổi khi bạn gửi tin nhắn tiếp theo trong đó."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "开启后，在任何权限模式下，智能体在打开 App 或链接、读取屏幕内容或操作屏幕之前都会先询问你，无论是通过 Luros 的屏幕工具还是 icli。截屏前始终会在聊天中询问。每个聊天会在你下次发送消息时应用更改。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開啟後，在任何權限模式下，代理程式在開啟 App 或連結、讀取螢幕內容或操作螢幕之前都會先詢問你，無論是透過 Luros 的螢幕工具還是 icli。截圖前一律會在聊天中詢問。每個聊天會在你傳送下一則訊息時套用變更。"
           }
         }
       }
@@ -156171,7 +153100,7 @@
         }
       }
     },
-    "Your agent follows these in every chat in this project, ahead of your custom instructions for all chats. They can’t change approvals or Apelin’s rules.": {
+    "Your agent follows these in every chat in this project, ahead of your custom instructions for all chats. They can’t change approvals or Luros’s rules.": {
       "extractionState": "manual",
       "localizations": {
         "ar": {
@@ -156254,7 +153183,7 @@
         }
       }
     },
-    "Your agent follows these in every chat, such as checking your assumptions before it starts. They can’t change approvals or Apelin’s rules.": {
+    "Your agent follows these in every chat, such as checking your assumptions before it starts. They can’t change approvals or Luros’s rules.": {
       "extractionState": "manual",
       "localizations": {
         "ar": {
@@ -156337,7 +153266,7 @@
         }
       }
     },
-    "Your agent reads these when a chat starts, and an open chat picks up changes with your next message. They can’t change approvals or Apelin’s rules.": {
+    "Your agent reads these when a chat starts, and an open chat picks up changes with your next message. They can’t change approvals or Luros’s rules.": {
       "extractionState": "manual",
       "localizations": {
         "ar": {
@@ -156420,7 +153349,7 @@
         }
       }
     },
-    "Your agent reads these when a chat starts, and an open chat picks up changes with your next message. This project’s instructions come before those for all chats, and both before AGENTS.md or CLAUDE.md. None of them can change approvals or Apelin’s rules.": {
+    "Your agent reads these when a chat starts, and an open chat picks up changes with your next message. This project’s instructions come before those for all chats, and both before AGENTS.md or CLAUDE.md. None of them can change approvals or Luros’s rules.": {
       "extractionState": "manual",
       "localizations": {
         "ar": {
@@ -156907,89 +153836,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "變更未儲存，請再試一次。"
-          }
-        }
-      }
-    },
-    "Your chats keep working, but Apelin can’t save them on this device until you free up space.": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تستمر المحادثات في العمل، لكن لا يمكن لـ Luros حفظها على هذا الجهاز حتى تُفرغ بعض المساحة."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deine Chats laufen weiter, aber Luros kann sie auf diesem Gerät erst speichern, wenn du Speicherplatz freigibst."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your chats keep working, but Luros can’t save them on this device until you free up space."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tus chats siguen funcionando, pero Luros no puede guardarlos en este dispositivo hasta que liberes espacio."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vos discussions continuent de fonctionner, mais Luros ne peut pas les enregistrer sur cet appareil tant que vous n’avez pas libéré de l’espace."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le chat continuano a funzionare, ma Luros non può salvarle su questo dispositivo finché non liberi spazio."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "チャットは引き続き使用できますが、空き領域を確保するまで、Lurosはこのデバイスにチャットを保存できません。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "채팅은 계속 사용할 수 있지만, 공간을 확보할 때까지 Luros이 이 기기에 채팅을 저장할 수 없습니다."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Suas conversas continuam funcionando, mas o Luros não pode salvá-las neste dispositivo até você liberar espaço."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Чаты продолжают работать, но Luros не сможет сохранить их на этом устройстве, пока вы не освободите место."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Các cuộc trò chuyện vẫn hoạt động, nhưng Luros không thể lưu chúng trên thiết bị này cho đến khi bạn giải phóng dung lượng."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "聊天可以继续，但在你腾出空间之前，Luros 无法把它们保存到这台设备上。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "聊天可以繼續進行，但在你釋放空間之前，Luros 無法將聊天儲存到此裝置。"
           }
         }
       }
@@ -158466,7 +155312,7 @@
         }
       }
     },
-    "“%@” is not a name Apelin can use. A name has up to 64 lowercase letters, digits and single hyphens.": {
+    "“%@” is not a name Luros can use. A name has up to 64 lowercase letters, digits and single hyphens.": {
       "extractionState": "manual",
       "localizations": {
         "ar": {
@@ -158625,7 +155471,7 @@
         }
       }
     },
-    "“%@” is the name of a skill built into Apelin.": {
+    "“%@” is the name of a skill built into Luros.": {
       "extractionState": "manual",
       "localizations": {
         "ar": {
