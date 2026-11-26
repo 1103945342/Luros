@@ -826,6 +826,13 @@ actor ToolRunner {
             }
             return try await json(backend.publishPackages(PackagePublishToolRequest(context: context, publication: publication)))
 
+        case .packageRelease:
+            // The repository, tag, commit and packages the card named.
+            guard let release = facts.packageRelease else {
+                throw ToolDeniedError(message: "the packages to release could not be read")
+            }
+            return try await json(backend.releasePackages(PackageReleaseToolRequest(context: context, release: release)))
+
         case .packageList:
             var projectID: String?
             if let reference = arguments.argNonEmptyString("project") {
