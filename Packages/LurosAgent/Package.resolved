@@ -1,5 +1,5 @@
 {
-  "originHash" : "2837713d477448787c7aabd5e39431b534a9db87ebf803a7c0d1ed93013530a2",
+  "originHash" : "d20bf390b4cdeb564d9fb96f5d38fc96bf68f27b50dae642c3382ad85ed6e2c5",
   "pins" : [
     {
       "identity" : "cstb",
@@ -13,9 +13,9 @@
     {
       "identity" : "kwwk",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/EYHN/kwwk.git",
+      "location" : "https://github.com/yellowplushq/kwwk.git",
       "state" : {
-        "revision" : "997b8c58047c9bda25f95dce55390d5439bb02bd"
+        "revision" : "fdd68f4ac22d63ce4c68a77d3f66af33ded77bfc"
       }
     },
     {
@@ -41,8 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/the-swift-collective/libpng.git",
       "state" : {
-        "revision" : "0eff23aca92a086b7892831f5cb4f58e15be9449",
-        "version" : "1.6.45"
+        "revision" : "46ad07db4f36acd679b94f1cbbc1a66169f4d5b0",
+        "version" : "1.6.46"
       }
     },
     {
@@ -50,8 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/the-swift-collective/libwebp.git",
       "state" : {
-        "revision" : "5f745a17b9a5c2a4283f17c2cde4517610ab5f99",
-        "version" : "1.4.1"
+        "revision" : "71574b08e0796d9e97e289a0eae9b1178f7bab65",
+        "version" : "1.4.2"
       }
     },
     {
@@ -68,8 +68,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-asn1.git",
       "state" : {
-        "revision" : "3b6410f7dee09eb33cdd26260c5fd47fda19b0e2",
-        "version" : "1.7.3"
+        "revision" : "97fd57437fc94cfa6b62f2b8f84c50f433534e17",
+        "version" : "1.7.5"
       }
     },
     {
@@ -113,8 +113,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-nio-http2.git",
       "state" : {
-        "revision" : "0f3e54e29c944c2e835ad52159da7d9e1c94ac69",
-        "version" : "1.46.0"
+        "revision" : "bf446775a1683f5dc13240f56de2f9c55c299431",
+        "version" : "1.46.1"
       }
     },
     {
@@ -122,8 +122,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-nio-ssl.git",
       "state" : {
-        "revision" : "322f3c2a4a21df31c84ca416bf65ee5e9059e440",
-        "version" : "2.37.5"
+        "revision" : "e6f8ff479955f619238063b7897269997e739fa6",
+        "version" : "2.37.8"
       }
     },
     {
@@ -140,8 +140,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/the-swift-collective/zlib.git",
       "state" : {
-        "revision" : "f1d153b90420f9fcc6ef916cd67ea96f0e68d137",
-        "version" : "1.3.2"
+        "revision" : "d3a28ff8123e88d936333eef6d4d1ea2a05092d2",
+        "version" : "1.3.3"
       }
     }
   ],

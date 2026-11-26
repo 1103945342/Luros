@@ -216,6 +216,14 @@ struct NoHostBackend: AgentHostBackend {
     func conversationStop(_: ConversationStopToolRequest) async throws -> ConversationActionToolResponse {
         throw Unexpected()
     }
+
+    func packageReleaseFacts(_: PackageReleaseFactsRequest) async throws -> PackageReleaseFacts {
+        throw Unexpected()
+    }
+
+    func releasePackages(_: PackageReleaseToolRequest) async throws -> PackageReleaseToolResponse {
+        throw Unexpected()
+    }
 }
 
 struct NoDigests: ApprovalDigestStore {
