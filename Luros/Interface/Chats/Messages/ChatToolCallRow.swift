@@ -318,8 +318,10 @@ enum ToolSymbol {
             "arrow.triangle.branch"
         case .projectBuild, .toolchainSelfTest:
             "hammer"
-        case .packageInstall, .packageRemove, .packageList, .packagePublish, .packageConfirmLoaded:
+        case .packageInstall, .packageRemove, .packageList, .packagePublish, .packageRelease, .packageConfirmLoaded:
             "shippingbox"
+        case .conversationCompact:
+            "arrow.down.right.and.arrow.up.left"
         case .screenCapture, .screenReadTree, .screenInteract, .deviceRespring:
             "iphone"
         case .logRead:

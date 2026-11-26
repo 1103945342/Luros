@@ -265,9 +265,10 @@ final class GitHubSkillsController: TableController, UITextFieldDelegate {
             // the row says it as its value
             $0.isAccessibilityElement = false
         }
-        let preview = UIButton(type: .detailDisclosure, primaryAction: UIAction { [weak self] _ in
+        let preview = UIButton(type: .detailDisclosure)
+        preview.addAction(UIAction { [weak self] _ in
             self?.preview(candidate)
-        })
+        }, for: .touchUpInside)
         preview.accessibilityLabel = String(localized: "Preview")
         let stack = UIStackView(arrangedSubviews: [label, preview]).then {
             $0.axis = .horizontal
