@@ -708,6 +708,31 @@ struct AccountDeskTests {
     }
 
     @Test
+    func `an Antigravity login resolves with the Google Cloud project every message names`() async throws {
+        // Code Assist's request names the project the sign-in stored; a
+        // resolution that pinned the access token alone dropped it, and every
+        // message failed "the login names no Google Cloud project".
+        let manager = OAuthManager(source: DeliveredCredentialSource([
+            "antigravity": OAuthCredentials(
+                access: "ya29-token",
+                refresh: "1//refresh",
+                expires: .max,
+                extras: [
+                    "projectId": .string("ag-proj"),
+                    "email": .string("ag@example.com"),
+                    "tier": .string("standard-tier"),
+                    "paidTier": .string("g1-pro-tier"),
+                ],
+            ),
+        ]))
+        let resolved = try #require(try await ProviderRegistration.resolve(storeID: "antigravity", manager: manager))
+        let auth = try #require(try await resolved.authResolver?(resolved.model, nil))
+        #expect(auth.token == "ya29-token")
+        #expect(auth.metadata["projectId"] == .string("ag-proj"))
+        #expect(auth.metadata["tier"] == .string("standard-tier"))
+    }
+
+    @Test
     func `every provider maps to the store id its session reads`() {
         #expect(Set(AgentProvider.allCases.map(\.storeID)) == CredentialInbox.knownProviders)
         #expect(Set(AgentProvider.allCases.map(\.storeID)).count == AgentProvider.allCases.count)

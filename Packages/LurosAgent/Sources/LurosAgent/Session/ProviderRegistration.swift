@@ -65,6 +65,22 @@ public enum ProviderRegistration {
                 authResolvers: resolved.authResolvers,
             )
         }
+        // A request that names more than its key — Antigravity's Google Cloud
+        // project, Qoder's account fields, Kiro's profile and region — finds
+        // them only in kwwk's own resolver, which reads the extras the sign-in
+        // stored and renews the token for the attempt that asks. That resolver
+        // is kept whole: pinning the access token here alone sent every
+        // Antigravity message without its project, and Code Assist answered
+        // "the login names no Google Cloud project".
+        if namesStoredExtras(storeID) {
+            return ResolvedAuth(
+                model: spoken,
+                modelLabel: resolved.modelLabel,
+                authResolver: resolved.authResolver,
+                providerSlots: resolved.providerSlots,
+                authResolvers: resolved.authResolvers,
+            )
+        }
         // The registry's transport is shared. Bind the key to this resolution
         // so another account verification cannot replace an in-flight key.
         return ResolvedAuth(
@@ -74,6 +90,16 @@ public enum ProviderRegistration {
             providerSlots: resolved.providerSlots,
             authResolvers: resolved.authResolvers,
         )
+    }
+
+    /// Store ids whose requests name what the sign-in stored beside the key,
+    /// which only kwwk's own resolver builds (`antigravityAuthResolver`,
+    /// `qoderResolver`, `kiroAuthResolver`): Antigravity's `projectId` and
+    /// account tier, Qoder's `uid`/`machineId`, Kiro's `profileArn` and the
+    /// region its address follows.
+    static func namesStoredExtras(_ storeID: String) -> Bool {
+        storeID == "antigravity" || storeID == "kiro"
+            || storeID == QoderSite.global.id || storeID == QoderSite.cn.id
     }
 
     /// The catalog a store id's models are filed under, when the two names
