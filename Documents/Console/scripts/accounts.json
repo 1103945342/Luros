@@ -3,6 +3,7 @@
   "steps": [
     {"op": "hello"},
     {"op": "agentAccountList", "label": "before"},
+    {"op": "agentProviderQuota", "label": "quota-cached", "request": {"mode": "cachedOnly"}},
     {"op": "agentModelList", "label": "model-list", "allowError": true, "request": {"provider": "githubCopilot"}},
     {"op": "agentModelActivate", "label": "empty-models", "allowError": true, "follow": false, "request": {"provider": "githubCopilot", "models": []}},
     {"op": "expect", "request": {"step": "empty-models", "errorCode": "badRequest"}},

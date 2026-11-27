@@ -92,6 +92,7 @@ public enum AppOperation: String, Codable, CaseIterable, Sendable {
     case agentRunCode
     case agentCredentialImport
     case agentAccountList
+    case agentProviderQuota
     case agentSkillList
     /// Rewrites a composer draft: one turn of the chosen model, with no
     /// session and no tools, asked to improve the text and answer with it.
@@ -215,7 +216,7 @@ public enum AppOperation: String, Codable, CaseIterable, Sendable {
              .devicePasscodeState, .devicePasscodeSave, .devicePasscodeRemove:
             .diagnostics
         case .agentDelegation, .agentOpen, .agentPrompt, .agentGenerateImage, .agentSteer, .agentAbort, .agentCompact, .agentConfigure, .agentSetRunMode, .agentQueue, .agentApprove, .agentAttach, .agentList,
-             .agentClose, .agentRunCode, .agentCredentialImport, .agentAccountList, .agentSkillList,
+             .agentClose, .agentRunCode, .agentCredentialImport, .agentAccountList, .agentProviderQuota, .agentSkillList,
              .agentRewritePrompt, .agentModelTest,
              .agentAPIConfiguration, .agentModelList,
              .agentModelActivate, .agentSignIn, .agentSignInRespond, .agentSignInCancel, .agentSignOut,
@@ -311,6 +312,7 @@ public enum AppOperation: String, Codable, CaseIterable, Sendable {
         case .agentRunCode: AgentRunCodeRequest.self
         case .agentCredentialImport: AgentCredentialImportRequest.self
         case .agentAccountList: AgentAccountListRequest.self
+        case .agentProviderQuota: AgentProviderQuotaRequest.self
         case .agentSkillList: AgentSkillListRequest.self
         case .agentRewritePrompt: AgentRewritePromptRequest.self
         case .agentModelTest: AgentModelTestRequest.self

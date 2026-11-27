@@ -1,4 +1,5 @@
 import LurosProtocol
+import SPIndicator
 import Then
 import UIKit
 
@@ -36,11 +37,11 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
     }
 
     private enum Row: Equatable {
-        case account(AgentAccount)
+        case account(AgentAccount, AgentQuotaSnapshot?)
         case status(Status)
         var id: String {
             switch self {
-            case let .account(account): account.provider.rawValue
+            case let .account(account, _): account.provider.rawValue
             case .status: "status"
             }
         }
@@ -52,18 +53,21 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
     ) { [weak self] _, _, row in
         guard let self else { return nil }
         switch row {
-        case let .account(account): return accountCell(account)
+        case let .account(account, quota): return accountCell(account, quota: quota)
         case let .status(status): return statusCell(status)
         }
     }
 
     /// The accounts as luros-agent last listed them.
     private var accounts: [AgentAccount] = []
+    private var quotas: [AgentProvider: AgentQuotaSnapshot] = [:]
     @objc private dynamic var loaded = false
+    @objc private dynamic var refreshingQuotas = false
     @objc private dynamic var failure: Error?
     @objc private dynamic var query = ""
     private var sections: [(Section, [Row])] = [(.status, [.status(.loading)])]
     private var loader: Task<Void, Never>?
+    private var quotaLoader: Task<Void, Never>?
     private let search = UISearchController(searchResultsController: nil)
 
     init() {
@@ -77,12 +81,22 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
 
     deinit {
         loader?.cancel()
+        quotaLoader?.cancel()
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         title = String(localized: "Model Providers")
         navigationItem.backButtonDisplayMode = .minimal
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            image: UIImage(systemName: "arrow.clockwise"),
+            primaryAction: UIAction { [weak self] _ in self?.refreshQuotasManually() },
+        ).then {
+            $0.accessibilityLabel = String(localized: "Refresh Quotas")
+        }
+        refreshControl = UIRefreshControl().then {
+            $0.addAction(UIAction { [weak self] _ in self?.refreshQuotasManually() }, for: .valueChanged)
+        }
         search.searchResultsUpdater = self
         search.obscuresBackgroundDuringPresentation = false
         search.searchBar.placeholder = String(localized: "Search")
@@ -129,7 +143,67 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
             guard let self else { return }
             loaded = true
             regroup()
+            loadQuotas(mode: .attentionGated, force: false)
         }
+    }
+
+    private func loadQuotas(mode: AgentQuotaFetchMode, force: Bool) {
+        guard accounts.contains(where: \.signedIn) else {
+            refreshControl?.endRefreshing()
+            return
+        }
+        quotaLoader?.cancel()
+        quotaLoader = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                refreshingQuotas = false
+                refreshControl?.endRefreshing()
+                navigationItem.rightBarButtonItem?.isEnabled = true
+            }
+            let response = try? await LurosService.app.agentProviderQuota(
+                provider: nil,
+                mode: mode,
+                foreground: true,
+                force: force,
+            )
+            guard !Task.isCancelled, let response else { return }
+            var next: [AgentProvider: AgentQuotaSnapshot] = [:]
+            for snap in response.quotas {
+                next[snap.provider] = snap
+            }
+            quotas = next
+            regroup()
+            if mode == .manualRefresh {
+                SPIndicator.present(
+                    title: String(localized: "Quotas Updated"),
+                    preset: .done,
+                    haptic: .success,
+                )
+            }
+        }
+    }
+
+    @objc(luros_refreshQuotasManually) private dynamic func refreshQuotasManually() {
+        guard !refreshingQuotas else {
+            refreshControl?.endRefreshing()
+            return
+        }
+        let earliestNext = quotas.values.compactMap(\.nextAllowedAt).min()
+        if let earliestNext, earliestNext > Date(),
+           quotas.values.allSatisfy({ $0.status != .cooldown && $0.status != .circuitBroken })
+        {
+            let seconds = max(1, Int(ceil(earliestNext.timeIntervalSinceNow)))
+            refreshControl?.endRefreshing()
+            SPIndicator.present(
+                title: String(localized: "Try Again in \(seconds)s"),
+                preset: .error,
+                haptic: .warning,
+            )
+            return
+        }
+        refreshingQuotas = true
+        navigationItem.rightBarButtonItem?.isEnabled = false
+        loadQuotas(mode: .manualRefresh, force: false)
     }
 
     @objc dynamic func updateSearchResults(for searchController: UISearchController) {
@@ -157,7 +231,9 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
                 (.accounts, shown.filter { !$0.signedIn && $0.method != .apiKey }),
                 (.keys, shown.filter { !$0.signedIn && $0.method == .apiKey }),
             ]
-            sections = groups.filter { !$0.1.isEmpty }.map { (.group($0.0), $0.1.map(Row.account)) }
+            sections = groups.filter { !$0.1.isEmpty }.map { group, items in
+                (.group(group), items.map { Row.account($0, quotas[$0.provider]) })
+            }
             if sections.isEmpty {
                 sections = [(.status, [.status(.noResults)])]
             }
@@ -168,7 +244,7 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
     // MARK: - Table
 
     private func account(at indexPath: IndexPath) -> AgentAccount? {
-        guard case let .account(account)? = dataSource.value(at: indexPath) else { return nil }
+        guard case let .account(account, _)? = dataSource.value(at: indexPath) else { return nil }
         return account
     }
 
@@ -198,19 +274,19 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
         }
     }
 
-    /// The provider's mark and name on one line; signed in, who as under the
-    /// name and a `…` menu at the end.
-    private func accountCell(_ account: AgentAccount) -> UITableViewCell {
+    /// The provider's mark and name on one line; signed in, who as + quota
+    /// summary under the name and a `…` menu at the end.
+    private func accountCell(_ account: AgentAccount, quota: AgentQuotaSnapshot?) -> UITableViewCell {
         let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
         var content: UIListContentConfiguration
         if account.signedIn {
             content = .stackedValueCell()
-            content.secondaryText = Self.signedInLine(account)
-            content.secondaryTextProperties.color = .secondaryLabel
-            content.secondaryTextProperties.numberOfLines = 1
+            content.secondaryText = Self.signedInLine(account, quota: quota)
+            content.secondaryTextProperties.color = quota?.status == .exhausted ? .systemOrange : .secondaryLabel
+            content.secondaryTextProperties.numberOfLines = 2
 
             cell.accessoryView = menuButton(account)
-            cell.selectionStyle = .none
+            cell.selectionStyle = .default
         } else {
             content = .cell()
             cell.accessoryType = .disclosureIndicator
@@ -224,13 +300,20 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
         return cell
     }
 
-    /// Who is signed in, and until when where the sign-in ends: one phrase,
-    /// never words set apart by a middle dot (owner, 2026-11-21).
-    private static func signedInLine(_ account: AgentAccount) -> String {
+    /// Who is signed in, expiry if any, and concise quota summary.
+    private static func signedInLine(_ account: AgentAccount, quota: AgentQuotaSnapshot?) -> String {
         let name = account.account ?? String(localized: "Signed In")
-        guard let expiresAt = account.expiresAt else { return name }
-        let date = expiresAt.formatted(date: .abbreviated, time: .shortened)
-        return expiresAt < Date() ? String(localized: "\(name), expired \(date)") : String(localized: "\(name), until \(date)")
+        var line = name
+        if let expiresAt = account.expiresAt {
+            let date = expiresAt.formatted(date: .abbreviated, time: .shortened)
+            line = expiresAt < Date()
+                ? String(localized: "\(name), expired \(date)")
+                : String(localized: "\(name), until \(date)")
+        }
+        if let quota, let summary = QuotaFormatting.summaryText(for: quota), !summary.isEmpty {
+            return "\(line) · \(summary)"
+        }
+        return line
     }
 
     /// `…` with no circle, its menu read each time it opens.
@@ -248,6 +331,12 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
 
     private func accountActions(_ account: AgentAccount) -> [UIMenuElement] {
         [
+            UIAction(
+                title: String(localized: "Quota & Details"),
+                image: UIImage(systemName: "chart.bar"),
+            ) { [weak self] _ in
+                self?.openQuotaDetail(account)
+            },
             UIAction(
                 title: String(localized: "Edit"),
                 image: UIImage(systemName: account.isAPIKeyAccount ? "pencil" : "arrow.clockwise"),
@@ -279,7 +368,7 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
     }
 
     override func tableView(_: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
-        account(at: indexPath).map { !$0.signedIn } ?? false
+        account(at: indexPath) != nil
     }
 
     override func tableView(
@@ -295,11 +384,24 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        guard let account = account(at: indexPath), !account.signedIn else { return }
-        signIn(account)
+        guard let account = account(at: indexPath) else { return }
+        if account.signedIn {
+            openQuotaDetail(account)
+        } else {
+            signIn(account)
+        }
     }
 
     // MARK: - Acting
+
+    private func openQuotaDetail(_ account: AgentAccount) {
+        let page = ProviderQuotaDetailController(
+            account: account,
+            initialQuota: quotas[account.provider],
+            onAccountsChanged: { [weak self] in self?.load() },
+        )
+        navigationController?.pushViewController(page, animated: true)
+    }
 
     private func signIn(_ account: AgentAccount) {
         let page = ProviderLoginController(account: account)

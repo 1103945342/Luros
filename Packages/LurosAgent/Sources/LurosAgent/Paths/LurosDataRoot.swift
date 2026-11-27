@@ -52,6 +52,11 @@ public struct LurosDataRoot: Sendable, Hashable {
         url.appendingPathComponent("Temporary")
     }
 
+    /// `Quota/`: sanitized provider quota snapshots and relay probe metadata.
+    public var quota: URL {
+        url.appendingPathComponent("Quota", isDirectory: true)
+    }
+
     /// `ModelData/models.json`: the model data the app updates and the agent
     /// reads.
     public var modelDataFile: URL {

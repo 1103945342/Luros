@@ -64,6 +64,9 @@ final class ChatController: UIViewController {
     /// app never attached to, so the row said finished while the agent worked
     /// and the reply only arrived on the next open. Only while visible.
     private var runReconcile: Task<Void, Never>?
+    private var quotaTask: Task<Void, Never>?
+    private var activeQuota: AgentQuotaSnapshot?
+    @objc dynamic private var wasWorkingForQuota = false
 
     /// The shown conversation's rows as last applied.
     private var messages: [ChatMessage] = []
@@ -260,6 +263,9 @@ final class ChatController: UIViewController {
         composer.onCompactContext = { [weak self] in
             guard let self, let chat else { return }
             ChatActions.askToCompact(for: chat.id, runtime: runtime, from: self)
+        }
+        composer.onRefreshQuota = { [weak self] in
+            self?.refreshComposerQuotaManually()
         }
         composer.todoPanel.onHide = { [weak self] in self?.confirmHideTodoList() }
         composer.onRunCommand = { [weak self] command, arguments in
@@ -627,6 +633,7 @@ final class ChatController: UIViewController {
     }
 
     deinit {
+        quotaTask?.cancel()
         NotificationCenter.default.removeObserver(self)
     }
 
@@ -954,6 +961,10 @@ final class ChatController: UIViewController {
                     hasContent: !composer.draft.text.isEmpty || !composer.draft.attachments.isEmpty,
                 )
             }
+            if wasWorkingForQuota && !summary.isWorking {
+                refreshComposerQuota(mode: .attentionGated)
+            }
+            wasWorkingForQuota = summary.isWorking
         }
     }
 
@@ -1264,6 +1275,74 @@ final class ChatController: UIViewController {
         composer.modelBar.setModel(selection?.provider, model: selection?.model)
         composer.modelBar.setEfforts(selection?.supportedEfforts ?? [], selected: selection?.effort)
         composer.modelBar.setTiers(selection?.supportedTiers ?? [], selected: selection?.tier)
+        refreshComposerQuota(mode: .attentionGated)
+    }
+
+    @objc(luros_refreshComposerQuotaManually) private dynamic func refreshComposerQuotaManually() {
+        if let nextAllowed = activeQuota?.nextAllowedAt,
+           nextAllowed > Date(),
+           activeQuota?.status != .cooldown,
+           activeQuota?.status != .circuitBroken
+        {
+            let seconds = max(1, Int(ceil(nextAllowed.timeIntervalSinceNow)))
+            SPIndicator.present(
+                title: String(localized: "Try Again in \(seconds)s"),
+                preset: .error,
+                haptic: .warning,
+            )
+            return
+        }
+        refreshComposerQuota(mode: .manualRefresh, force: activeQuota?.status == .circuitBroken || activeQuota?.status == .cooldown)
+    }
+
+    private func refreshComposerQuota(mode: AgentQuotaFetchMode, force: Bool = false) {
+        let selection = chat.flatMap { ComposerModelSelection.selection(for: $0.id) }
+        guard let provider = selection?.provider else {
+            activeQuota = nil
+            composer.setProviderQuota(nil, model: nil)
+            return
+        }
+        let model = selection?.model
+        if activeQuota?.provider != provider {
+            activeQuota = nil
+            composer.setProviderQuota(nil, model: model)
+        }
+        quotaTask?.cancel()
+        quotaTask = Task { [weak self] in
+            guard let self else { return }
+            if mode == .attentionGated,
+               let cached = try? await LurosService.app.agentProviderQuota(
+                   provider: provider,
+                   mode: .cachedOnly,
+                   foreground: true,
+                   force: false,
+               ),
+               let snap = cached.quotas.first,
+               !Task.isCancelled
+            {
+                activeQuota = snap
+                composer.setProviderQuota(snap, model: model)
+            }
+            guard !Task.isCancelled,
+                  let response = try? await LurosService.app.agentProviderQuota(
+                      provider: provider,
+                      mode: mode,
+                      foreground: true,
+                      force: force,
+                  ),
+                  !Task.isCancelled
+            else { return }
+            let latest = response.quotas.first
+            activeQuota = latest
+            composer.setProviderQuota(latest, model: model)
+            if mode == .manualRefresh, latest != nil {
+                SPIndicator.present(
+                    title: String(localized: "Quota Updated"),
+                    preset: .done,
+                    haptic: .success,
+                )
+            }
+        }
     }
 
     /// A model disabled in Settings stops being the one the next message uses.

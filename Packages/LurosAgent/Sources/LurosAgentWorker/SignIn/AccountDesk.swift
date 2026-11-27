@@ -44,6 +44,8 @@ public actor AccountDesk {
     private let listener: OAuthLoopbackFactory
     private let timeoutSeconds: Double
     private let verifyKey: @Sendable (AgentProvider, OAuthCredentials, String?) async throws -> Void
+    private let quotaTransport: any QuotaHTTPTransport
+    private var quotaCoordinators: [URL: QuotaCoordinator] = [:]
     private var keyVerification: (run: SignInRun, task: Task<Void, Error>)?
     private var running: SignInRun?
 
@@ -53,12 +55,14 @@ public actor AccountDesk {
         listener: @escaping OAuthLoopbackFactory = AccountDesk.nioListener,
         timeoutSeconds: Double = Double(AgentSignInRequest.timeoutSeconds),
         verifyKey: @escaping @Sendable (AgentProvider, OAuthCredentials, String?) async throws -> Void = ProviderKeyVerification.verify,
+        quotaTransport: any QuotaHTTPTransport = URLSessionQuotaTransport.shared,
     ) {
         self.store = store
         self.login = login
         self.listener = listener
         self.timeoutSeconds = timeoutSeconds
         self.verifyKey = verifyKey
+        self.quotaTransport = quotaTransport
     }
 
     /// kwwk's NIO listener with Luros's own pages.
@@ -232,7 +236,8 @@ public actor AccountDesk {
         return AgentAPIConfigurationResponse(values: values)
     }
 
-    public func signOut(_ provider: AgentProvider) async throws {
+    public func signOut(_ provider: AgentProvider, dataRoot: LurosDataRoot? = nil) async throws {
+        let existingCredentials = try? await store.credentials(for: provider.storeID)
         do {
             try await store.remove(provider.storeID)
         } catch {
@@ -241,6 +246,106 @@ public actor AccountDesk {
                 "Unable to remove the saved sign-in: \(error.localizedDescription). Try again.",
             )
         }
+        if let dataRoot, let existingCredentials {
+            let usesAPIKey = ProviderModels.usesAPIKey(provider, credentials: existingCredentials)
+            let poolID = QuotaPoolIdentity.poolID(
+                provider: provider,
+                storeID: provider.storeID,
+                credentials: existingCredentials,
+                usesAPIKey: usesAPIKey,
+            )
+            // Keep deduplicated key pool if another signed-in account still shares the same key digest.
+            let remainingIDs = await store.providerIds()
+            var sharedElsewhere = false
+            if poolID.hasPrefix("key:") {
+                for otherID in remainingIDs {
+                    if let otherCreds = try? await store.credentials(for: otherID),
+                       "key:\(QuotaPoolIdentity.keyDigestPrefix16(for: otherCreds.access))" == poolID
+                    {
+                        sharedElsewhere = true
+                        break
+                    }
+                }
+            }
+            if !sharedElsewhere {
+                QuotaCacheStore(dataRoot: dataRoot).clearPool(poolID: poolID)
+            }
+        }
+    }
+
+    // MARK: - Provider Quota
+
+    private func quotaCoordinator(for dataRoot: LurosDataRoot) -> QuotaCoordinator {
+        if let existing = quotaCoordinators[dataRoot.url] {
+            return existing
+        }
+        let coordinator = QuotaCoordinator(
+            store: QuotaCacheStore(dataRoot: dataRoot),
+            transport: quotaTransport,
+        )
+        quotaCoordinators[dataRoot.url] = coordinator
+        return coordinator
+    }
+
+    public func quotas(
+        _ request: AgentProviderQuotaRequest,
+        dataRoot: LurosDataRoot,
+    ) async -> AgentProviderQuotaResponse {
+        let stored = await Set(store.providerIds())
+        var targets: [AgentProvider] = []
+        if let single = request.provider {
+            if stored.contains(single.storeID) {
+                targets = [single]
+            }
+        } else {
+            for listedProvider in AgentProvider.signInOrder {
+                for provider in Self.listed(listedProvider, stored: stored) where stored.contains(provider.storeID) {
+                    targets.append(provider)
+                }
+            }
+        }
+
+        var descriptors: [QuotaAccountDescriptor] = []
+        for provider in targets {
+            guard var credentials = try? await store.credentials(for: provider.storeID) else { continue }
+            let usesAPIKey = ProviderModels.usesAPIKey(provider, credentials: credentials)
+            if request.mode != .cachedOnly,
+               !usesAPIKey,
+               credentials.isExpired,
+               !credentials.refresh.isEmpty
+            {
+                let refreshers: [any OAuthProvider] = if let site = KimiSite.site(id: provider.storeID) {
+                    OAuthSubscriptions.refresher(
+                        providerId: site.id,
+                        kimiIdentity: KimiIdentity.identity(recordedIn: credentials),
+                    ).map { [$0] } ?? []
+                } else {
+                    KimiIdentity.refreshers(for: provider.storeID)
+                }
+                let manager = OAuthManager(source: store, providers: refreshers)
+                if let freshAccess = try? await manager.apiKey(for: provider.storeID), !freshAccess.isEmpty {
+                    credentials = (try? await manager.credentials(for: provider.storeID)) ?? credentials
+                    credentials.access = freshAccess
+                    try? await store.store(credentials, for: provider.storeID)
+                }
+            }
+            descriptors.append(QuotaAccountDescriptor(
+                provider: provider,
+                storeID: provider.storeID,
+                accountLabel: Self.accountLabel(provider, credentials),
+                credentials: credentials,
+                usesAPIKey: usesAPIKey,
+            ))
+        }
+
+        let coordinator = quotaCoordinator(for: dataRoot)
+        let snapshots = await coordinator.snapshots(
+            for: descriptors,
+            mode: request.mode,
+            foreground: request.foreground,
+            force: request.force,
+        )
+        return AgentProviderQuotaResponse(quotas: snapshots)
     }
 
     /// A typed key's endpoint host — the one it was given, else its form's

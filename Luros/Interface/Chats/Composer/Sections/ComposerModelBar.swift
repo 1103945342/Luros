@@ -31,6 +31,10 @@ final class ComposerModelBar: ComposerSectionView {
     /// how much. The ring is the only control here whose state is a figure.
     let usageButton = ContextUsageButton()
 
+    /// Compact quota box beside the context ring showing the active provider's
+    /// used quota percentage (e.g. `42%`).
+    let quotaButton = QuotaBadgeButton()
+
     /// Attachments: the plus that opens the camera, photos, files and the web,
     /// and closes them again.
     let addButton = ComposerIconButton(symbolName: "plus", label: String(localized: "Add Attachment"))
@@ -65,7 +69,7 @@ final class ComposerModelBar: ComposerSectionView {
     override func initializeViews() {
         super.initializeViews()
 
-        for control in [modePill, modelButton, effortButton, tierButton, usageButton, addButton, sendButton] {
+        for control in [modePill, modelButton, effortButton, tierButton, usageButton, quotaButton, addButton, sendButton] {
             addSubview(control)
         }
 
@@ -77,6 +81,7 @@ final class ComposerModelBar: ComposerSectionView {
             self?.setNeedsLayout()
         }
         usageButton.tapAction = { [weak self] in self?.onContextTapped?() }
+        quotaButton.tapAction = { [weak self] in self?.onContextTapped?() }
         modelButton.tapAction = { [weak self] in self?.onModelTapped?() }
         addButton.tapAction = { [weak self] in self?.onAddTapped?() }
         sendButton.tapAction = { [weak self] in self?.tapSend() }
@@ -195,6 +200,14 @@ final class ComposerModelBar: ComposerSectionView {
     /// it again.
     func setContextExpanded(_ expanded: Bool) {
         usageButton.setExpanded(expanded)
+        quotaButton.setExpanded(expanded)
+    }
+
+    func setProviderQuota(_ display: QuotaFormatting.ComposerQuotaDisplay?) {
+        updateControls { [self] in
+            quotaButton.set(display)
+            heightPublisher.send(isUserInteractionEnabled ? preferredHeight : 0)
+        }
     }
 
     /// The import panel is open: the plus draws as a close, so the same tap
@@ -324,11 +337,23 @@ final class ComposerModelBar: ComposerSectionView {
         }
 
         let ringSize = ContextUsageButton.size
-        usageButton.frame = directionalFrame(CGRect(
-            x: x,
-            y: (bounds.height - ringSize) / 2,
-            width: ringSize,
-            height: ringSize,
-        ))
+        if !usageButton.isHidden {
+            usageButton.frame = directionalFrame(CGRect(
+                x: x,
+                y: (bounds.height - ringSize) / 2,
+                width: ringSize,
+                height: ringSize,
+            ))
+            x += ringSize + spacing
+        }
+        if !quotaButton.isHidden {
+            let quotaSize = quotaButton.intrinsicContentSize
+            quotaButton.frame = directionalFrame(CGRect(
+                x: x,
+                y: (bounds.height - quotaSize.height) / 2,
+                width: quotaSize.width,
+                height: quotaSize.height,
+            ))
+        }
     }
 }
