@@ -42,15 +42,23 @@ final class ModelActivationController: TableController, UISearchResultsUpdating 
             title: String(localized: "Save"),
             primaryAction: UIAction { [weak self] _ in self?.save() },
         )
+        // The provider's own list, asked for on arrival and again from here
+        // (owner, 2026-11-28): what the account already knows is drawn until
+        // the provider answers, and stays when it cannot.
+        let fetch = UIBarButtonItem(
+            image: UIImage(systemName: "arrow.clockwise"),
+            primaryAction: UIAction { [weak self] _ in self?.fetchModels() },
+        )
+        fetch.accessibilityLabel = String(localized: "Refresh Models")
         if usesAPIKey {
             let add = UIBarButtonItem(
                 image: UIImage(systemName: "plus"),
                 primaryAction: UIAction { [weak self] _ in self?.addCustomModel() },
             )
             add.accessibilityLabel = String(localized: "Add Custom Model")
-            navigationItem.rightBarButtonItems = [save, add]
+            navigationItem.rightBarButtonItems = [save, add, fetch]
         } else {
-            navigationItem.rightBarButtonItem = save
+            navigationItem.rightBarButtonItems = [save, fetch]
         }
         search.searchResultsUpdater = self
         search.obscuresBackgroundDuringPresentation = false
@@ -87,18 +95,36 @@ final class ModelActivationController: TableController, UISearchResultsUpdating 
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        guard usesAPIKey, loader == nil else { return }
+        guard loader == nil else { return }
+        fetchModels()
+    }
+
+    /// The provider's model list for this account, merged with the models the
+    /// reader added and the ones already enabled: a provider that cannot
+    /// answer leaves the list as it was, which is where the defaults show.
+    @objc private dynamic func fetchModels() {
+        loader?.cancel()
         dataSource.beginLoad()
+        navigationItem.prompt = nil
         loader = Task { [weak self] in
+            guard let self else { return }
             do {
-                guard let provider = self?.account.provider else { return }
-                let fetched = try await LurosService.app.agentModelList(provider: provider).models
-                guard let self, !Task.isCancelled else { return }
+                let fetched = try await LurosService.app.agentModelList(
+                    provider: account.provider,
+                    accountID: account.storeID,
+                ).models
+                guard !Task.isCancelled else { return }
+                guard !fetched.isEmpty else {
+                    navigationItem.prompt = String(localized: "Unable to Fetch Models")
+                    updateSearchResults(for: search)
+                    return
+                }
                 models = Array(Set(fetched).union(custom).union(selected).subtracting(hidden)).sorted()
                 updateSearchResults(for: search)
             } catch {
                 guard !Task.isCancelled else { return }
-                self?.navigationItem.prompt = String(localized: "Unable to Fetch Models")
+                navigationItem.prompt = String(localized: "Unable to Fetch Models")
+                updateSearchResults(for: search)
             }
         }
     }
