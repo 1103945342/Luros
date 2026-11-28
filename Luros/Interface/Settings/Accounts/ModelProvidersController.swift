@@ -39,9 +39,13 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
     private enum Row: Equatable {
         case account(AgentAccount, AgentQuotaSnapshot?)
         case status(Status)
+        /// One row per account, not per provider: two sign-ins of one
+        /// provider are two rows, and a diffable data source refuses two
+        /// identifiers that are the same (owner, 2026-11-28).
         var id: String {
             switch self {
-            case let .account(account, _): account.provider.rawValue
+            case let .account(account, _):
+                "account:" + (account.storeID ?? account.provider.rawValue)
             case .status: "status"
             }
         }
