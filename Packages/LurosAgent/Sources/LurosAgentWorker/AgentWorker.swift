@@ -228,6 +228,11 @@ public enum AgentWorker {
                     dataRoot: LurosDataRoot(home: home),
                 )
             }
+        case .agentProviderQuota:
+            await WorkerMain.serve(AgentProviderQuotaRequest.self, request) { query in
+                let home = URL(fileURLWithPath: context.assignment.home, isDirectory: true)
+                return await accounts.quotas(query, dataRoot: LurosDataRoot(home: home))
+            }
         case .agentSkillList:
             await WorkerMain.serve(AgentSkillListRequest.self, request) { _ in
                 let home = URL(fileURLWithPath: context.assignment.home, isDirectory: true)
@@ -301,7 +306,8 @@ public enum AgentWorker {
             }
         case .agentSignOut:
             await WorkerMain.serve(AgentSignOutRequest.self, request) { signOut in
-                try await accounts.signOut(signOut.provider)
+                let home = URL(fileURLWithPath: context.assignment.home, isDirectory: true)
+                try await accounts.signOut(signOut.provider, dataRoot: LurosDataRoot(home: home))
                 return Acknowledged()
             }
         default:

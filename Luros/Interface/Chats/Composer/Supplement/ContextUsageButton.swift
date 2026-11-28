@@ -152,3 +152,102 @@ final class ContextUsageButton: UIControl {
         return true
     }
 }
+
+/// Compact rounded box beside `ContextUsageButton` displaying the active provider's
+/// used quota percentage (or remaining balance) right in the composer row.
+final class QuotaBadgeButton: UIControl {
+    static let height: CGFloat = ContextUsageButton.size
+
+    private let label = UILabel()
+    var tapAction: () -> Void = {}
+    private var isTrackingTap = false
+    @objc private dynamic var expanded = false
+    private var currentDisplay: QuotaFormatting.ComposerQuotaDisplay?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        translatesAutoresizingMaskIntoConstraints = false
+        layer.cornerRadius = 7
+        layer.cornerCurve = .continuous
+        layer.borderWidth = 1
+
+        label.font = .monospacedDigitSystemFont(ofSize: 10, weight: .semibold)
+        label.textAlignment = .center
+        label.isUserInteractionEnabled = false
+        addSubview(label)
+
+        addTarget(self, action: #selector(luros_tapped), for: .primaryActionTriggered)
+        addTarget(self, action: #selector(luros_tapped), for: .touchUpInside)
+
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+        accessibilityLabel = String(localized: "Provider Quota")
+        isHidden = true
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("Use init(frame:)")
+    }
+
+    override var intrinsicContentSize: CGSize {
+        guard !isHidden else { return .zero }
+        let width = max(32, ceil(label.intrinsicContentSize.width) + 12)
+        return CGSize(width: width, height: Self.height)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        label.frame = bounds.insetBy(dx: 5, dy: 2)
+    }
+
+    func set(_ display: QuotaFormatting.ComposerQuotaDisplay?) {
+        currentDisplay = display
+        isHidden = display == nil
+        guard let display else { return }
+        label.text = display.badgeText
+
+        let color: UIColor = if display.isExhausted {
+            .systemRed
+        } else if let pct = display.usedPercent {
+            switch NSDecimalNumber(decimal: pct).doubleValue {
+            case 95...: .systemRed
+            case 75...: .systemOrange
+            default: .secondaryLabel
+            }
+        } else {
+            .secondaryLabel
+        }
+        label.textColor = color
+        layer.borderColor = color.withAlphaComponent(0.45).cgColor
+        backgroundColor = color.withAlphaComponent(0.1)
+        accessibilityValue = display.headline
+        invalidateIntrinsicContentSize()
+        setNeedsLayout()
+    }
+
+    @objc(luros_setExpanded:) dynamic func setExpanded(_ expanded: Bool) {
+        self.expanded = expanded
+        accessibilityTraits = expanded ? [.button, .selected] : [.button]
+        if let display = currentDisplay {
+            accessibilityValue = display.headline
+        }
+    }
+
+    @objc(luros_tapped) private dynamic func luros_tapped() {
+        guard !isHidden, !isTrackingTap else { return }
+        isTrackingTap = true
+        DispatchQueue.main.async { [weak self] in self?.isTrackingTap = false }
+        tapAction()
+    }
+
+    override var isHighlighted: Bool {
+        didSet { alpha = isHighlighted ? 0.4 : 1 }
+    }
+
+    override func accessibilityActivate() -> Bool {
+        guard !isHidden else { return false }
+        tapAction()
+        return true
+    }
+}

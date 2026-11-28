@@ -546,7 +546,7 @@ do {
     // or reads a sign-in, and never lists or forgets an account.
     for operation: AppOperation in [.protectedEditOpen, .protectedEditCommit, .ptyOpen, .ptyAttach, .agentApprove, .agentSteer, .agentCompact,
                                     .toolchainRemove, .sdkRemove, .environmentCancel,
-                                    .agentAccountList, .agentAPIConfiguration, .agentModelList, .agentModelActivate, .agentSignIn, .agentSignInRespond, .agentSignInCancel, .agentSignOut,
+                                    .agentAccountList, .agentProviderQuota, .agentAPIConfiguration, .agentModelList, .agentModelActivate, .agentSignIn, .agentSignInRespond, .agentSignInCancel, .agentSignOut,
                                     .agentCredentialImport, .transferExport, .transferInspect, .transferImport]
     {
         check(!CallerPolicy.allows(.worker(.agent, instance: "s"), operation), "the agent may not call \(operation.rawValue)")

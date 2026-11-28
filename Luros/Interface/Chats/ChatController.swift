@@ -954,6 +954,7 @@ final class ChatController: UIViewController {
                     hasContent: !composer.draft.text.isEmpty || !composer.draft.attachments.isEmpty,
                 )
             }
+
         }
     }
 
@@ -1266,6 +1267,26 @@ final class ChatController: UIViewController {
         composer.modelBar.setTiers(selection?.supportedTiers ?? [], selected: selection?.tier)
     }
 
+    // MARK: - Provider quota
+
+    /// The usage icon on a model group opens that account's quota over the
+    /// picker, which asks afresh and comes back here (owner, 2026-11-28).
+    private func presentQuotaSheet(for account: AgentAccount) {
+        guard let sheet = modelSheet, !sheet.isBeingDismissed else { return }
+        let page = QuotaSheetController(
+            provider: account.provider,
+            accountLabel: account.account,
+            poolID: account.poolID,
+        )
+        let navigation = UINavigationController(rootViewController: page)
+        navigation.modalPresentationStyle = .pageSheet
+        if let presentation = navigation.sheetPresentationController {
+            presentation.detents = [.medium(), .large()]
+            presentation.prefersGrabberVisible = true
+        }
+        sheet.present(navigation, animated: true)
+    }
+
     /// A model disabled in Settings stops being the one the next message uses.
     @objc private func enabledModelsChanged() {
         ensureModelSelection()
@@ -1424,6 +1445,9 @@ final class ChatController: UIViewController {
         return accounts.map { account in
             ComposerChoiceSheet.Group(
                 title: account.account ?? account.provider.displayName,
+                quota: { [weak self] in
+                    self?.presentQuotaSheet(for: account)
+                },
                 choices: (account.models ?? []).map { model in
                     ComposerChoiceSheet.Choice(
                         // The name the catalog gives it, with the provider's own

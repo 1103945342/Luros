@@ -155,6 +155,7 @@ public enum ProviderResolver {
         network: NetworkPath = .system,
         wait: Duration = exchangeWait,
         modelParameters: AgentModelParameters? = nil,
+        quotaStore: QuotaCacheStore? = nil,
         diagnostic: @Sendable (String) -> Void = { _ in },
     ) async throws -> ResolvedProvider {
         let reading = Date()
@@ -182,6 +183,7 @@ public enum ProviderResolver {
                     manager: manager,
                     modelOverride: modelID,
                     parameters: modelParameters,
+                    quotaStore: quotaStore,
                 )
             }
         } catch is Deadline.Exceeded {

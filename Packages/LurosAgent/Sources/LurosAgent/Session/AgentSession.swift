@@ -208,6 +208,7 @@ public actor AgentSession {
         journal.startup("transcript read: \(transcript.count) message(s) in \(Self.milliseconds(since: opened))")
 
         let resolving = Date()
+        let quotaStore = QuotaCacheStore(dataRoot: configuration.dataRoot)
         let resolved: ResolvedProvider
         do {
             resolved = try await ProviderResolver.resolve(
@@ -215,6 +216,7 @@ public actor AgentSession {
                 credentials: credentials,
                 network: configuration.network,
                 modelParameters: configuration.modelParameters,
+                quotaStore: quotaStore,
                 diagnostic: { journal.startup($0) },
             )
         } catch {
@@ -386,6 +388,7 @@ public actor AgentSession {
             credentials: credentials,
             network: configuration.network,
             modelParameters: modelParameters,
+            quotaStore: QuotaCacheStore(dataRoot: configuration.dataRoot),
         )
         guard runTask == nil, pendingDrain == nil, !historyMutation else { return false }
         recordModel = resolved.model
@@ -1136,7 +1139,12 @@ public actor AgentSession {
                     if choice.provider == resolvedFrom.provider, stored == resolvedFrom.credentials, let recordModel {
                         resolvedChoice = ResolvedProvider(model: recordModel, authResolver: agent.authResolver, credentials: stored)
                     } else {
-                        resolvedChoice = try await ProviderResolver.resolve(choice.provider, credentials: credentials, modelParameters: choice.parameters)
+                        resolvedChoice = try await ProviderResolver.resolve(
+                            choice.provider,
+                            credentials: credentials,
+                            modelParameters: choice.parameters,
+                            quotaStore: QuotaCacheStore(dataRoot: configuration.dataRoot),
+                        )
                     }
                 }
                 if !images.isEmpty, let vision = (item.modelChoice?.defaults ?? modelDefaults).vision {

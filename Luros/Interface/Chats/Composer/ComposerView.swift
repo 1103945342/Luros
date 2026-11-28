@@ -69,6 +69,8 @@ class ComposerView: ComposerSectionView {
 
     /// What the context panel's button asks for.
     var onCompactContext: (() -> Void)?
+    /// Asked when the user taps refresh inside the context/quota panel.
+    var onRefreshQuota: (() -> Void)?
     /// Told when the mode pill changes, with the mode it took.
     var onModeChanged: ((ComposerMode) -> Void)?
     /// A command that the app runs itself was chosen.
@@ -171,6 +173,7 @@ class ComposerView: ComposerSectionView {
             self?.layoutIfNeeded()
         }
         contextPanel.onCompact = { [weak self] in self?.onCompactContext?() }
+        contextPanel.onRefreshQuota = { [weak self] in self?.onRefreshQuota?() }
         modelBar.onContextTapped = { [weak self] in self?.toggleContextPanel() }
         modelBar.onModeChanged = { [weak self] mode in self?.onModeChanged?(mode) }
         modelBar.onAddTapped = { [weak self] in
@@ -432,6 +435,12 @@ class ComposerView: ComposerSectionView {
             compactable: compactable,
             compacting: compacting,
         )
+    }
+
+    func setProviderQuota(_ snapshot: AgentQuotaSnapshot?, model: String?) {
+        let display = snapshot.flatMap { QuotaFormatting.composerDisplay(for: $0, model: model) }
+        modelBar.setProviderQuota(display)
+        contextPanel.setProviderQuota(display)
     }
 
     /// The text changed: work out which menu, if either, the draft has opened.

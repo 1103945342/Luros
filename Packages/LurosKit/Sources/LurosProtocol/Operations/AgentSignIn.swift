@@ -94,6 +94,9 @@ public struct AgentAccount: Codable, Sendable, Equatable {
     /// for a name the provider does not describe itself, so the settings page
     /// can show a relay's models with the figures they really have.
     public var capabilities: [String: AgentModelCapabilities]?
+    /// Canonical deduplication pool identifier (`key:<sha256_prefix16>` or `oauth:<storeID>`),
+    /// populated when signed in so UI views match the exact pool without holding secrets.
+    public var poolID: String?
     public var isAPIKeyAccount: Bool {
         usesAPIKey ?? (method == .apiKey)
     }
@@ -110,6 +113,7 @@ public struct AgentAccount: Codable, Sendable, Equatable {
         reasoningEfforts: [String: [AgentReasoningEffort]]? = nil,
         serviceTiers: [String: [AgentServiceTier]]? = nil,
         capabilities: [String: AgentModelCapabilities]? = nil,
+        poolID: String? = nil,
     ) {
         self.provider = provider
         self.method = method
@@ -122,6 +126,7 @@ public struct AgentAccount: Codable, Sendable, Equatable {
         self.reasoningEfforts = reasoningEfforts
         self.serviceTiers = serviceTiers
         self.capabilities = capabilities
+        self.poolID = poolID
     }
 }
 

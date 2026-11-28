@@ -31,6 +31,10 @@ final class ComposerModelBar: ComposerSectionView {
     /// how much. The ring is the only control here whose state is a figure.
     let usageButton = ContextUsageButton()
 
+    /// Compact quota box beside the context ring showing the active provider's
+    /// used quota percentage (e.g. `42%`).
+    let quotaButton = QuotaBadgeButton()
+
     /// Attachments: the plus that opens the camera, photos, files and the web,
     /// and closes them again.
     let addButton = ComposerIconButton(symbolName: "plus", label: String(localized: "Add Attachment"))
@@ -65,7 +69,7 @@ final class ComposerModelBar: ComposerSectionView {
     override func initializeViews() {
         super.initializeViews()
 
-        for control in [modePill, modelButton, effortButton, tierButton, usageButton, addButton, sendButton] {
+        for control in [modePill, modelButton, effortButton, tierButton, usageButton, quotaButton, addButton, sendButton] {
             addSubview(control)
         }
 
@@ -77,6 +81,7 @@ final class ComposerModelBar: ComposerSectionView {
             self?.setNeedsLayout()
         }
         usageButton.tapAction = { [weak self] in self?.onContextTapped?() }
+        quotaButton.tapAction = { [weak self] in self?.onContextTapped?() }
         modelButton.tapAction = { [weak self] in self?.onModelTapped?() }
         addButton.tapAction = { [weak self] in self?.onAddTapped?() }
         sendButton.tapAction = { [weak self] in self?.tapSend() }
@@ -195,6 +200,14 @@ final class ComposerModelBar: ComposerSectionView {
     /// it again.
     func setContextExpanded(_ expanded: Bool) {
         usageButton.setExpanded(expanded)
+        quotaButton.setExpanded(expanded)
+    }
+
+    func setProviderQuota(_ display: QuotaFormatting.ComposerQuotaDisplay?) {
+        updateControls { [self] in
+            quotaButton.set(display)
+            heightPublisher.send(isUserInteractionEnabled ? preferredHeight : 0)
+        }
     }
 
     /// The import panel is open: the plus draws as a close, so the same tap
@@ -276,12 +289,13 @@ final class ComposerModelBar: ComposerSectionView {
             height: sendSize,
         )
         sendButton.frame = directionalFrame(sendFrame)
-        addButton.frame = directionalFrame(CGRect(
+        let addLogicalFrame = CGRect(
             x: sendFrame.minX - spacing - sendSize,
             y: sendFrame.minY,
             width: sendSize,
             height: sendSize,
-        ))
+        )
+        addButton.frame = directionalFrame(addLogicalFrame)
 
         // The left side reads in the order it is decided in: what the run may
         // do, which model answers, how hard it thinks, how full the context is.
@@ -324,11 +338,36 @@ final class ComposerModelBar: ComposerSectionView {
         }
 
         let ringSize = ContextUsageButton.size
-        usageButton.frame = directionalFrame(CGRect(
-            x: x,
-            y: (bounds.height - ringSize) / 2,
-            width: ringSize,
-            height: ringSize,
-        ))
+        let maxRight = addLogicalFrame.minX - spacing
+        if !usageButton.isHidden {
+            usageButton.frame = directionalFrame(CGRect(
+                x: x,
+                y: (bounds.height - ringSize) / 2,
+                width: ringSize,
+                height: ringSize,
+            ))
+            x += ringSize + spacing
+        }
+        if !quotaButton.isHidden {
+            let availableWidth = max(0, maxRight - x)
+            if availableWidth >= 24 {
+                let quotaSize = quotaButton.intrinsicContentSize
+                let width = min(quotaSize.width, availableWidth)
+                quotaButton.alpha = 1
+                quotaButton.isUserInteractionEnabled = true
+                quotaButton.accessibilityElementsHidden = false
+                quotaButton.frame = directionalFrame(CGRect(
+                    x: x,
+                    y: (bounds.height - quotaSize.height) / 2,
+                    width: width,
+                    height: quotaSize.height,
+                ))
+            } else {
+                quotaButton.alpha = 0
+                quotaButton.isUserInteractionEnabled = false
+                quotaButton.accessibilityElementsHidden = true
+                quotaButton.frame = .zero
+            }
+        }
     }
 }
