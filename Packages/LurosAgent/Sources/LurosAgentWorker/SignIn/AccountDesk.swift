@@ -113,18 +113,33 @@ public actor AccountDesk {
         accounts.reserveCapacity(AgentProvider.signInOrder.count)
         for listedProvider in AgentProvider.signInOrder {
             for provider in Self.listed(listedProvider, stored: stored) {
-                let accountStarted = DispatchTime.now().uptimeNanoseconds
                 let requested = extraModels[provider.rawValue] ?? []
                 let others = Array(provider.signInMethods.dropFirst())
+                let ids = Self.accountIDs(of: provider, stored: stored)
+                guard !ids.isEmpty else {
+                    accounts.append(AgentAccount(
+                        provider: provider,
+                        method: provider.signInMethod,
+                        alternativeMethods: others.isEmpty ? nil : others,
+                        signedIn: false,
+                        storeID: provider.storeID,
+                    ))
+                    continue
+                }
+                // Every account the provider has, its first included: one row
+                // each, told apart by the account id (owner, 2026-11-28).
+                for id in ids {
+                let accountStarted = DispatchTime.now().uptimeNanoseconds
                 var account = AgentAccount(
                     provider: provider,
                     method: provider.signInMethod,
                     alternativeMethods: others.isEmpty ? nil : others,
-                    signedIn: stored.contains(provider.storeID),
+                    signedIn: true,
+                    storeID: id,
                 )
                 // An item that does not decode is still signed in: Sign Out is
                 // how it goes away, and the account names no model.
-                if account.signedIn, let credentials = try? await store.credentials(for: provider.storeID) {
+                if let credentials = try? await store.credentials(for: id) {
                     account.account = Self.accountLabel(provider, credentials)
                     account.expiresAt = Self.lapses(credentials)
                     let models = onlyExtraModels
@@ -158,16 +173,15 @@ public actor AccountDesk {
                     account.usesAPIKey = usesAPIKey ? true : nil
                     account.poolID = QuotaPoolIdentity.poolID(
                         provider: provider,
-                        storeID: provider.storeID,
+                        storeID: id,
                         credentials: credentials,
                         usesAPIKey: usesAPIKey,
                     )
                 }
                 accounts.append(account)
-                if account.signedIn {
-                    Self.log.notice(
-                        "listed \(provider.storeID, privacy: .public) in \(Self.milliseconds(since: accountStarted), privacy: .public) ms: \(account.models?.count ?? 0, privacy: .public) models, catalog \(account.capabilities == nil ? 0 : 1, privacy: .public)",
-                    )
+                Self.log.notice(
+                    "listed \(id, privacy: .public) in \(Self.milliseconds(since: accountStarted), privacy: .public) ms, \(account.models?.count ?? 0, privacy: .public) models",
+                )
                 }
             }
         }
@@ -175,6 +189,19 @@ public actor AccountDesk {
             "listed \(accounts.count, privacy: .public) providers in \(Self.milliseconds(since: started), privacy: .public) ms, \(onlyExtraModels ? "named" : "all", privacy: .public) models",
         )
         return AgentAccountListResponse(accounts: accounts)
+    }
+
+    /// The account ids one provider row stands for: its own when signed in,
+    /// then `#2`, `#3` … for the accounts added after it (owner, 2026-11-28).
+    static func accountIDs(of provider: AgentProvider, stored: Set<String>) -> [String] {
+        var ids: [String] = []
+        if stored.contains(provider.storeID) {
+            ids.append(provider.storeID)
+        }
+        for number in 2 ... AccountIDs.maximum where stored.contains(AccountIDs.extra(provider, number)) {
+            ids.append(AccountIDs.extra(provider, number))
+        }
+        return ids
     }
 
     /// The whole list with the caller's own models added: what every account
@@ -223,8 +250,12 @@ public actor AccountDesk {
 
     /// The explicit app-only editor reads the saved key directly; no task is
     /// created and neither account listings nor sign-in events expose it.
-    public func apiConfiguration(for provider: AgentProvider) async throws -> AgentAPIConfigurationResponse {
-        guard let credentials = try await store.credentials(for: provider.storeID) else {
+    public func apiConfiguration(
+        for provider: AgentProvider,
+        accountID: String? = nil,
+    ) async throws -> AgentAPIConfigurationResponse {
+        let accountID = AccountIDs.resolved(accountID, for: provider)
+        guard let credentials = try await store.credentials(for: accountID) else {
             throw LurosError(.notFound, "No saved API configuration was found. Sign in to the provider first.")
         }
         guard ProviderModels.usesAPIKey(provider, credentials: credentials) else {
@@ -243,21 +274,37 @@ public actor AccountDesk {
         return AgentAPIConfigurationResponse(values: values)
     }
 
-    public func signOut(_ provider: AgentProvider, dataRoot: LurosDataRoot? = nil) async throws {
-        let existingCredentials = try? await store.credentials(for: provider.storeID)
-        do {
-            try await store.remove(provider.storeID)
-        } catch {
-            throw LurosError(
-                .internal,
-                "Unable to remove the saved sign-in: \(error.localizedDescription). Try again.",
-            )
+    /// Forgets one account, or with no `accountID` every account the provider
+    /// has, its first included (owner, 2026-11-28).
+    public func signOut(
+        _ provider: AgentProvider,
+        accountID: String? = nil,
+        dataRoot: LurosDataRoot? = nil,
+    ) async throws {
+        if let accountID, !accountID.isEmpty,
+           !AccountIDs.belongs(accountID, to: provider)
+        {
+            throw LurosError(.badRequest, "\(accountID) is not an account of \(provider.rawValue).")
+        }
+        let ids = accountID.map { [$0] }
+            ?? ([provider.storeID] + (2 ... AccountIDs.maximum).map { AccountIDs.extra(provider, $0) })
+        let existingCredentials = try? await store.credentials(for: ids[0])
+        for id in ids {
+            if (try? await store.credentials(for: id)) == nil { continue }
+            do {
+                try await store.remove(id)
+            } catch {
+                throw LurosError(
+                    .internal,
+                    "Unable to remove the saved sign-in: \(error.localizedDescription). Try again.",
+                )
+            }
         }
         if let dataRoot, let existingCredentials {
             let usesAPIKey = ProviderModels.usesAPIKey(provider, credentials: existingCredentials)
             let poolID = QuotaPoolIdentity.poolID(
                 provider: provider,
-                storeID: provider.storeID,
+                storeID: ids[0],
                 credentials: existingCredentials,
                 usesAPIKey: usesAPIKey,
             )
@@ -299,22 +346,22 @@ public actor AccountDesk {
         dataRoot: LurosDataRoot,
     ) async -> AgentProviderQuotaResponse {
         let stored = await Set(store.providerIds())
-        var targets: [AgentProvider] = []
+        var targets: [(provider: AgentProvider, accountID: String)] = []
         if let single = request.provider {
-            if stored.contains(single.storeID) {
-                targets = [single]
-            }
+            targets = Self.accountIDs(of: single, stored: stored).map { (single, $0) }
         } else {
             for listedProvider in AgentProvider.signInOrder {
-                for provider in Self.listed(listedProvider, stored: stored) where stored.contains(provider.storeID) {
-                    targets.append(provider)
+                for provider in Self.listed(listedProvider, stored: stored) {
+                    targets += Self.accountIDs(of: provider, stored: stored).map { (provider, $0) }
                 }
             }
         }
 
         var descriptors: [QuotaAccountDescriptor] = []
-        for provider in targets {
-            guard var credentials = try? await store.credentials(for: provider.storeID) else { continue }
+        for target in targets {
+            let provider = target.provider
+            let accountID = target.accountID
+            guard var credentials = try? await store.credentials(for: accountID) else { continue }
             let usesAPIKey = ProviderModels.usesAPIKey(provider, credentials: credentials)
             if request.mode != .cachedOnly,
                !usesAPIKey,
@@ -329,16 +376,19 @@ public actor AccountDesk {
                 } else {
                     KimiIdentity.refreshers(for: provider.storeID)
                 }
-                let manager = OAuthManager(source: store, providers: refreshers)
-                if let freshAccess = try? await manager.apiKey(for: provider.storeID), !freshAccess.isEmpty {
-                    credentials = (try? await manager.credentials(for: provider.storeID)) ?? credentials
+                let manager = OAuthManager(
+                    source: store,
+                    providers: Self.scoped(refreshers, accountID: accountID, provider: provider),
+                )
+                if let freshAccess = try? await manager.apiKey(for: accountID), !freshAccess.isEmpty {
+                    credentials = (try? await manager.credentials(for: accountID)) ?? credentials
                     credentials.access = freshAccess
-                    try? await store.store(credentials, for: provider.storeID)
+                    try? await store.store(credentials, for: accountID)
                 }
             }
             descriptors.append(QuotaAccountDescriptor(
                 provider: provider,
-                storeID: provider.storeID,
+                storeID: accountID,
                 accountLabel: Self.accountLabel(provider, credentials),
                 credentials: credentials,
                 usesAPIKey: usesAPIKey,
@@ -359,6 +409,19 @@ public actor AccountDesk {
     /// default — which tells two keys apart and is no secret. A
     /// subscription carries no account name kwwk keeps, and a key a browser
     /// sign-in minted (OpenRouter's, Z.ai's) names no endpoint.
+    /// The provider's refreshers, answering under the account's own store id
+    /// when it is not the provider's first, so a second sign-in of one
+    /// provider refreshes through its flow and keeps its own credential
+    /// (owner, 2026-11-28).
+    static func scoped(
+        _ refreshers: [any OAuthProvider],
+        accountID: String,
+        provider: AgentProvider,
+    ) -> [any OAuthProvider] {
+        guard accountID != provider.storeID else { return refreshers }
+        return refreshers.map { AccountRefresher(base: $0, id: accountID) }
+    }
+
     static func accountLabel(_ provider: AgentProvider, _ credentials: OAuthCredentials) -> String? {
         if case let .string(base)? = credentials.extras[AgentSignInField.baseURL.rawValue] {
             return URLComponents(string: base)?.host
@@ -389,8 +452,15 @@ public actor AccountDesk {
                 "\(request.provider.rawValue) does not support \(method.rawValue) sign-in. Choose another method.",
             )
         }
+        let accountID = AccountIDs.resolved(request.accountID, for: request.provider)
+        guard AccountIDs.belongs(accountID, to: request.provider) else {
+            throw LurosError(
+                .badRequest,
+                "\(accountID) is not an account of \(request.provider.rawValue).",
+            )
+        }
         await stopRunning()
-        let run = SignInRun(taskID: taskID, provider: request.provider, method: method)
+        let run = SignInRun(taskID: taskID, provider: request.provider, accountID: accountID, method: method)
         running = run
         run.work = Task { [weak self] in
             await self?.perform(run, reporter: reporter)
@@ -464,8 +534,13 @@ public actor AccountDesk {
 
     /// The models the provider lists and, for an API-key account, the
     /// limits each of them and of `limitsFor` has when the user sets none.
-    public func models(for provider: AgentProvider, limitsFor asked: [String] = []) async throws -> AgentModelListResponse {
-        guard let credentials = try await store.credentials(for: provider.storeID) else {
+    public func models(
+        for provider: AgentProvider,
+        accountID: String? = nil,
+        limitsFor asked: [String] = [],
+    ) async throws -> AgentModelListResponse {
+        let accountID = AccountIDs.resolved(accountID, for: provider)
+        guard let credentials = try await store.credentials(for: accountID) else {
             throw LurosError(.notFound, "Sign in to the provider first.")
         }
         let models = try await ProviderModels.fetch(provider, credentials: credentials)
@@ -488,7 +563,8 @@ public actor AccountDesk {
         guard !request.models.isEmpty, request.models.count <= 64,
               request.models.allSatisfy({ !$0.isEmpty && $0.count <= 256 && !$0.contains(where: \.isNewline) })
         else { throw LurosError(.badRequest, "Select between 1 and 64 valid model IDs.") }
-        guard let credentials = try await store.credentials(for: request.provider.storeID) else {
+        let accountID = AccountIDs.resolved(request.accountID, for: request.provider)
+        guard let credentials = try await store.credentials(for: accountID) else {
             throw LurosError(.notFound, "Sign in to the provider first.")
         }
         let usesAPIKey = ProviderModels.usesAPIKey(request.provider, credentials: credentials)
@@ -496,7 +572,7 @@ public actor AccountDesk {
             throw LurosError(.badRequest, "This OAuth provider does not require model verification.")
         }
         await stopRunning()
-        let run = SignInRun(taskID: taskID, provider: request.provider, method: .apiKey)
+        let run = SignInRun(taskID: taskID, provider: request.provider, accountID: accountID, method: .apiKey)
         running = run
         run.work = Task { [weak self, verifyKey] in
             var currentModel = ""
@@ -614,16 +690,16 @@ public actor AccountDesk {
     /// What kwwk's login gets beside its callbacks: for Kimi, either site,
     /// the device id that site's stored sign-in recorded, so signing in
     /// again keeps the device Kimi knows (`KimiIdentity`).
-    private func options(for provider: AgentProvider) async -> SignInOptions {
-        guard provider == .kimiCoding || provider == .kimiCodingGlobal else { return SignInOptions() }
-        let previous = try? await store.credentials(for: provider.storeID)
+    private func options(for run: SignInRun) async -> SignInOptions {
+        guard run.provider == .kimiCoding || run.provider == .kimiCodingGlobal else { return SignInOptions() }
+        let previous = try? await store.credentials(for: run.accountID)
         return SignInOptions(kimiIdentity: KimiIdentity.identity(recordedIn: previous))
     }
 
     private func perform(_ run: SignInRun, reporter: SignInReporter) async {
         let taskID = run.taskID
         do {
-            let options = await options(for: run.provider)
+            let options = await options(for: run)
             // Not named `credentials`: Swift 6.2 reads the call in the closure
             // as the variable it initialises.
             var signedIn = try await Self.withDeadline(timeoutSeconds) { [self] in
@@ -634,7 +710,7 @@ public actor AccountDesk {
             }
             try Task.checkCancellation()
             do {
-                try await store.store(signedIn, for: run.provider.storeID)
+                try await store.store(signedIn, for: run.accountID)
             } catch {
                 // A store error names a status, never the secret.
                 throw LurosError(.internal, "Unable to save your sign-in: \(error.localizedDescription). Try again.")
@@ -771,6 +847,9 @@ private struct SignInPresenter: OAuthBrowserPresenter {
 final class SignInRun: @unchecked Sendable {
     let taskID: TaskID
     let provider: AgentProvider
+    /// The credential's store id: the provider's own for its first account,
+    /// `provider#2` and up for the ones added after it (owner, 2026-11-28).
+    let accountID: String
     let method: AgentSignInMethod
     var work: Task<Void, Never>?
 
@@ -781,9 +860,10 @@ final class SignInRun: @unchecked Sendable {
     @objc private dynamic var deviceCode = false
     private var listener: PasteableLoopback?
 
-    init(taskID: TaskID, provider: AgentProvider, method: AgentSignInMethod) {
+    init(taskID: TaskID, provider: AgentProvider, accountID: String, method: AgentSignInMethod) {
         self.taskID = taskID
         self.provider = provider
+        self.accountID = accountID
         self.method = method
     }
 

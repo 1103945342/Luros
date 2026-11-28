@@ -13,6 +13,9 @@ extension Notification.Name {
 /// does, and a later model that offers them gets them back.
 struct ComposerModelSelection: Codable, Equatable {
     var provider: AgentProvider
+    /// The account this model is used through (`AgentAccountID`); nil is the
+    /// provider's first, as every selection saved before this was.
+    var storeID: String?
     var model: String
     /// The last catalog snapshot, so the effort control also restores offline.
     var supportedEfforts: [AgentReasoningEffort]

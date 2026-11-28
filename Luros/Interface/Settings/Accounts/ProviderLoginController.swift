@@ -146,8 +146,13 @@ final class ProviderLoginController: UIViewController {
         return UIBarButtonItem(customView: spinner)
     }()
 
+    /// The account this page signs in to: the provider's first, or the
+    /// `#2`/`#3` one the row named (owner, 2026-11-28).
+    private let accountID: String?
+
     init(account: AgentAccount) {
         provider = account.provider
+        accountID = account.storeID
         methods = [account.method] + (account.alternativeMethods ?? []).filter { $0 != account.method }
         isEditingConfiguration = account.signedIn && account.isAPIKeyAccount
         method = account.isAPIKeyAccount ? .apiKey : account.method
@@ -259,11 +264,18 @@ final class ProviderLoginController: UIViewController {
             let handle: TaskHandle
             do {
                 if editing {
-                    let configuration = try await LurosService.app.agentAPIConfiguration(provider: provider)
+                    let configuration = try await LurosService.app.agentAPIConfiguration(
+                        provider: provider,
+                        accountID: accountID,
+                    )
                     guard !Task.isCancelled else { return }
                     self?.savedValues = configuration.values
                 }
-                handle = try await LurosService.app.agentSignIn(provider: provider, method: method)
+                handle = try await LurosService.app.agentSignIn(
+                    provider: provider,
+                    method: method,
+                    accountID: accountID,
+                )
             } catch {
                 guard !Task.isCancelled else { return }
                 self?.lose(error)

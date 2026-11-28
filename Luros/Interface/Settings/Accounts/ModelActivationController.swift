@@ -12,6 +12,10 @@ final class ModelActivationController: TableController, UISearchResultsUpdating 
     @objc private dynamic var hidden: Set<String>
     private var loader: Task<Void, Never>?
     @objc private dynamic var saving = false
+    /// Shown where the fetch button was while the provider is being asked
+    /// (owner, 2026-11-28): a page that looks frozen reads as broken.
+    private let fetchSpinner = UIActivityIndicatorView(style: .medium)
+    private var fetchItem: UIBarButtonItem?
     private var verification: TaskHandle?
     private let search = UISearchController(searchResultsController: nil)
 
@@ -42,15 +46,24 @@ final class ModelActivationController: TableController, UISearchResultsUpdating 
             title: String(localized: "Save"),
             primaryAction: UIAction { [weak self] _ in self?.save() },
         )
+        // The provider's own list, asked for on arrival and again from here
+        // (owner, 2026-11-28): what the account already knows is drawn until
+        // the provider answers, and stays when it cannot.
+        let fetch = UIBarButtonItem(
+            image: UIImage(systemName: "arrow.clockwise"),
+            primaryAction: UIAction { [weak self] _ in self?.fetchModels() },
+        )
+        fetch.accessibilityLabel = String(localized: "Refresh Models")
+        fetchItem = fetch
         if usesAPIKey {
             let add = UIBarButtonItem(
                 image: UIImage(systemName: "plus"),
                 primaryAction: UIAction { [weak self] _ in self?.addCustomModel() },
             )
             add.accessibilityLabel = String(localized: "Add Custom Model")
-            navigationItem.rightBarButtonItems = [save, add]
+            navigationItem.rightBarButtonItems = [save, add, fetch]
         } else {
-            navigationItem.rightBarButtonItem = save
+            navigationItem.rightBarButtonItems = [save, fetch]
         }
         search.searchResultsUpdater = self
         search.obscuresBackgroundDuringPresentation = false
@@ -87,23 +100,62 @@ final class ModelActivationController: TableController, UISearchResultsUpdating 
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        guard usesAPIKey, loader == nil else { return }
+        guard loader == nil else { return }
+        fetchModels()
+    }
+
+    /// The provider's model list for this account, merged with the models the
+    /// reader added and the ones already enabled: a provider that cannot
+    /// answer leaves the list as it was, which is where the defaults show.
+    @objc private dynamic func fetchModels() {
+        loader?.cancel()
         dataSource.beginLoad()
+        navigationItem.prompt = nil
+        showFetching(true)
         loader = Task { [weak self] in
+            guard let self else { return }
+            defer { showFetching(false) }
             do {
-                guard let provider = self?.account.provider else { return }
-                let fetched = try await LurosService.app.agentModelList(provider: provider).models
-                guard let self, !Task.isCancelled else { return }
+                let fetched = try await LurosService.app.agentModelList(
+                    provider: account.provider,
+                    accountID: account.storeID,
+                ).models
+                guard !Task.isCancelled else { return }
+                guard !fetched.isEmpty else {
+                    navigationItem.prompt = String(localized: "Unable to Fetch Models")
+                    updateSearchResults(for: search)
+                    return
+                }
                 models = Array(Set(fetched).union(custom).union(selected).subtracting(hidden)).sorted()
                 updateSearchResults(for: search)
             } catch {
                 guard !Task.isCancelled else { return }
-                self?.navigationItem.prompt = String(localized: "Unable to Fetch Models")
+                navigationItem.prompt = String(localized: "Unable to Fetch Models")
+                updateSearchResults(for: search)
             }
         }
     }
 
     deinit { loader?.cancel() }
+
+    /// The spinner stands where the fetch button was, in the same place in
+    /// the bar, so the page says it is working and nothing else moves.
+    private func showFetching(_ fetching: Bool) {
+        guard let fetchItem, var items = navigationItem.rightBarButtonItems else { return }
+        if fetching {
+            fetchSpinner.startAnimating()
+            let spinning = UIBarButtonItem(customView: fetchSpinner)
+            items = items.map { item -> UIBarButtonItem in
+                item === fetchItem ? spinning : item
+            }
+        } else {
+            fetchSpinner.stopAnimating()
+            items = items.map { item -> UIBarButtonItem in
+                item.customView === fetchSpinner ? fetchItem : item
+            }
+        }
+        navigationItem.rightBarButtonItems = items
+    }
 
     @objc dynamic func updateSearchResults(for searchController: UISearchController) {
         let query = (searchController.searchBar.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)

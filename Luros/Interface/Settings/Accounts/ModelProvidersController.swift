@@ -39,9 +39,13 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
     private enum Row: Equatable {
         case account(AgentAccount, AgentQuotaSnapshot?)
         case status(Status)
+        /// One row per account, not per provider: two sign-ins of one
+        /// provider are two rows, and a diffable data source refuses two
+        /// identifiers that are the same (owner, 2026-11-28).
         var id: String {
             switch self {
-            case let .account(account, _): account.provider.rawValue
+            case let .account(account, _):
+                "account:" + (account.storeID ?? account.provider.rawValue)
             case .status: "status"
             }
         }
@@ -363,6 +367,7 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
             ) { [weak self] _ in
                 self?.signIn(account)
             },
+            addAccountAction(for: account.provider),
             UIAction(
                 title: String(localized: "Models"),
                 image: UIImage(systemName: "checklist"),
@@ -414,6 +419,33 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
 
     // MARK: - Acting
 
+    /// A second, third … account of one provider (owner, 2026-11-28): the
+    /// lowest free slot, signed in on a page of its own, so its key and its
+    /// quota are that account's and never the first one's.
+    private func addAccountAction(for provider: AgentProvider) -> UIKit.UIAction {
+        let ids = accounts.filter { $0.provider == provider }.compactMap(\.storeID)
+        let base = ids.first.map(AgentAccountID.base(of:)) ?? provider.rawValue
+        let free = AgentAccountID.next(base: base, taken: Set(ids))
+        // The methods are the worker's to name: the provider's unsaved row,
+        // which every list carries, is what a new account is signed in with.
+        let template = accounts.first { $0.provider == provider && !$0.signedIn }
+            ?? accounts.first { $0.provider == provider }
+        return UIKit.UIAction(
+            title: String(localized: "Add Account"),
+            image: UIImage(systemName: "person.badge.plus"),
+            attributes: (free == nil || template == nil) ? .disabled : [],
+        ) { [weak self] _ in
+            guard let self, let free, let template else { return }
+            signIn(AgentAccount(
+                provider: provider,
+                method: template.method,
+                alternativeMethods: template.alternativeMethods,
+                signedIn: false,
+                storeID: free,
+            ))
+        }
+    }
+
     private func openQuotaDetail(_ account: AgentAccount) {
         let page = ProviderQuotaDetailController(
             account: account,
@@ -443,14 +475,14 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
             confirmTitle: "Sign Out",
             destructive: true,
         ) { [weak self] in
-            self?.signOut(provider)
+            self?.signOut(provider, accountID: account.storeID)
         }
     }
 
-    private func signOut(_ provider: AgentProvider) {
+    private func signOut(_ provider: AgentProvider, accountID: String?) {
         Task { [weak self] in
             do {
-                try await LurosService.app.agentSignOut(provider: provider)
+                try await LurosService.app.agentSignOut(provider: provider, accountID: accountID)
                 EnabledModels.remove(for: provider)
                 self?.load()
             } catch {
