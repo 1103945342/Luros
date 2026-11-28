@@ -49,8 +49,15 @@ struct AccountDeskQuotaTests {
         let transport = MockTransport()
         let desk = AccountDesk(store: store, quotaTransport: transport)
 
+        let listed = await desk.list(dataRoot: root)
+        let deepSeekAccount = try #require(listed.accounts.first { $0.provider == .deepSeek })
+        let compatAccount = try #require(listed.accounts.first { $0.provider == .openAICompatible })
+        #expect(deepSeekAccount.poolID != nil)
+        #expect(deepSeekAccount.poolID == compatAccount.poolID)
+
         let response = await desk.quotas(AgentProviderQuotaRequest(mode: .attentionGated), dataRoot: root)
         #expect(response.quotas.count == 2)
+        #expect(Set(response.quotas.map(\.provider)) == [.deepSeek, .openAICompatible])
         // SingleFlight + shared SHA-256 pool key avoids querying twice concurrently.
         #expect(transport.callCount == 1)
 

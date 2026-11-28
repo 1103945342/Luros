@@ -132,17 +132,28 @@ public actor QuotaCoordinator {
         // Gating checks (only when endpoint didn't change)
         if !endpointChanged, let existing {
             if mode == .manualRefresh {
+                if let lastManual = existing.lastManualRefreshAt {
+                    let debounceUntil = lastManual.addingTimeInterval(Self.manualDebounceInterval)
+                    if now < debounceUntil {
+                        return projectedSnapshot(
+                            existing: existing,
+                            account: account,
+                            poolID: poolID,
+                            baseURL: baseURL,
+                            manualDebounceOverride: debounceUntil,
+                            now: now,
+                        )
+                    }
+                }
                 if !force,
-                   let lastManual = existing.lastManualRefreshAt,
-                   now.timeIntervalSince(lastManual) < Self.manualDebounceInterval
+                   let brokenUntil = existing.circuitBrokenUntil, now < brokenUntil
                 {
-                    let nextAllowed = lastManual.addingTimeInterval(Self.manualDebounceInterval)
                     return projectedSnapshot(
                         existing: existing,
                         account: account,
                         poolID: poolID,
                         baseURL: baseURL,
-                        nextAllowedOverride: nextAllowed,
+                        nextAllowedOverride: brokenUntil,
                         now: now,
                     )
                 }
@@ -180,36 +191,24 @@ public actor QuotaCoordinator {
                     ? (existing.lastForegroundFetchAt ?? existing.snapshot.updatedAt)
                     : (existing.lastBackgroundFetchAt ?? existing.lastForegroundFetchAt ?? existing.snapshot.updatedAt)
                 if let lastFetch, now.timeIntervalSince(lastFetch) < stalenessInterval {
+                    // Staleness gate hit: never set nextAllowedAt (reserved for cooldown/circuit breaker).
                     return projectedSnapshot(
                         existing: existing,
                         account: account,
                         poolID: poolID,
                         baseURL: baseURL,
-                        nextAllowedOverride: lastFetch.addingTimeInterval(stalenessInterval),
                         now: now,
                     )
                 }
             }
-
-            // Bulk/non-forced refresh respects 24h circuit breaker even on manualRefresh if !force,
-            // unless user explicitly forces a re-probe (e.g. from detail page).
-            if mode == .manualRefresh, !force,
-               let brokenUntil = existing.circuitBrokenUntil, now < brokenUntil
-            {
-                return projectedSnapshot(
-                    existing: existing,
-                    account: account,
-                    poolID: poolID,
-                    baseURL: baseURL,
-                    nextAllowedOverride: brokenUntil,
-                    now: now,
-                )
-            }
         }
 
-        // SingleFlight deduplication by poolID
+        // SingleFlight deduplication by poolID, projecting onto the caller's provider
         if let running = inFlight[poolID] {
-            return await running.value
+            var shared = await running.value
+            shared.provider = account.provider
+            shared.accountLabel = account.accountLabel ?? shared.accountLabel
+            return shared
         }
 
         let task = Task<AgentQuotaSnapshot, Never> { [store, transport, kwwkUsage, clock] in
@@ -275,6 +274,7 @@ public actor QuotaCoordinator {
         poolID: String,
         baseURL: String?,
         nextAllowedOverride: Date? = nil,
+        manualDebounceOverride: Date? = nil,
         now: Date,
     ) -> AgentQuotaSnapshot {
         guard var snap = existing?.snapshot else {
@@ -288,13 +288,20 @@ public actor QuotaCoordinator {
         }
         snap.provider = account.provider
         snap.accountLabel = account.accountLabel ?? snap.accountLabel
-        snap.nextAllowedAt = nextAllowedOverride ?? snap.nextAllowedAt
+        snap.nextAllowedAt = nextAllowedOverride
+        let activeManualDebounce = existing?.lastManualRefreshAt.flatMap { last -> Date? in
+            let until = last.addingTimeInterval(Self.manualDebounceInterval)
+            return now < until ? until : nil
+        }
+        snap.manualDebounceUntil = manualDebounceOverride ?? activeManualDebounce
         if let brokenUntil = existing?.circuitBrokenUntil, now < brokenUntil {
             snap.status = .circuitBroken
             snap.circuitBrokenUntil = brokenUntil
+            snap.nextAllowedAt = snap.nextAllowedAt ?? brokenUntil
         } else if let cooldownUntil = existing?.cooldownUntil, now < cooldownUntil {
             snap.status = .cooldown
             snap.cooldownUntil = cooldownUntil
+            snap.nextAllowedAt = snap.nextAllowedAt ?? cooldownUntil
         }
         return snap
     }
@@ -330,7 +337,12 @@ public actor QuotaCoordinator {
                 store.storeRelayProbe(endpointKey: key, kind: probeKind, now: now)
             }
             var snap = result.snapshot
-            snap.nextAllowedAt = mode == .manualRefresh ? now.addingTimeInterval(Self.manualDebounceInterval) : nil
+            snap.nextAllowedAt = nil
+            let activeManualDebounce = existing?.lastManualRefreshAt.flatMap { last -> Date? in
+                let until = last.addingTimeInterval(Self.manualDebounceInterval)
+                return now < until ? until : nil
+            }
+            snap.manualDebounceUntil = mode == .manualRefresh ? now.addingTimeInterval(Self.manualDebounceInterval) : activeManualDebounce
             let pool = PersistedQuotaPool(
                 poolID: poolID,
                 endpointKey: result.endpointKey ?? endpointKey,
@@ -367,6 +379,11 @@ public actor QuotaCoordinator {
             let fallbackKind: AgentQuotaPoolKind = QuotaPoolIdentity.isOAuthSubscription(account.provider) && !account.usesAPIKey
                 ? .window
                 : .balance
+            let activeManualDebounce = existing?.lastManualRefreshAt.flatMap { last -> Date? in
+                let until = last.addingTimeInterval(Self.manualDebounceInterval)
+                return now < until ? until : nil
+            }
+            let manualDebounceUntil = mode == .manualRefresh ? now.addingTimeInterval(Self.manualDebounceInterval) : activeManualDebounce
             let snap = AgentQuotaSnapshot(
                 poolID: poolID,
                 provider: account.provider,
@@ -381,6 +398,7 @@ public actor QuotaCoordinator {
                 billingURL: existing?.snapshot.billingURL ?? QuotaPoolIdentity.billingURL(for: account.provider, baseURL: baseURL),
                 updatedAt: existing?.snapshot.updatedAt ?? now,
                 nextAllowedAt: circuitBrokenUntil ?? cooldownUntil,
+                manualDebounceUntil: manualDebounceUntil,
                 cooldownUntil: cooldownUntil,
                 circuitBrokenUntil: circuitBrokenUntil,
                 errorSummary: summary,
@@ -406,6 +424,11 @@ public actor QuotaCoordinator {
             let fallbackKind: AgentQuotaPoolKind = QuotaPoolIdentity.isOAuthSubscription(account.provider) && !account.usesAPIKey
                 ? .window
                 : .balance
+            let activeManualDebounce = existing?.lastManualRefreshAt.flatMap { last -> Date? in
+                let until = last.addingTimeInterval(Self.manualDebounceInterval)
+                return now < until ? until : nil
+            }
+            let manualDebounceUntil = mode == .manualRefresh ? now.addingTimeInterval(Self.manualDebounceInterval) : activeManualDebounce
             let snap = AgentQuotaSnapshot(
                 poolID: poolID,
                 provider: account.provider,
@@ -420,6 +443,7 @@ public actor QuotaCoordinator {
                 billingURL: existing?.snapshot.billingURL ?? QuotaPoolIdentity.billingURL(for: account.provider, baseURL: baseURL),
                 updatedAt: existing?.snapshot.updatedAt ?? now,
                 nextAllowedAt: cooldownUntil,
+                manualDebounceUntil: manualDebounceUntil,
                 cooldownUntil: cooldownUntil,
                 errorSummary: "Network error while checking quota.",
             )

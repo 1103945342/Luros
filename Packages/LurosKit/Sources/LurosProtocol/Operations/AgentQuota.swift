@@ -6,7 +6,8 @@ public enum QuotaDecimalCoding {
     private static let posixLocale = Locale(identifier: "en_US_POSIX")
 
     public static func encode(_ value: Decimal) -> String {
-        NSDecimalString(&mutable(value), posixLocale)
+        var copy = value
+        return NSDecimalString(&copy, posixLocale)
     }
 
     public static func decode(from decoder: any Decoder) throws -> Decimal {
@@ -32,10 +33,6 @@ public enum QuotaDecimalCoding {
               !decimal.isNaN
         else { return nil }
         return decimal
-    }
-
-    private static func mutable(_ value: Decimal) -> Decimal {
-        value
     }
 }
 
@@ -221,6 +218,7 @@ public struct AgentQuotaSnapshot: Codable, Sendable, Equatable {
     public var billingURL: URL?
     public var updatedAt: Date?
     public var nextAllowedAt: Date?
+    public var manualDebounceUntil: Date?
     public var cooldownUntil: Date?
     public var circuitBrokenUntil: Date?
     public var errorSummary: String?
@@ -239,6 +237,7 @@ public struct AgentQuotaSnapshot: Codable, Sendable, Equatable {
         billingURL: URL? = nil,
         updatedAt: Date? = nil,
         nextAllowedAt: Date? = nil,
+        manualDebounceUntil: Date? = nil,
         cooldownUntil: Date? = nil,
         circuitBrokenUntil: Date? = nil,
         errorSummary: String? = nil,
@@ -256,6 +255,7 @@ public struct AgentQuotaSnapshot: Codable, Sendable, Equatable {
         self.billingURL = billingURL
         self.updatedAt = updatedAt
         self.nextAllowedAt = nextAllowedAt
+        self.manualDebounceUntil = manualDebounceUntil
         self.cooldownUntil = cooldownUntil
         self.circuitBrokenUntil = circuitBrokenUntil
         self.errorSummary = errorSummary

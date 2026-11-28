@@ -22,6 +22,7 @@ final class ComposerContextPanel: ComposerPanel {
 
     private static let barHeight: CGFloat = 8
     private static let quotaBarHeight: CGFloat = 6
+    private static let refreshButtonSize: CGFloat = 28
 
     private let track = UIView()
     private let fill = UIView()
@@ -337,10 +338,10 @@ final class ComposerContextPanel: ComposerPanel {
 
     private func quotaSectionHeight(for width: CGFloat) -> CGFloat {
         guard let quotaDisplay else { return 0 }
-        let textWidth = max(0, width - 32 - ComposerMetrics.Spacing.sm)
+        let textWidth = max(0, width - Self.refreshButtonSize - ComposerMetrics.Spacing.sm)
         let titleH = quotaTitleLabel.sizeThatFits(CGSize(width: textWidth, height: .greatestFiniteMagnitude)).height
         let detailH = quotaDetailLabel.sizeThatFits(CGSize(width: textWidth, height: .greatestFiniteMagnitude)).height
-        let textH = max(28, titleH + detailH)
+        let textH = max(Self.refreshButtonSize, titleH + detailH)
         let barH: CGFloat = quotaDisplay.usedPercent != nil ? (Self.quotaBarHeight + ComposerMetrics.Spacing.xs) : 0
         return 1 + ComposerMetrics.Spacing.sm + barH + textH + ComposerMetrics.Spacing.sm
     }
@@ -392,12 +393,12 @@ final class ComposerContextPanel: ComposerPanel {
                 quotaFill.frame = CGRect(x: 0, y: 0, width: width * qRatio, height: Self.quotaBarHeight)
                 qy = quotaTrack.frame.maxY + ComposerMetrics.Spacing.xs
             }
-            let refreshSize: CGFloat = 28
+            let refreshSize = Self.refreshButtonSize
             let qTextWidth = max(0, width - refreshSize - ComposerMetrics.Spacing.sm)
             let qTitleH = quotaTitleLabel.sizeThatFits(CGSize(width: qTextWidth, height: .greatestFiniteMagnitude)).height
             let qDetailH = quotaDetailLabel.sizeThatFits(CGSize(width: qTextWidth, height: .greatestFiniteMagnitude)).height
-            quotaTitleLabel.frame = CGRect(x: 0, y: qy, width: qTextWidth, height: qTitleH)
-            quotaDetailLabel.frame = CGRect(x: 0, y: quotaTitleLabel.frame.maxY, width: qTextWidth, height: qDetailH)
+            quotaTitleLabel.frame = directionalFrame(CGRect(x: 0, y: qy, width: qTextWidth, height: qTitleH))
+            quotaDetailLabel.frame = directionalFrame(CGRect(x: 0, y: quotaTitleLabel.frame.maxY, width: qTextWidth, height: qDetailH))
             let qTextBlockH = max(refreshSize, qTitleH + qDetailH)
             quotaRefreshButton.frame = directionalFrame(CGRect(
                 x: width - refreshSize,

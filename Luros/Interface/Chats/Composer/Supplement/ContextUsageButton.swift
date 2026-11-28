@@ -228,8 +228,9 @@ final class QuotaBadgeButton: UIControl {
 
     @objc(luros_setExpanded:) dynamic func setExpanded(_ expanded: Bool) {
         self.expanded = expanded
+        accessibilityTraits = expanded ? [.button, .selected] : [.button]
         if let display = currentDisplay {
-            accessibilityValue = expanded ? String(localized: "Expanded") : display.headline
+            accessibilityValue = display.headline
         }
     }
 

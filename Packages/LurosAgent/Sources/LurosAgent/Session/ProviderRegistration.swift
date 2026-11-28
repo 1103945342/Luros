@@ -45,29 +45,51 @@ public enum ProviderRegistration {
         }
         guard let resolved = registered else { return nil }
         if let quotaStore {
-            let latest = (try? await manager.credentials(for: storeID)) ?? credentials
-            if storeID == CredentialProviderID.anthropicOAuth {
-                let observingClient = QuotaHeaderObservingHTTPClient(storeID: storeID, store: quotaStore)
-                await APIRegistry.shared.register(
-                    ProviderVariants.anthropicOAuth(accessToken: nil, client: observingClient),
-                    scope: "anthropic",
+            if storeID == CredentialProviderID.anthropicOAuth,
+               let existing = await APIRegistry.shared.provider(scope: "anthropic", api: resolved.model.api) as? AnthropicProvider,
+               !(existing.client is QuotaHeaderObservingHTTPClient)
+            {
+                let observingClient = QuotaHeaderObservingHTTPClient(
+                    inner: existing.client,
+                    storeID: storeID,
+                    store: quotaStore,
                 )
-            } else if storeID == "openai-codex" {
-                let accountId: String? = if case let .string(stored)? = latest.extras["accountId"], !stored.isEmpty {
-                    stored
-                } else {
-                    OpenAICodexOAuthProvider.extractAccountId(fromJWT: latest.access)
-                }
-                let observingClient = QuotaHeaderObservingHTTPClient(storeID: storeID, store: quotaStore)
-                await APIRegistry.shared.register(
-                    ProviderVariants.chatgptCodex(
-                        accessToken: nil,
-                        accountId: accountId,
-                        client: observingClient,
-                        originator: "kwwk",
-                    ),
-                    scope: "chatgpt-codex",
+                let wrapped = AnthropicProvider(
+                    api: existing.api,
+                    client: observingClient,
+                    defaultBaseURL: existing.defaultBaseURL,
+                    defaultAPIKey: existing.defaultAPIKey,
+                    apiVersion: existing.apiVersion,
+                    extraHeaders: existing.extraHeaders,
+                    authHeaderBuilder: existing.authHeaderBuilder,
+                    systemPromptPrefix: existing.systemPromptPrefix,
+                    maximumOutputTokens: existing.maximumOutputTokens,
                 )
+                await APIRegistry.shared.register(wrapped, scope: "anthropic")
+            } else if storeID == "openai-codex",
+                      let existing = await APIRegistry.shared.provider(scope: "chatgpt-codex", api: resolved.model.api) as? OpenAIResponsesProvider,
+                      !(existing.client is QuotaHeaderObservingHTTPClient)
+            {
+                let observingClient = QuotaHeaderObservingHTTPClient(
+                    inner: existing.client,
+                    storeID: storeID,
+                    store: quotaStore,
+                )
+                let wrapped = OpenAIResponsesProvider(
+                    api: existing.api,
+                    client: observingClient,
+                    webSocketClient: existing.webSocketClient,
+                    defaultBaseURL: existing.defaultBaseURL,
+                    defaultAPIKey: existing.defaultAPIKey,
+                    extraHeaders: existing.extraHeaders,
+                    bodyOverrides: existing.bodyOverrides,
+                    urlBuilder: existing.urlBuilder,
+                    webSocketURLBuilder: existing.webSocketURLBuilder,
+                    maxWebSocketFailures: existing.maxWebSocketFailures,
+                    authHeaderBuilder: existing.authHeaderBuilder,
+                    webSocketEndpoints: existing.webSocketEndpoints,
+                )
+                await APIRegistry.shared.register(wrapped, scope: "chatgpt-codex")
             }
         }
         // A model the endpoint's own record does not describe is read against

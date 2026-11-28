@@ -161,6 +161,48 @@ struct ProviderQuotaTests {
         #expect(decoded.balances.first?.used == Decimal(string: "0.03"))
         #expect(decoded.windows.first?.usedPercent == Decimal(string: "33.33"))
         #expect(decoded.windows.first?.remainingPercent == Decimal(string: "66.67"))
+        for sample in ["0", "10.30", "123456.789", "-1.25"] {
+            let decimal = try #require(Decimal(string: sample))
+            let encoded = QuotaDecimalCoding.encode(decimal)
+            #expect(QuotaDecimalCoding.parse(encoded) == decimal)
+        }
+    }
+
+    @Test
+    func `Cache store rejects future relay probe timestamps and preserves pool kind on passive merge`() throws {
+        let root = try makeTempRoot()
+        defer { try? FileManager.default.removeItem(at: root.home) }
+
+        let store = QuotaCacheStore(dataRoot: root)
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        store.storeRelayProbe(endpointKey: "https://future.example", kind: .sub2api, now: now.addingTimeInterval(3600))
+        #expect(store.cachedRelayProbe(for: "https://future.example", now: now) == nil)
+        #expect(store.cachedRelayProbe(for: "https://future.example", now: now.addingTimeInterval(3605)) == .sub2api)
+
+        let debounce = now.addingTimeInterval(25)
+        store.upsertPool(PersistedQuotaPool(
+            poolID: "key:balance-pool",
+            snapshot: AgentQuotaSnapshot(
+                poolID: "key:balance-pool",
+                provider: .openAICompatible,
+                kind: .balance,
+                source: .probedRelay,
+                status: .available,
+                manualDebounceUntil: debounce,
+            ),
+        ))
+        let merged = store.mergePassiveUpdate(
+            poolID: "key:balance-pool",
+            provider: .openAICompatible,
+            accountLabel: "relay.example",
+            windows: [AgentQuotaWindow(id: "fiveHour", label: "5h", usedPercent: Decimal(12))],
+            balances: [],
+            planName: nil,
+            isExhausted: false,
+            now: now,
+        )
+        #expect(merged.snapshot.kind == .balance)
+        #expect(merged.snapshot.manualDebounceUntil == debounce)
     }
 
     @Test
@@ -639,23 +681,37 @@ struct ProviderQuotaTests {
             usesAPIKey: true,
         )
 
-        // Concurrent calls -> 1 network request (SingleFlight)
+        // Concurrent calls -> 1 network request (SingleFlight) and per-caller provider projection
+        let sharedAccount = QuotaAccountDescriptor(
+            provider: .openAICompatible,
+            storeID: CredentialProviderID.openAICompatible,
+            accountLabel: "relay.deepseek.example",
+            credentials: OAuthCredentials(access: "ds-1", refresh: "", expires: .max, extras: ["baseUrl": .string("https://api.deepseek.com")]),
+            usesAPIKey: true,
+        )
         async let a = coordinator.snapshot(for: account, mode: .attentionGated, foreground: true, force: false)
-        async let b = coordinator.snapshot(for: account, mode: .attentionGated, foreground: true, force: false)
-        _ = await (a, b)
+        async let b = coordinator.snapshot(for: sharedAccount, mode: .attentionGated, foreground: true, force: false)
+        let (snapA, snapB) = await (a, b)
         #expect(counter.value == 1)
+        #expect(snapA.provider == .deepSeek)
+        #expect(snapB.provider == .openAICompatible)
+        #expect(snapB.accountLabel == "relay.deepseek.example")
 
-        // 5m later in foreground -> ordinary 10m gate prevents refetch
+        // 5m later in foreground -> ordinary 10m gate prevents refetch without setting nextAllowedAt
         clockBox.advance(by: 5 * 60)
-        _ = await coordinator.snapshot(for: account, mode: .attentionGated, foreground: true, force: false)
+        let gatedSnap = await coordinator.snapshot(for: account, mode: .attentionGated, foreground: true, force: false)
         #expect(counter.value == 1)
+        #expect(gatedSnap.nextAllowedAt == nil)
 
-        // Manual refresh -> succeeds, then 10s later is debounced (30s manual debounce)
-        _ = await coordinator.snapshot(for: account, mode: .manualRefresh, foreground: true, force: false)
+        // Manual refresh -> succeeds even inside staleness window, sets manualDebounceUntil, then 10s later is debounced
+        let manualSnap = await coordinator.snapshot(for: account, mode: .manualRefresh, foreground: true, force: true)
         #expect(counter.value == 2)
+        #expect(manualSnap.nextAllowedAt == nil)
+        #expect(manualSnap.manualDebounceUntil == clockBox.now.addingTimeInterval(QuotaCoordinator.manualDebounceInterval))
         clockBox.advance(by: 10)
-        _ = await coordinator.snapshot(for: account, mode: .manualRefresh, foreground: true, force: false)
+        let debouncedSnap = await coordinator.snapshot(for: account, mode: .manualRefresh, foreground: true, force: true)
         #expect(counter.value == 2)
+        #expect(debouncedSnap.manualDebounceUntil == clockBox.now.addingTimeInterval(20))
 
         // 404 on unsupported relay trips 24h circuit breaker
         let deadAccount = QuotaAccountDescriptor(

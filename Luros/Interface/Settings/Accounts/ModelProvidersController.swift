@@ -58,9 +58,14 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
         }
     }
 
+    private struct QuotaKey: Hashable {
+        let provider: AgentProvider
+        let poolID: String
+    }
+
     /// The accounts as luros-agent last listed them.
     private var accounts: [AgentAccount] = []
-    private var quotas: [AgentProvider: AgentQuotaSnapshot] = [:]
+    private var quotas: [QuotaKey: AgentQuotaSnapshot] = [:]
     @objc private dynamic var loaded = false
     @objc private dynamic var refreshingQuotas = false
     @objc private dynamic var failure: Error?
@@ -167,13 +172,13 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
                 force: force,
             )
             guard !Task.isCancelled, let response else { return }
-            var next: [AgentProvider: AgentQuotaSnapshot] = [:]
+            var next: [QuotaKey: AgentQuotaSnapshot] = [:]
             for snap in response.quotas {
-                next[snap.provider] = snap
+                next[QuotaKey(provider: snap.provider, poolID: snap.poolID)] = snap
             }
             quotas = next
             regroup()
-            if mode == .manualRefresh {
+            if mode == .manualRefresh, !response.quotas.isEmpty {
                 SPIndicator.present(
                     title: String(localized: "Quotas Updated"),
                     preset: .done,
@@ -188,11 +193,11 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
             refreshControl?.endRefreshing()
             return
         }
-        let earliestNext = quotas.values.compactMap(\.nextAllowedAt).min()
-        if let earliestNext, earliestNext > Date(),
-           quotas.values.allSatisfy({ $0.status != .cooldown && $0.status != .circuitBroken })
-        {
-            let seconds = max(1, Int(ceil(earliestNext.timeIntervalSinceNow)))
+        let now = Date()
+        let queryable = quotas.values.filter { $0.kind != .billingLink }
+        let debounces = queryable.compactMap(\.manualDebounceUntil).filter { $0 > now }
+        if !queryable.isEmpty, debounces.count == queryable.count, let earliestDebounce = debounces.min() {
+            let seconds = max(1, Int(ceil(earliestDebounce.timeIntervalSince(now))))
             refreshControl?.endRefreshing()
             SPIndicator.present(
                 title: String(localized: "Try Again in \(seconds)s"),
@@ -203,7 +208,22 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
         }
         refreshingQuotas = true
         navigationItem.rightBarButtonItem?.isEnabled = false
-        loadQuotas(mode: .manualRefresh, force: false)
+        loadQuotas(mode: .manualRefresh, force: true)
+    }
+
+    private func quota(for account: AgentAccount) -> AgentQuotaSnapshot? {
+        if let poolID = account.poolID,
+           let exact = quotas[QuotaKey(provider: account.provider, poolID: poolID)]
+        {
+            return exact
+        }
+        let matches = quotas.values.filter { $0.provider == account.provider }
+        if let label = account.account,
+           let labeled = matches.first(where: { $0.accountLabel == label })
+        {
+            return labeled
+        }
+        return matches.first
     }
 
     @objc dynamic func updateSearchResults(for searchController: UISearchController) {
@@ -232,7 +252,7 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
                 (.keys, shown.filter { !$0.signedIn && $0.method == .apiKey }),
             ]
             sections = groups.filter { !$0.1.isEmpty }.map { group, items in
-                (.group(group), items.map { Row.account($0, quotas[$0.provider]) })
+                (.group(group), items.map { Row.account($0, quota(for: $0)) })
             }
             if sections.isEmpty {
                 sections = [(.status, [.status(.noResults)])]
@@ -397,7 +417,7 @@ final class ModelProvidersController: TableController, UISearchResultsUpdating {
     private func openQuotaDetail(_ account: AgentAccount) {
         let page = ProviderQuotaDetailController(
             account: account,
-            initialQuota: quotas[account.provider],
+            initialQuota: quota(for: account),
             onAccountsChanged: { [weak self] in self?.load() },
         )
         navigationController?.pushViewController(page, animated: true)

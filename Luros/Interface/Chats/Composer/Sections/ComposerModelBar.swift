@@ -289,12 +289,13 @@ final class ComposerModelBar: ComposerSectionView {
             height: sendSize,
         )
         sendButton.frame = directionalFrame(sendFrame)
-        addButton.frame = directionalFrame(CGRect(
+        let addLogicalFrame = CGRect(
             x: sendFrame.minX - spacing - sendSize,
             y: sendFrame.minY,
             width: sendSize,
             height: sendSize,
-        ))
+        )
+        addButton.frame = directionalFrame(addLogicalFrame)
 
         // The left side reads in the order it is decided in: what the run may
         // do, which model answers, how hard it thinks, how full the context is.
@@ -337,6 +338,7 @@ final class ComposerModelBar: ComposerSectionView {
         }
 
         let ringSize = ContextUsageButton.size
+        let maxRight = addLogicalFrame.minX - spacing
         if !usageButton.isHidden {
             usageButton.frame = directionalFrame(CGRect(
                 x: x,
@@ -347,13 +349,25 @@ final class ComposerModelBar: ComposerSectionView {
             x += ringSize + spacing
         }
         if !quotaButton.isHidden {
-            let quotaSize = quotaButton.intrinsicContentSize
-            quotaButton.frame = directionalFrame(CGRect(
-                x: x,
-                y: (bounds.height - quotaSize.height) / 2,
-                width: quotaSize.width,
-                height: quotaSize.height,
-            ))
+            let availableWidth = max(0, maxRight - x)
+            if availableWidth >= 24 {
+                let quotaSize = quotaButton.intrinsicContentSize
+                let width = min(quotaSize.width, availableWidth)
+                quotaButton.alpha = 1
+                quotaButton.isUserInteractionEnabled = true
+                quotaButton.accessibilityElementsHidden = false
+                quotaButton.frame = directionalFrame(CGRect(
+                    x: x,
+                    y: (bounds.height - quotaSize.height) / 2,
+                    width: width,
+                    height: quotaSize.height,
+                ))
+            } else {
+                quotaButton.alpha = 0
+                quotaButton.isUserInteractionEnabled = false
+                quotaButton.accessibilityElementsHidden = true
+                quotaButton.frame = .zero
+            }
         }
     }
 }

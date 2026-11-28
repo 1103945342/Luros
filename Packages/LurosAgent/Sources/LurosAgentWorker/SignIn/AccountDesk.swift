@@ -154,7 +154,14 @@ public actor AccountDesk {
                             account.capabilities = facts.capabilities
                         }
                     }
-                    account.usesAPIKey = ProviderModels.usesAPIKey(provider, credentials: credentials) ? true : nil
+                    let usesAPIKey = ProviderModels.usesAPIKey(provider, credentials: credentials)
+                    account.usesAPIKey = usesAPIKey ? true : nil
+                    account.poolID = QuotaPoolIdentity.poolID(
+                        provider: provider,
+                        storeID: provider.storeID,
+                        credentials: credentials,
+                        usesAPIKey: usesAPIKey,
+                    )
                 }
                 accounts.append(account)
                 if account.signedIn {

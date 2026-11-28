@@ -109,6 +109,7 @@ public final class QuotaCacheStore: @unchecked Sendable {
         poolID: String,
         provider: AgentProvider,
         accountLabel: String?,
+        kind: AgentQuotaPoolKind? = nil,
         windows: [AgentQuotaWindow],
         balances: [AgentQuotaBalance],
         planName: String?,
@@ -134,6 +135,7 @@ public final class QuotaCacheStore: @unchecked Sendable {
                     mergedBalances.append(incoming)
                 }
             }
+            let effectiveKind = kind ?? existing?.snapshot.kind ?? (!mergedWindows.isEmpty ? .window : .balance)
             let effectiveStatus: AgentQuotaStatus = isExhausted
                 ? .exhausted
                 : (mergedWindows.contains { $0.usedPercent >= 100 && $0.id != "overage" } ? .exhausted : .available)
@@ -141,7 +143,7 @@ public final class QuotaCacheStore: @unchecked Sendable {
                 poolID: poolID,
                 provider: provider,
                 accountLabel: accountLabel ?? existing?.snapshot.accountLabel,
-                kind: .window,
+                kind: effectiveKind,
                 source: .passiveHeaders,
                 status: effectiveStatus,
                 balances: mergedBalances,
@@ -151,6 +153,7 @@ public final class QuotaCacheStore: @unchecked Sendable {
                 billingURL: QuotaPoolIdentity.billingURL(for: provider),
                 updatedAt: now,
                 nextAllowedAt: nil,
+                manualDebounceUntil: existing?.snapshot.manualDebounceUntil,
                 cooldownUntil: nil,
                 circuitBrokenUntil: nil,
                 errorSummary: nil,
@@ -189,9 +192,11 @@ public final class QuotaCacheStore: @unchecked Sendable {
     public func cachedRelayProbe(for endpointKey: String, now: Date = Date()) -> RelayProbeKind? {
         lock.withLock {
             let list = readPreservedList(at: probesFile) as PreservedList<PersistedRelayProbe>
-            guard let entry = list.items.first(where: { $0.endpointKey == endpointKey }),
-                  now.timeIntervalSince(entry.probedAt) < Self.probeCacheTTL
-            else { return nil }
+            guard let entry = list.items.first(where: { $0.endpointKey == endpointKey }) else {
+                return nil
+            }
+            let age = now.timeIntervalSince(entry.probedAt)
+            guard age >= 0, age < Self.probeCacheTTL else { return nil }
             return entry.kind
         }
     }

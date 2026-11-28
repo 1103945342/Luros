@@ -123,7 +123,7 @@ final class ProviderQuotaDetailController: TableController {
                 force: false,
             )
             guard !Task.isCancelled else { return }
-            if let latest = response?.quotas.first {
+            if let latest = matchingSnapshot(in: response?.quotas ?? []) {
                 snapshot = latest
                 rebuildSections()
             }
@@ -135,12 +135,9 @@ final class ProviderQuotaDetailController: TableController {
             refreshControl?.endRefreshing()
             return
         }
-        if let nextAllowed = snapshot?.nextAllowedAt,
-           nextAllowed > Date(),
-           snapshot?.status != .circuitBroken,
-           snapshot?.status != .cooldown
-        {
-            let seconds = max(1, Int(ceil(nextAllowed.timeIntervalSinceNow)))
+        let now = Date()
+        if let debounceUntil = snapshot?.manualDebounceUntil, debounceUntil > now {
+            let seconds = max(1, Int(ceil(debounceUntil.timeIntervalSince(now))))
             refreshControl?.endRefreshing()
             SPIndicator.present(
                 title: String(localized: "Try Again in \(seconds)s"),
@@ -152,7 +149,6 @@ final class ProviderQuotaDetailController: TableController {
         refreshing = true
         updateRefreshControls()
         loader?.cancel()
-        let force = snapshot?.status == .circuitBroken || snapshot?.status == .cooldown
         loader = Task { [weak self] in
             guard let self else { return }
             defer {
@@ -165,10 +161,10 @@ final class ProviderQuotaDetailController: TableController {
                     provider: account.provider,
                     mode: .manualRefresh,
                     foreground: true,
-                    force: force,
+                    force: true,
                 )
                 guard !Task.isCancelled else { return }
-                if let latest = response.quotas.first {
+                if let latest = matchingSnapshot(in: response.quotas) {
                     snapshot = latest
                     rebuildSections()
                     if latest.status == .available || latest.status == .exhausted {
@@ -184,6 +180,21 @@ final class ProviderQuotaDetailController: TableController {
                 presentNotice(title: "Unable to Refresh Quota", message: error.readableMessage)
             }
         }
+    }
+
+    private func matchingSnapshot(in quotas: [AgentQuotaSnapshot]) -> AgentQuotaSnapshot? {
+        if let poolID = account.poolID ?? snapshot?.poolID,
+           let exact = quotas.first(where: { $0.poolID == poolID && $0.provider == account.provider })
+           ?? quotas.first(where: { $0.poolID == poolID })
+        {
+            return exact
+        }
+        if let label = account.account,
+           let labeled = quotas.first(where: { $0.provider == account.provider && $0.accountLabel == label })
+        {
+            return labeled
+        }
+        return quotas.first(where: { $0.provider == account.provider }) ?? quotas.first
     }
 
     @objc(luros_updateRefreshControls) private dynamic func updateRefreshControls() {

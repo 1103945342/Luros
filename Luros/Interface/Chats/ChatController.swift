@@ -66,7 +66,7 @@ final class ChatController: UIViewController {
     private var runReconcile: Task<Void, Never>?
     private var quotaTask: Task<Void, Never>?
     private var activeQuota: AgentQuotaSnapshot?
-    @objc dynamic private var wasWorkingForQuota = false
+    private var wasWorkingForQuota = false
 
     /// The shown conversation's rows as last applied.
     private var messages: [ChatMessage] = []
@@ -1279,12 +1279,8 @@ final class ChatController: UIViewController {
     }
 
     @objc(luros_refreshComposerQuotaManually) private dynamic func refreshComposerQuotaManually() {
-        if let nextAllowed = activeQuota?.nextAllowedAt,
-           nextAllowed > Date(),
-           activeQuota?.status != .cooldown,
-           activeQuota?.status != .circuitBroken
-        {
-            let seconds = max(1, Int(ceil(nextAllowed.timeIntervalSinceNow)))
+        if let debounceUntil = activeQuota?.manualDebounceUntil, debounceUntil > Date() {
+            let seconds = max(1, Int(ceil(debounceUntil.timeIntervalSinceNow)))
             SPIndicator.present(
                 title: String(localized: "Try Again in \(seconds)s"),
                 preset: .error,
@@ -1292,7 +1288,7 @@ final class ChatController: UIViewController {
             )
             return
         }
-        refreshComposerQuota(mode: .manualRefresh, force: activeQuota?.status == .circuitBroken || activeQuota?.status == .cooldown)
+        refreshComposerQuota(mode: .manualRefresh, force: true)
     }
 
     private func refreshComposerQuota(mode: AgentQuotaFetchMode, force: Bool = false) {
@@ -1310,32 +1306,24 @@ final class ChatController: UIViewController {
         quotaTask?.cancel()
         quotaTask = Task { [weak self] in
             guard let self else { return }
-            if mode == .attentionGated,
-               let cached = try? await LurosService.app.agentProviderQuota(
-                   provider: provider,
-                   mode: .cachedOnly,
-                   foreground: true,
-                   force: false,
-               ),
-               let snap = cached.quotas.first,
-               !Task.isCancelled
-            {
-                activeQuota = snap
-                composer.setProviderQuota(snap, model: model)
-            }
-            guard !Task.isCancelled,
-                  let response = try? await LurosService.app.agentProviderQuota(
-                      provider: provider,
-                      mode: mode,
-                      foreground: true,
-                      force: force,
-                  ),
-                  !Task.isCancelled
+            guard let response = try? await LurosService.app.agentProviderQuota(
+                provider: provider,
+                mode: mode,
+                foreground: true,
+                force: force,
+            ),
+            !Task.isCancelled
             else { return }
-            let latest = response.quotas.first
+            let latest: AgentQuotaSnapshot? = if let currentPoolID = activeQuota?.poolID, activeQuota?.provider == provider {
+                response.quotas.first(where: { $0.poolID == currentPoolID && $0.provider == provider })
+                    ?? response.quotas.first(where: { $0.provider == provider })
+                    ?? response.quotas.first
+            } else {
+                response.quotas.first(where: { $0.provider == provider }) ?? response.quotas.first
+            }
             activeQuota = latest
             composer.setProviderQuota(latest, model: model)
-            if mode == .manualRefresh, latest != nil {
+            if mode == .manualRefresh, let latest, latest.status == .available || latest.status == .exhausted {
                 SPIndicator.present(
                     title: String(localized: "Quota Updated"),
                     preset: .done,
