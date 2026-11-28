@@ -28,7 +28,17 @@ final class ComposerChoiceSheet: UIViewController {
     /// Choices under a heading of their own, such as one provider's models.
     struct Group {
         var title: String?
+        /// What the endpoint has left, drawn at the right of its heading: the
+        /// model picker is where a provider is chosen, so it is where its
+        /// quota belongs (owner, 2026-11-28).
+        var detail: String?
         var choices: [Choice]
+
+        init(title: String? = nil, detail: String? = nil, choices: [Choice]) {
+            self.title = title
+            self.detail = detail
+            self.choices = choices
+        }
     }
 
     /// The height the connectivity report opens at, on a phone and on a card
@@ -158,11 +168,36 @@ final class ComposerChoiceSheet: UIViewController {
                 label.textColor = .secondaryLabel
                 label.numberOfLines = 0
                 label.accessibilityTraits = .header
+                // The quota sits on the heading's own line, at its right:
+                // the endpoint and what it has left are read together.
+                let heading: UIView
+                if let detail = group.detail, !detail.isEmpty {
+                    let detailLabel = UILabel()
+                    detailLabel.text = detail
+                    detailLabel.font = .preferredFont(forTextStyle: .caption1)
+                    detailLabel.adjustsFontForContentSizeCategory = true
+                    detailLabel.textColor = .tertiaryLabel
+                    detailLabel.textAlignment = .natural
+                    detailLabel.setContentHuggingPriority(.required, for: .horizontal)
+                    detailLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+                    let row = UIStackView(arrangedSubviews: [label, detailLabel])
+                    row.axis = .horizontal
+                    row.alignment = .firstBaseline
+                    row.spacing = 8
+                    // One stop: the host, then what it has left.
+                    row.isAccessibilityElement = true
+                    row.accessibilityLabel = title
+                    row.accessibilityValue = detail
+                    row.accessibilityTraits = .header
+                    heading = row
+                } else {
+                    heading = label
+                }
                 if let previous = stack.arrangedSubviews.last {
                     stack.setCustomSpacing(16, after: previous)
                 }
-                stack.addArrangedSubview(label)
-                stack.setCustomSpacing(4, after: label)
+                stack.addArrangedSubview(heading)
+                stack.setCustomSpacing(4, after: heading)
             }
             for choice in group.choices {
                 let row = ChoiceRow(title: choice.title, detail: choice.subtitle, chosen: choice.isSelected)
