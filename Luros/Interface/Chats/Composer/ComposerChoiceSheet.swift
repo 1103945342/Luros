@@ -28,15 +28,15 @@ final class ComposerChoiceSheet: UIViewController {
     /// Choices under a heading of their own, such as one provider's models.
     struct Group {
         var title: String?
-        /// What the endpoint has left, drawn at the right of its heading: the
-        /// model picker is where a provider is chosen, so it is where its
-        /// quota belongs (owner, 2026-11-28).
-        var detail: String?
+        /// The usage icon at the right of the heading, which opens that
+        /// account's quota: the heading says which endpoint, the icon says
+        /// what it has left (owner, 2026-11-28).
+        var quota: (() -> Void)?
         var choices: [Choice]
 
-        init(title: String? = nil, detail: String? = nil, choices: [Choice]) {
+        init(title: String? = nil, quota: (() -> Void)? = nil, choices: [Choice]) {
             self.title = title
-            self.detail = detail
+            self.quota = quota
             self.choices = choices
         }
     }
@@ -168,36 +168,33 @@ final class ComposerChoiceSheet: UIViewController {
                 label.textColor = .secondaryLabel
                 label.numberOfLines = 0
                 label.accessibilityTraits = .header
-                // The quota sits on the heading's own line, at its right:
-                // the endpoint and what it has left are read together.
-                let heading: UIView
-                if let detail = group.detail, !detail.isEmpty {
-                    let detailLabel = UILabel()
-                    detailLabel.text = detail
-                    detailLabel.font = .preferredFont(forTextStyle: .caption1)
-                    detailLabel.adjustsFontForContentSizeCategory = true
-                    detailLabel.textColor = .tertiaryLabel
-                    detailLabel.textAlignment = .natural
-                    detailLabel.setContentHuggingPriority(.required, for: .horizontal)
-                    detailLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
-                    let row = UIStackView(arrangedSubviews: [label, detailLabel])
-                    row.axis = .horizontal
-                    row.alignment = .firstBaseline
-                    row.spacing = 8
-                    // One stop: the host, then what it has left.
-                    row.isAccessibilityElement = true
-                    row.accessibilityLabel = title
-                    row.accessibilityValue = detail
-                    row.accessibilityTraits = .header
-                    heading = row
-                } else {
-                    heading = label
+                // No figure here: a chart icon at the right opens that
+                // account's quota sheet, which asks afresh each time.
+                let row = UIStackView(arrangedSubviews: [label])
+                row.axis = .horizontal
+                row.alignment = .center
+                row.spacing = 8
+                if let open = group.quota {
+                    let icon = UIButton(type: .system)
+                    icon.setImage(
+                        UIImage(
+                            systemName: "chart.bar",
+                            withConfiguration: UIImage.SymbolConfiguration(pointSize: 12, weight: .semibold),
+                        ),
+                        for: .normal,
+                    )
+                    icon.tintColor = .tertiaryLabel
+                    icon.accessibilityLabel = String(localized: "Provider Quota")
+                    icon.setContentHuggingPriority(.required, for: .horizontal)
+                    icon.setContentCompressionResistancePriority(.required, for: .horizontal)
+                    icon.addAction(UIAction { _ in open() }, for: .primaryActionTriggered)
+                    row.addArrangedSubview(icon)
                 }
                 if let previous = stack.arrangedSubviews.last {
                     stack.setCustomSpacing(16, after: previous)
                 }
-                stack.addArrangedSubview(heading)
-                stack.setCustomSpacing(4, after: heading)
+                stack.addArrangedSubview(row)
+                stack.setCustomSpacing(4, after: row)
             }
             for choice in group.choices {
                 let row = ChoiceRow(title: choice.title, detail: choice.subtitle, chosen: choice.isSelected)
@@ -414,5 +411,206 @@ private final class ChoiceRow: UIControl {
                 view.frame.origin.x = bounds.width - view.frame.maxX
             }
         }
+    }
+}
+
+/// One account's quota, opened from the model picker's usage icon (owner,
+/// 2026-11-28): asked afresh each time it opens, pulled down, or refreshed from
+/// the top right; a figure where the provider gives one, and "Unable to Query
+/// Usage" where it does not. Back puts the picker back.
+final class QuotaSheetController: UITableViewController {
+    private struct Row {
+        var title: String
+        var value: String? = nil
+        var detail: String? = nil
+    }
+
+    private struct Section {
+        var title: String?
+        var rows: [Row]
+    }
+
+    private let provider: AgentProvider
+    private let accountLabel: String?
+    private let poolID: String?
+    private var sections: [Section] = []
+    private var failure: String?
+    private var isLoading = true
+    private var currentSnapshot: AgentQuotaSnapshot?
+    private var loader: Task<Void, Never>?
+
+    init(provider: AgentProvider, accountLabel: String?, poolID: String?) {
+        self.provider = provider
+        self.accountLabel = accountLabel
+        self.poolID = poolID
+        super.init(style: .insetGrouped)
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("Use init(provider:accountLabel:poolID:)")
+    }
+
+    deinit {
+        loader?.cancel()
+    }
+
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = accountLabel ?? provider.displayName
+        navigationItem.largeTitleDisplayMode = .never
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            title: String(localized: "Back"),
+            style: .plain,
+            target: self,
+            action: #selector(luros_back),
+        )
+        let refresh = UIBarButtonItem(
+            image: UIImage(systemName: "arrow.clockwise"),
+            style: .plain,
+            target: self,
+            action: #selector(luros_refresh),
+        )
+        refresh.accessibilityLabel = String(localized: "Refresh Quota")
+        navigationItem.rightBarButtonItem = refresh
+        refreshControl = UIRefreshControl()
+        refreshControl?.addTarget(self, action: #selector(luros_pulled), for: .valueChanged)
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 52
+        reload()
+    }
+
+    @objc private dynamic func luros_back() {
+        dismiss(animated: true)
+    }
+
+    @objc private dynamic func luros_refresh() {
+        reload()
+    }
+
+    @objc private dynamic func luros_pulled() {
+        reload()
+    }
+
+    // MARK: - Asking
+
+    /// One live read: `force` skips the coordinator's debounce, so the sheet
+    /// shows what the provider answers now, not what it answered before.
+    @objc private dynamic func reload() {
+        loader?.cancel()
+        isLoading = true
+        failure = nil
+        render()
+        loader = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let response = try await LurosService.app.agentProviderQuota(
+                    provider: provider,
+                    mode: .manualRefresh,
+                    foreground: true,
+                    force: true,
+                )
+                guard !Task.isCancelled else { return }
+                let snapshot = response.quotas.first { $0.poolID == poolID } ?? response.quotas.first
+                isLoading = false
+                currentSnapshot = snapshot
+                refreshControl?.endRefreshing()
+                render()
+            } catch {
+                guard !Task.isCancelled else { return }
+                isLoading = false
+                failure = error.readableMessage
+                refreshControl?.endRefreshing()
+                render()
+            }
+        }
+    }
+
+    private func render() {
+        var sections: [Section] = []
+        if isLoading, currentSnapshot == nil {
+            sections.append(Section(title: nil, rows: [Row(title: String(localized: "Loading…"))]))
+        } else if let snapshot = currentSnapshot {
+            var facts: [Row] = [
+                Row(title: String(localized: "Status"), value: QuotaFormatting.statusText(for: snapshot.status)),
+            ]
+            if let plan = snapshot.planName, !plan.isEmpty {
+                facts.append(Row(title: String(localized: "Plan"), value: plan))
+            }
+            if let account = snapshot.accountLabel, !account.isEmpty {
+                facts.append(Row(title: String(localized: "Account"), value: account))
+            }
+            facts.append(Row(title: String(localized: "Source"), value: QuotaFormatting.sourceText(for: snapshot)))
+            sections.append(Section(title: nil, rows: facts))
+            if !snapshot.balances.isEmpty {
+                let rows = snapshot.balances.map { balance in
+                    Row(
+                        title: balance.currency ?? balance.unitLabel ?? String(localized: "Balances"),
+                        value: QuotaFormatting.balanceAmountText(balance, amount: balance.remaining ?? balance.total),
+                    )
+                }
+                sections.append(Section(title: String(localized: "Balances"), rows: rows))
+            }
+            if !snapshot.windows.isEmpty {
+                let rows = snapshot.windows.map { window in
+                    var detail = String(localized: "\(QuotaFormatting.percentText(window.remainingPercent)) remaining")
+                    if let reset = window.resetsAt {
+                        detail += " · " + QuotaFormatting.resetText(for: reset)
+                    }
+                    if let status = window.status, !status.isEmpty {
+                        detail += " · " + status
+                    }
+                    return Row(
+                        title: window.label,
+                        value: QuotaFormatting.percentText(window.usedPercent),
+                        detail: detail,
+                    )
+                }
+                sections.append(Section(title: String(localized: "Usage Windows"), rows: rows))
+            }
+            if snapshot.balances.isEmpty, snapshot.windows.isEmpty {
+                sections.append(Section(title: nil, rows: [
+                    Row(
+                        title: String(localized: "Unable to Query Usage"),
+                        detail: snapshot.errorSummary,
+                    ),
+                ]))
+            }
+        } else {
+            sections.append(Section(title: nil, rows: [
+                Row(title: String(localized: "Unable to Query Usage"), detail: failure),
+            ]))
+        }
+        self.sections = sections
+        tableView.reloadData()
+    }
+
+    // MARK: - Table
+
+    override func numberOfSections(in _: UITableView) -> Int {
+        sections.count
+    }
+
+    override func tableView(_: UITableView, numberOfRowsInSection section: Int) -> Int {
+        sections[section].rows.count
+    }
+
+    override func tableView(_: UITableView, titleForHeaderInSection section: Int) -> String? {
+        sections[section].title
+    }
+
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let row = sections[indexPath.section].rows[indexPath.row]
+        let cell = tableView.dequeueReusableCell(withIdentifier: "row")
+            ?? UITableViewCell(style: row.detail == nil ? .value1 : .subtitle, reuseIdentifier: "row")
+        var content = row.detail == nil
+            ? UIListContentConfiguration.valueCell()
+            : UIListContentConfiguration.subtitleCell()
+        content.text = row.title
+        content.secondaryText = [row.value, row.detail].compactMap { $0 }.joined(separator: " · ")
+        cell.contentConfiguration = content
+        cell.selectionStyle = .none
+        return cell
     }
 }

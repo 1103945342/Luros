@@ -64,17 +64,6 @@ final class ChatController: UIViewController {
     /// app never attached to, so the row said finished while the agent worked
     /// and the reply only arrived on the next open. Only while visible.
     private var runReconcile: Task<Void, Never>?
-    /// Each signed-in account's quota as last read, by pool: the model sheet
-    /// draws these at once, before its own refresh lands, so opening it never
-    /// waits for a network round trip (owner, 2026-11-28).
-    private var quotaSnapshots: [String: AgentQuotaSnapshot] = [:]
-    private var quotaTask: Task<Void, Never>?
-    private var quotaPoll: Task<Void, Never>?
-    /// The accounts the model sheet last listed, so a quota arriving after the
-    /// list can be drawn into the sheet that is up.
-    private var sheetAccounts: [AgentAccount] = []
-    private var sheetIsLoading = false
-    private var wasWorkingForQuota = false
 
     /// The shown conversation's rows as last applied.
     private var messages: [ChatMessage] = []
@@ -566,7 +555,6 @@ final class ChatController: UIViewController {
         }
         sayUnsent()
         watchRuns()
-        startQuotaPolling()
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -574,7 +562,6 @@ final class ChatController: UIViewController {
         ChatPerformance.stop()
         runReconcile?.cancel()
         runReconcile = nil
-        stopQuotaPolling()
     }
 
     /// One host question every few seconds while the page is up, so a run a
@@ -640,8 +627,6 @@ final class ChatController: UIViewController {
     }
 
     deinit {
-        quotaTask?.cancel()
-        quotaPoll?.cancel()
         NotificationCenter.default.removeObserver(self)
     }
 
@@ -969,10 +954,7 @@ final class ChatController: UIViewController {
                     hasContent: !composer.draft.text.isEmpty || !composer.draft.attachments.isEmpty,
                 )
             }
-            if wasWorkingForQuota && !summary.isWorking {
-                refreshQuotas()
-            }
-            wasWorkingForQuota = summary.isWorking
+
         }
     }
 
@@ -1287,80 +1269,22 @@ final class ChatController: UIViewController {
 
     // MARK: - Provider quota
 
-    /// Every signed-in account's quota, forced: what a picker asks for once it
-    /// is up. The figure already read is on screen; this replaces it when it
-    /// lands (owner, 2026-11-28).
-    private func refreshQuotas() {
-        quotaTask?.cancel()
-        quotaTask = Task { [weak self] in
-            guard let self else { return }
-            guard let response = try? await LurosService.app.agentProviderQuota(
-                mode: .manualRefresh,
-                foreground: true,
-                force: true,
-            ), !Task.isCancelled else { return }
-            applyQuota(response)
+    /// The usage icon on a model group opens that account's quota over the
+    /// picker, which asks afresh and comes back here (owner, 2026-11-28).
+    private func presentQuotaSheet(for account: AgentAccount) {
+        guard let sheet = modelSheet, !sheet.isBeingDismissed else { return }
+        let page = QuotaSheetController(
+            provider: account.provider,
+            accountLabel: account.account,
+            poolID: account.poolID,
+        )
+        let navigation = UINavigationController(rootViewController: page)
+        navigation.modalPresentationStyle = .pageSheet
+        if let presentation = navigation.sheetPresentationController {
+            presentation.detents = [.medium(), .large()]
+            presentation.prefersGrabberVisible = true
         }
-    }
-
-    /// What the last read left, answered from the worker's own cache without
-    /// waiting for the network: the model sheet opens on it.
-    private func refreshQuotasFromCache() {
-        Task { [weak self] in
-            guard let self else { return }
-            guard let response = try? await LurosService.app.agentProviderQuota(
-                mode: .cachedOnly,
-                foreground: true,
-            ), !Task.isCancelled else { return }
-            applyQuota(response)
-        }
-    }
-
-    /// The background read, every 30 s while this chat is on screen, so the
-    /// sheet opens on a figure at most half a minute old.
-    private func startQuotaPolling() {
-        guard quotaPoll == nil else { return }
-        quotaPoll = Task { [weak self] in
-            while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 30_000_000_000)
-                guard !Task.isCancelled, self != nil else { return }
-                guard let response = try? await LurosService.app.agentProviderQuota(
-                    mode: .attentionGated,
-                    foreground: true,
-                ) else { continue }
-                self?.applyQuota(response)
-            }
-        }
-    }
-
-    private func stopQuotaPolling() {
-        quotaPoll?.cancel()
-        quotaPoll = nil
-    }
-
-    private func applyQuota(_ response: AgentProviderQuotaResponse) {
-        var read: [String: AgentQuotaSnapshot] = [:]
-        for snapshot in response.quotas {
-            read[snapshot.poolID] = snapshot
-        }
-        quotaSnapshots = read
-        drawQuotaInSheet()
-    }
-
-    /// The picker is up: its headings say what each endpoint has left, now
-    /// that another read has landed.
-    private func drawQuotaInSheet() {
-        guard let sheet = modelSheet, !sheet.isBeingDismissed, let id = chat?.id,
-              !sheetAccounts.isEmpty
-        else { return }
-        sheet.update(groups: modelGroups(sheetAccounts, for: id), loading: sheetIsLoading)
-    }
-
-    /// An account's quota as the picker shows it beside the endpoint's host:
-    /// the percentage or balance it is read against, or why there is none.
-    private func quotaDetail(for account: AgentAccount) -> String? {
-        guard let poolID = account.poolID, let snapshot = quotaSnapshots[poolID] else { return nil }
-        return QuotaFormatting.headerText(for: snapshot)
+        sheet.present(navigation, animated: true)
     }
 
     /// A model disabled in Settings stops being the one the next message uses.
@@ -1411,8 +1335,6 @@ final class ChatController: UIViewController {
     /// account and context window have been read.
     @objc private dynamic func presentModelSheet() {
         guard let id = chat?.id, presentedViewController == nil else { return }
-        // The figure read last is drawn at once; the forced read follows.
-        refreshQuotasFromCache()
         let sheet = ComposerChoiceSheet(heading: String(localized: "Model"), groups: [])
         modelSheet = sheet
         sheet.onRetry = { [weak self, weak sheet] in
@@ -1420,7 +1342,6 @@ final class ChatController: UIViewController {
             self.refreshModelSheet(sheet, for: id)
         }
         refreshModelSheet(sheet, for: id)
-        refreshQuotas()
         ComposerChoiceSheet.present(sheet, from: self)
     }
 
@@ -1447,7 +1368,6 @@ final class ChatController: UIViewController {
 
     @objc private dynamic func refreshModelSheet(_ sheet: ComposerChoiceSheet, for id: UUID) {
         modelLoader?.cancel()
-        sheetIsLoading = true
         sheet.update(groups: previewModelGroups(for: id), loading: true)
         modelLoader = Task { [weak self, weak sheet] in
             guard let self, let sheet else { return }
@@ -1461,7 +1381,6 @@ final class ChatController: UIViewController {
                 guard !accounts.isEmpty else {
                     // A saved sign-in that failed to read is not an instruction
                     // to send the reader through setup or pick another model.
-                    sheetIsLoading = false
                     if listed.contains(where: { $0.signedIn && $0.models == nil }) {
                         sheet.update(groups: [], failure: String(localized: "Models Unavailable"))
                     } else {
@@ -1469,8 +1388,6 @@ final class ChatController: UIViewController {
                     }
                     return
                 }
-                sheetAccounts = accounts
-                sheetIsLoading = false
                 sheet.update(groups: modelGroups(accounts, for: id))
                 let elapsed = Int((ProcessInfo.processInfo.systemUptime - start) * 1000)
                 Self.modelLogger.notice("picker choices ready in \(elapsed, privacy: .public) ms")
@@ -1478,7 +1395,6 @@ final class ChatController: UIViewController {
                 guard !Task.isCancelled, self.chat?.id == id,
                       presentedViewController === sheet, !sheet.isBeingDismissed
                 else { return }
-                sheetIsLoading = false
                 sheet.update(groups: previewModelGroups(for: id), failure: error.readableMessage)
             }
         }
@@ -1529,7 +1445,9 @@ final class ChatController: UIViewController {
         return accounts.map { account in
             ComposerChoiceSheet.Group(
                 title: account.account ?? account.provider.displayName,
-                detail: quotaDetail(for: account),
+                quota: { [weak self] in
+                    self?.presentQuotaSheet(for: account)
+                },
                 choices: (account.models ?? []).map { model in
                     ComposerChoiceSheet.Choice(
                         // The name the catalog gives it, with the provider's own
