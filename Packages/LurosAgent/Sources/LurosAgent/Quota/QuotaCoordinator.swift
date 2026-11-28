@@ -25,12 +25,12 @@ public struct QuotaAccountDescriptor: Sendable {
 }
 
 /// Coordinates quota refreshes with SingleFlight deduplication, attention-based
-/// gating (10m foreground / 5m subscription / 1h background), 30s manual debounce,
-/// exponential failure backoff, and 24h endpoint circuit breaking.
+/// gating (30s, foreground and background alike — owner, 2026-11-28), 30s manual
+/// debounce, exponential failure backoff, and 24h endpoint circuit breaking.
 public actor QuotaCoordinator {
-    public static let foregroundOrdinaryInterval: TimeInterval = 10 * 60
-    public static let foregroundSubscriptionInterval: TimeInterval = 5 * 60
-    public static let backgroundInterval: TimeInterval = 60 * 60
+    public static let foregroundOrdinaryInterval: TimeInterval = 30
+    public static let foregroundSubscriptionInterval: TimeInterval = 30
+    public static let backgroundInterval: TimeInterval = 30
     public static let manualDebounceInterval: TimeInterval = 30
     public static let circuitBreakerDuration: TimeInterval = 24 * 60 * 60
     public static let baseBackoffSeconds: TimeInterval = 60
