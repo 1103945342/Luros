@@ -171,7 +171,14 @@ public enum ProviderResolver {
         // never writes them anywhere. Only this account's refresher is made;
         // API keys need none, and Kimi's identity never reaches for ~/.kwwk.
         let preparing = Date()
-        let manager = OAuthManager(source: credentials, providers: KimiIdentity.refreshers(for: storeID))
+        // A second account of one provider refreshes through the provider's
+        // flow and keeps its own credential (owner, 2026-11-28).
+        let base = AccountIDs.base(of: storeID)
+        let refreshers = KimiIdentity.refreshers(for: base)
+        let manager = OAuthManager(
+            source: credentials,
+            providers: base == storeID ? refreshers : refreshers.map { AccountRefresher(base: $0, id: storeID) },
+        )
         diagnostic("provider refreshers prepared in \(elapsed(since: preparing))")
         let registering = Date()
         let modelID = configuration.modelID

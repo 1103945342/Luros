@@ -81,7 +81,11 @@ public enum AgentWorker {
                 }
                 let choice = try prompt.provider.map { provider in
                     PendingModelChoice(
-                        provider: try AgentWorker.provider(provider: provider, model: prompt.model),
+                        provider: try AgentWorker.provider(
+                            provider: provider,
+                            model: prompt.model,
+                            accountID: prompt.accountID,
+                        ),
                         wireProvider: provider, model: prompt.model,
                         reasoningEffort: prompt.reasoningEffort, serviceTier: prompt.serviceTier,
                         parameters: prompt.modelParameters ?? .init(), defaults: prompt.modelDefaults)
@@ -277,11 +281,11 @@ public enum AgentWorker {
             }
         case .agentAPIConfiguration:
             await WorkerMain.serve(AgentAPIConfigurationRequest.self, request) { query in
-                try await accounts.apiConfiguration(for: query.provider)
+                try await accounts.apiConfiguration(for: query.provider, accountID: query.accountID)
             }
         case .agentModelList:
             await WorkerMain.serve(AgentModelListRequest.self, request) { query in
-                try await accounts.models(for: query.provider)
+                try await accounts.models(for: query.provider, accountID: query.accountID, limitsFor: query.limitsFor ?? [])
             }
         case .agentModelActivate:
             await WorkerMain.serve(AgentModelActivateRequest.self, request) { query in
@@ -307,7 +311,11 @@ public enum AgentWorker {
         case .agentSignOut:
             await WorkerMain.serve(AgentSignOutRequest.self, request) { signOut in
                 let home = URL(fileURLWithPath: context.assignment.home, isDirectory: true)
-                try await accounts.signOut(signOut.provider, dataRoot: LurosDataRoot(home: home))
+                try await accounts.signOut(
+                    signOut.provider,
+                    accountID: signOut.accountID,
+                    dataRoot: LurosDataRoot(home: home),
+                )
                 return Acknowledged()
             }
         default:
@@ -360,7 +368,7 @@ public enum AgentWorker {
     /// every other provider uses its credential store id and the default
     /// model chosen by ProviderRegistration when none is named.
     static func provider(_ open: AgentOpenRequest) throws -> ProviderConfiguration {
-        try provider(provider: open.provider ?? .githubCopilot, model: open.model)
+        try provider(provider: open.provider ?? .githubCopilot, model: open.model, accountID: open.accountID)
     }
 
     /// The same, from a provider and model rather than an open request: a
@@ -368,8 +376,16 @@ public enum AgentWorker {
     static func provider(
         provider: AgentProvider,
         model requested: String?,
+        accountID: String? = nil,
     ) throws -> ProviderConfiguration {
         let model = requested.flatMap { $0.isEmpty ? nil : $0 }
+        // A second account of one provider (`anthropic#2`) is its own kwwk
+        // store id: the registration maps it back to the provider's own flow
+        // and this credential (owner, 2026-11-28).
+        let account = AccountIDs.resolved(accountID, for: provider)
+        if account != provider.storeID {
+            return .stored(storeID: account, model: model)
+        }
         switch provider {
         case .githubCopilot:
             return .githubCopilot(model: model ?? defaultCopilotModel)

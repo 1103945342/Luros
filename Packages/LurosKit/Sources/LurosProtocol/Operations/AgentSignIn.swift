@@ -138,6 +138,44 @@ public struct AgentAccount: Codable, Sendable, Equatable {
     }
 }
 
+/// What an account is called on the wire (owner, 2026-11-28), in the one
+/// spelling both sides read: its credential's store id. A provider's first
+/// account keeps the store id it always had; the ones added after it are
+/// `<base>#2`, `<base>#3`, … The provider a store id belongs to is LurosAgent's
+/// to know (`AccountIDs`), so these take the base id as a string.
+public enum AgentAccountID {
+    public static let separator = "#"
+    /// How many accounts of one provider may be signed in at once.
+    public static let maximum = 9
+
+    /// The store id an extra account of `base` uses.
+    public static func extra(_ base: String, _ number: Int) -> String {
+        "\(base)\(separator)\(number)"
+    }
+
+    /// The number of an extra account (`#2`, `#3`), nil for the first.
+    public static func number(of accountID: String) -> Int? {
+        guard let index = accountID.lastIndex(of: Character(separator)) else { return nil }
+        let suffix = accountID[accountID.index(after: index)...]
+        guard let number = Int(suffix), (2 ... maximum).contains(number) else { return nil }
+        return number
+    }
+
+    /// The base store id an account belongs to: `anthropic#2` is `anthropic`.
+    public static func base(of accountID: String) -> String {
+        guard let number = number(of: accountID) else { return accountID }
+        return String(accountID.dropLast(String(separator).count + String(number).count))
+    }
+
+    /// The next account id `base` can be signed in to, given the ones it has.
+    public static func next(base: String, taken: Set<String>) -> String? {
+        guard taken.contains(base) else { return base }
+        return (2 ... maximum).lazy
+            .map { extra(base, $0) }
+            .first { !taken.contains($0) }
+    }
+}
+
 /// Every provider Luros's sessions can use, signed in or not, in the
 /// order kwwk lists its logins: subscriptions, then keys.
 public struct AgentAccountListRequest: OperationRequest {

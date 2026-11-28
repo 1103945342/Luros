@@ -62,10 +62,13 @@ public struct AgentModelTestRequest: OperationRequest {
     public static let operation = AppOperation.agentModelTest
 
     public var provider: AgentProvider
+    /// The account whose key is tried; nil is the provider's first.
+    public var accountID: String?
     public var model: String
 
-    public init(provider: AgentProvider, model: String) {
+    public init(provider: AgentProvider, accountID: String? = nil, model: String) {
         self.provider = provider
+        self.accountID = accountID
         self.model = model
     }
 }

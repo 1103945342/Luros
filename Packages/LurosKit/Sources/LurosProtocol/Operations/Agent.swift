@@ -511,6 +511,9 @@ public struct AgentOpenRequest: OperationRequest {
     /// switch is the app's, shown only while Ask Before Using the Screen is
     /// off. An agent's open takes its opener's.
     public var allowsUnlock: Bool?
+    /// The account (`AgentAccountID`) the provider is read through; nil is
+    /// the provider's first, as every session opened before this was.
+    public var accountID: String?
     public var reasoningEffort: AgentReasoningEffort?
     public var serviceTier: AgentServiceTier?
     /// The model's context window and largest reply as the user set them
@@ -573,6 +576,7 @@ public struct AgentOpenRequest: OperationRequest {
         approvalMode: ApprovalMode = .confirm,
         asksBeforeScreen: Bool? = nil,
         allowsUnlock: Bool? = nil,
+        accountID: String? = nil,
         reasoningEffort: AgentReasoningEffort? = nil,
         serviceTier: AgentServiceTier? = nil,
         modelLimits: AgentModelLimits? = nil,
@@ -596,6 +600,7 @@ public struct AgentOpenRequest: OperationRequest {
         self.approvalMode = approvalMode
         self.asksBeforeScreen = asksBeforeScreen
         self.allowsUnlock = allowsUnlock
+        self.accountID = accountID
         self.reasoningEffort = reasoningEffort
         self.serviceTier = serviceTier
         self.modelLimits = modelLimits
@@ -680,6 +685,10 @@ public struct AgentPromptRequest: OperationRequest {
     /// nil leaves the session's as it is. The host drops it from an agent's
     /// prompt.
     public var allowsUnlock: Bool?
+    /// The account (`AgentAccountID`) the provider is read through; nil keeps
+    /// the session's, as a nil `approvalMode` does, and the host drops it from
+    /// an agent's prompt.
+    public var accountID: String?
     /// What this run is allowed to do, from the composer's pill: `plan` reads
     /// and answers without changing anything, `build` works as the approval
     /// mode allows, `auto` is a build run that stops asking. Not the approval
@@ -728,6 +737,7 @@ public struct AgentPromptRequest: OperationRequest {
         approvalMode: ApprovalMode? = nil,
         asksBeforeScreen: Bool? = nil,
         allowsUnlock: Bool? = nil,
+        accountID: String? = nil,
         runMode: AgentRunMode? = nil,
         promptInjection: String? = nil,
         fromSessionID: String? = nil,
@@ -751,6 +761,7 @@ public struct AgentPromptRequest: OperationRequest {
         self.approvalMode = approvalMode
         self.asksBeforeScreen = asksBeforeScreen
         self.allowsUnlock = allowsUnlock
+        self.accountID = accountID
         self.runMode = runMode
         self.promptInjection = promptInjection
         self.fromSessionID = fromSessionID

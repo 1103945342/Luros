@@ -14,7 +14,11 @@ public enum ProviderRegistration {
         quotaStore: QuotaCacheStore? = nil,
     ) async throws -> ResolvedAuth? {
         guard let credentials = try await manager.credentials(for: storeID) else { return nil }
-        if storeID == CredentialProviderID.deepSeek {
+        // A second account of one provider (`anthropic#2`) registers as the
+        // provider, from its own credentials, the way a further endpoint does
+        // (owner, 2026-11-28).
+        let baseStoreID = AccountIDs.base(of: storeID)
+        if baseStoreID == CredentialProviderID.deepSeek {
             let id = modelOverride ?? DeepSeekProvider.extra("defaultModel", in: credentials) ?? DeepSeekProvider.defaultModel
             let base = DeepSeekProvider.extra("baseUrl", in: credentials) ?? DeepSeekProvider.baseURL
             let fallback = Model(id: id, api: "openai-completions", provider: "deepseek", baseURL: base)
@@ -28,7 +32,7 @@ public enum ProviderRegistration {
                 ResolvedProviderAuth(token: credentials.access, scheme: .bearer)
             })
         }
-        let registered: ResolvedAuth? = if CredentialProviderID.endpointNumber(storeID) != nil {
+        let registered: ResolvedAuth? = if CredentialProviderID.endpointNumber(baseStoreID) != nil {
             // kwwk knows one OpenAI-compatible login, by its store id. A
             // further endpoint is registered as that login, from its own
             // credentials: the model carries its base URL, and the key is
@@ -40,12 +44,18 @@ public enum ProviderRegistration {
                 ),
                 modelOverride: modelOverride,
             )
+        } else if baseStoreID != storeID {
+            try await registerStored(
+                storeId: baseStoreID,
+                manager: OAuthManager(source: DeliveredCredentialSource([baseStoreID: credentials])),
+                modelOverride: modelOverride,
+            )
         } else {
             try await registerStored(storeId: storeID, manager: manager, modelOverride: modelOverride)
         }
         guard let resolved = registered else { return nil }
         if let quotaStore {
-            if storeID == CredentialProviderID.anthropicOAuth,
+            if baseStoreID == CredentialProviderID.anthropicOAuth,
                let existing = await APIRegistry.shared.provider(scope: "anthropic", api: resolved.model.api) as? AnthropicProvider,
                !(existing.client is QuotaHeaderObservingHTTPClient)
             {
@@ -66,7 +76,7 @@ public enum ProviderRegistration {
                     maximumOutputTokens: existing.maximumOutputTokens,
                 )
                 await APIRegistry.shared.register(wrapped, scope: "anthropic")
-            } else if storeID == "openai-codex",
+            } else if baseStoreID == "openai-codex",
                       let existing = await APIRegistry.shared.provider(scope: "chatgpt-codex", api: resolved.model.api) as? OpenAIResponsesProvider,
                       !(existing.client is QuotaHeaderObservingHTTPClient)
             {
@@ -98,14 +108,14 @@ public enum ProviderRegistration {
         // figures are already the catalog's changes nothing here.
         let model = ModelResolver.resolving(
             DeepSeekProvider.isOfficial(credentials) ? DeepSeekProvider.applyingCatalog(to: resolved.model) : resolved.model,
-            catalogKey: catalogKey(storeID: storeID),
+            catalogKey: catalogKey(storeID: baseStoreID),
             parameters: parameters,
         )
         // Nobody promised a hand-entered endpoint takes OpenAI's `developer`
         // role, and a reasoning model sends its system prompt under it: the
         // prompt goes as `system` instead, which every endpoint takes.
-        let spoken = CredentialProviderID.isOpenAICompatible(storeID) ? model.keepingSystemRole : model
-        guard !CredentialProviderID.isOpenAICompatible(storeID) else {
+        let spoken = CredentialProviderID.isOpenAICompatible(baseStoreID) ? model.keepingSystemRole : model
+        guard !CredentialProviderID.isOpenAICompatible(baseStoreID) else {
             return ResolvedAuth(
                 model: spoken,
                 modelLabel: resolved.modelLabel,
@@ -121,7 +131,7 @@ public enum ProviderRegistration {
         // is kept whole: pinning the access token here alone sent every
         // Antigravity message without its project, and Code Assist answered
         // "the login names no Google Cloud project".
-        if namesStoredExtras(storeID) {
+        if namesStoredExtras(baseStoreID) {
             return ResolvedAuth(
                 model: spoken,
                 modelLabel: resolved.modelLabel,
