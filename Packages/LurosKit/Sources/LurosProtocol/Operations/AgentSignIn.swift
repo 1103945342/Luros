@@ -97,6 +97,12 @@ public struct AgentAccount: Codable, Sendable, Equatable {
     /// Canonical deduplication pool identifier (`key:<sha256_prefix16>` or `oauth:<storeID>`),
     /// populated when signed in so UI views match the exact pool without holding secrets.
     public var poolID: String?
+    /// The credential store id this account lives under (`AccountIDs` in
+    /// LurosAgent): the provider's own for its first account, `provider#2`,
+    /// `provider#3` for the ones added after it. An account is addressed by
+    /// it, so two sign-ins of one provider are two accounts (owner,
+    /// 2026-11-28). Nil from a worker older than this, and for the first.
+    public var storeID: String?
     public var isAPIKeyAccount: Bool {
         usesAPIKey ?? (method == .apiKey)
     }
@@ -114,6 +120,7 @@ public struct AgentAccount: Codable, Sendable, Equatable {
         serviceTiers: [String: [AgentServiceTier]]? = nil,
         capabilities: [String: AgentModelCapabilities]? = nil,
         poolID: String? = nil,
+        storeID: String? = nil,
     ) {
         self.provider = provider
         self.method = method
@@ -127,6 +134,7 @@ public struct AgentAccount: Codable, Sendable, Equatable {
         self.serviceTiers = serviceTiers
         self.capabilities = capabilities
         self.poolID = poolID
+        self.storeID = storeID
     }
 }
 
@@ -167,8 +175,11 @@ public struct AgentAPIConfigurationRequest: OperationRequest {
     public typealias Response = AgentAPIConfigurationResponse
     public static let operation = AppOperation.agentAPIConfiguration
     public var provider: AgentProvider
-    public init(provider: AgentProvider) {
+    /// The account whose key is read; nil is the provider's first.
+    public var accountID: String?
+    public init(provider: AgentProvider, accountID: String? = nil) {
         self.provider = provider
+        self.accountID = accountID
     }
 }
 
@@ -183,14 +194,17 @@ public struct AgentModelListRequest: OperationRequest {
     public typealias Response = AgentModelListResponse
     public static let operation = AppOperation.agentModelList
     public var provider: AgentProvider
+    /// The account whose models are listed; nil is the provider's first.
+    public var accountID: String?
     /// Models besides those the provider lists whose automatic limits to
     /// answer: the ones the user added by hand or enabled. At most
     /// `maximumLimitsAsked` are read.
     public var limitsFor: [String]?
     public static let maximumLimitsAsked = 256
 
-    public init(provider: AgentProvider, limitsFor: [String]? = nil) {
+    public init(provider: AgentProvider, accountID: String? = nil, limitsFor: [String]? = nil) {
         self.provider = provider
+        self.accountID = accountID
         self.limitsFor = limitsFor
     }
 }
@@ -215,9 +229,10 @@ public struct AgentModelActivateRequest: OperationRequest {
     public typealias Response = TaskHandle
     public static let operation = AppOperation.agentModelActivate
     public var provider: AgentProvider
+    public var accountID: String?
     public var models: [String]
-    public init(provider: AgentProvider, models: [String]) {
-        self.provider = provider; self.models = models
+    public init(provider: AgentProvider, accountID: String? = nil, models: [String]) {
+        self.provider = provider; self.accountID = accountID; self.models = models
     }
 }
 
@@ -238,10 +253,15 @@ public struct AgentSignInRequest: OperationRequest {
     /// One of the account's `alternativeMethods`; nil is its `method`. Any
     /// other is refused `badRequest` before the task is accepted.
     public var method: AgentSignInMethod?
+    /// The account to sign in to (`AgentAccountID`): nil is the provider's
+    /// first, which an existing sign-in keeps overwriting as before. A new
+    /// account names its own id, `provider#2` and up (owner, 2026-11-28).
+    public var accountID: String?
 
-    public init(provider: AgentProvider, method: AgentSignInMethod? = nil) {
+    public init(provider: AgentProvider, method: AgentSignInMethod? = nil, accountID: String? = nil) {
         self.provider = provider
         self.method = method
+        self.accountID = accountID
     }
 }
 
@@ -290,8 +310,12 @@ public struct AgentSignOutRequest: OperationRequest {
     public typealias Response = Acknowledged
     public static let operation = AppOperation.agentSignOut
     public var provider: AgentProvider
-    public init(provider: AgentProvider) {
+    /// The account to forget; nil is the provider's first and, with it, every
+    /// account the provider has (a whole provider signed out).
+    public var accountID: String?
+    public init(provider: AgentProvider, accountID: String? = nil) {
         self.provider = provider
+        self.accountID = accountID
     }
 }
 
@@ -303,20 +327,35 @@ public extension LurosService {
         try await send(AgentAccountListRequest(extraModels: extraModels, onlyExtraModels: onlyExtraModels))
     }
 
-    func agentAPIConfiguration(provider: AgentProvider) async throws -> AgentAPIConfigurationResponse {
-        try await send(AgentAPIConfigurationRequest(provider: provider))
+    func agentAPIConfiguration(
+        provider: AgentProvider,
+        accountID: String? = nil,
+    ) async throws -> AgentAPIConfigurationResponse {
+        try await send(AgentAPIConfigurationRequest(provider: provider, accountID: accountID))
     }
 
-    func agentModelList(provider: AgentProvider, limitsFor: [String]? = nil) async throws -> AgentModelListResponse {
-        try await send(AgentModelListRequest(provider: provider, limitsFor: limitsFor))
+    func agentModelList(
+        provider: AgentProvider,
+        accountID: String? = nil,
+        limitsFor: [String]? = nil,
+    ) async throws -> AgentModelListResponse {
+        try await send(AgentModelListRequest(provider: provider, accountID: accountID, limitsFor: limitsFor))
     }
 
-    func agentModelActivate(provider: AgentProvider, models: [String]) async throws -> TaskHandle {
-        try await send(AgentModelActivateRequest(provider: provider, models: models))
+    func agentModelActivate(
+        provider: AgentProvider,
+        accountID: String? = nil,
+        models: [String],
+    ) async throws -> TaskHandle {
+        try await send(AgentModelActivateRequest(provider: provider, accountID: accountID, models: models))
     }
 
-    func agentSignIn(provider: AgentProvider, method: AgentSignInMethod? = nil) async throws -> TaskHandle {
-        try await send(AgentSignInRequest(provider: provider, method: method))
+    func agentSignIn(
+        provider: AgentProvider,
+        method: AgentSignInMethod? = nil,
+        accountID: String? = nil,
+    ) async throws -> TaskHandle {
+        try await send(AgentSignInRequest(provider: provider, method: method, accountID: accountID))
     }
 
     func agentSignInRespond(taskID: TaskID, fields: [AgentSignInField: String], verifyModel: Bool? = nil) async throws {
@@ -327,8 +366,8 @@ public extension LurosService {
         _ = try await send(AgentSignInCancelRequest(taskID: taskID))
     }
 
-    func agentSignOut(provider: AgentProvider) async throws {
-        _ = try await send(AgentSignOutRequest(provider: provider))
+    func agentSignOut(provider: AgentProvider, accountID: String? = nil) async throws {
+        _ = try await send(AgentSignOutRequest(provider: provider, accountID: accountID))
     }
 }
 
