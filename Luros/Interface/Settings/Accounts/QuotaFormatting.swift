@@ -3,10 +3,10 @@ import LurosProtocol
 
 /// Locale-aware formatting for `Decimal` balances, percentages, and window reset times.
 enum QuotaFormatting {
-    static func decimalText(_ value: Decimal, maxFractionDigits: Int = 2) -> String {
+    static func decimalText(_ value: Decimal, maxFractionDigits: Int = 2, minFractionDigits: Int = 0) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 0
+        formatter.minimumFractionDigits = minFractionDigits
         formatter.maximumFractionDigits = maxFractionDigits
         return formatter.string(from: value as NSDecimalNumber) ?? "\(value)"
     }
@@ -81,6 +81,74 @@ enum QuotaFormatting {
         }
 
         return snapshot.status == .exhausted ? String(localized: "Exhausted") : nil
+    }
+
+    /// What the model picker draws at the right of an endpoint's heading
+    /// (owner, 2026-11-28): a balance as money with its cents, each usage
+    /// window by its length, and a word — never the circuit breaker's own
+    /// state, which read as if the API itself were unusable.
+    static func headerText(for snapshot: AgentQuotaSnapshot) -> String? {
+        switch snapshot.status {
+        case .circuitBroken, .cooldown, .unsupported, .error:
+            return String(localized: "Unable to Query Usage")
+        case .available, .exhausted:
+            break
+        }
+        // A balance pool is money: DeepSeek and the relays report what is
+        // left, not a window, and a stray rate-limit header must not turn
+        // that into a percentage.
+        if snapshot.kind == .balance {
+            let money = snapshot.balances.compactMap { balance -> String? in
+                guard let amount = balance.remaining ?? balance.total else { return nil }
+                return headingMoney(balance, amount: amount)
+            }
+            return money.isEmpty ? nil : money.joined(separator: " · ")
+        }
+        var parts = snapshot.windows.map { "\(windowName($0)) \(percentText($0.usedPercent))" }
+        if parts.isEmpty {
+            parts = snapshot.balances.compactMap { balance -> String? in
+                guard let amount = balance.remaining ?? balance.total else { return nil }
+                return headingMoney(balance, amount: amount)
+            }
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// Money as a heading shows it: its symbol, then the cents — `$0.98`,
+    /// `¥4.48` — where the picker's row has no room for a locale's code.
+    private static func headingMoney(_ balance: AgentQuotaBalance, amount: Decimal) -> String {
+        if balance.isUnlimited { return "∞" }
+        let symbol: String = switch balance.currency?.uppercased() {
+        case "USD": "$"
+        case "CNY", "RMB": "¥"
+        case "EUR": "€"
+        case "GBP": "£"
+        case "JPY": "¥"
+        case let code?: code + " "
+        case nil: ""
+        }
+        let digits = maxFractionDigits(for: balance.currency)
+        let number = decimalText(amount, maxFractionDigits: digits, minFractionDigits: digits)
+        return symbol + number + (balance.currency == nil || balance.unitLabel != nil ? " " + (balance.unitLabel ?? "quota") : "")
+    }
+
+    /// Cents for the currencies that have them; a whole unit otherwise.
+    private static func maxFractionDigits(for currency: String?) -> Int {
+        switch currency?.uppercased() {
+        case "JPY", "KRW": 0
+        case nil: 2
+        default: 2
+        }
+    }
+
+    /// A window's length as a heading has room for: `5h`, `7d`, else the
+    /// label the pool gave it — a per-model weekly window names its model.
+    private static func windowName(_ window: AgentQuotaWindow) -> String {
+        switch window.id {
+        case "fiveHour": return "5h"
+        case "sevenDay": return "7d"
+        default: return window.label
+        }
     }
 
     static func shortWindowLabel(_ window: AgentQuotaWindow) -> String {

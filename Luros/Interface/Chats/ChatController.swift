@@ -1360,15 +1360,7 @@ final class ChatController: UIViewController {
     /// the percentage or balance it is read against, or why there is none.
     private func quotaDetail(for account: AgentAccount) -> String? {
         guard let poolID = account.poolID, let snapshot = quotaSnapshots[poolID] else { return nil }
-        switch snapshot.status {
-        case .available, .exhausted:
-            return QuotaFormatting.composerDisplay(for: snapshot, model: nil)?.badgeText
-                ?? QuotaFormatting.statusText(for: snapshot.status)
-        case .cooldown, .circuitBroken, .unsupported, .error:
-            // "Paused (24h)", "Cooldown", "Error": a word, where the composer's
-            // ring had room for an exclamation mark and nothing else.
-            return QuotaFormatting.statusText(for: snapshot.status)
-        }
+        return QuotaFormatting.headerText(for: snapshot)
     }
 
     /// A model disabled in Settings stops being the one the next message uses.
